@@ -1,0 +1,703 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/aisbreaker/ais1/0.6.0
+info:
+  version: "0.6.0"
+  title: "AIsBreaker API"
+  description: >-
+    Specification of the AIsBreaker API. This API is used to access AI services.
+#security:
+#  - accessCode:
+#      - read
+#      - write
+paths:
+  # init API access
+  /oauth/token:
+    post:
+      summary: Get access token
+      operationId: oauthToken
+      requestBody:
+        description: JSON value with access credentials and details of the requested AI service/adapte"
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIServiceRequest'
+
+      responses:
+        '200':
+          description: "Access granted"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIAccessToken'
+        '400':
+          description: invalid input, object invalid
+
+  # main API endpoint
+  /conversation/request:
+    post:
+      summary: Send one or multiple messages (to append it to a conversation), then get the complete response from the AI service.
+      operationId: conversationRequest
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRequest'
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalConversationResponse'
+        '201':
+          description: Created
+          # the response is a server side events (SSE) stream
+          #
+          # SSE is currently not supported by OpenAPI spec, 
+          # therefore we use an approach based on https://github.com/OAI/OpenAPI-Specification/issues/396#issuecomment-894718960
+          content:
+            text/event-stream: # we use an eventstream with JSON objects in the 'data' field
+              schema:
+                type: array 
+                # format: event-stream
+                items:
+                  oneOf:
+                    - $ref: '#/components/schemas/ConversationResponse'
+                      # description: Any partial response while streaming the response from the AI service.
+                    - $ref: '#/components/schemas/FinalConversationResponse'
+                      # description: The final response from the AI service while streaming, i.e. the last server-side event.
+        '400':
+          description: invalid input, object invalid
+
+  # helper endpoints
+  /conversation/messagesXXX/{conversation_state}:
+    get:
+      summary: Get all messages of a conversation. Use HTTP GET for short conversation_state values/strings.
+      operationId: conversationMessages
+      parameters:
+        - in: path
+          name: conversation_state
+          schema:
+            $ref: '#/components/schemas/ConversationState'
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                description: All (relevant) messages (prompts, media, ...) of the conversation.
+                items:
+                  $ref: '#/components/schemas/Message'
+        '400':
+          description: invalid input, object invalid
+
+  /conversation/messages:
+    post:
+      summary: Get all messages of a conversation. Use HTTP POST for long conversation_state values/strings.
+      operationId: conversationMessagesPost
+      requestBody:
+        #description: ""
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - conversation_state
+              properties:
+                conversation_state:
+                  $ref: '#/components/schemas/ConversationState'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                description: All (relevant) messages (prompts, media, ...) of the conversation.
+                items:
+                  $ref: '#/components/schemas/Message'
+        '400':
+          description: invalid input, object invalid
+
+  # debug endpoint
+  /ping:
+    get:
+      summary: Server heartbeat operation
+      description: >-
+        This operation shows how to override the global security defined above,
+        as we want to open it up for all users.
+      security: []
+      responses:
+        '200':
+          description: OK
+
+#
+# components / schemas / specific data types
+#
+components:
+  schemas:
+
+    #
+    # authentication related schemas
+    #
+
+    APIServiceRequest:
+      type: object
+      required:
+        - client_id
+        - client_secret
+        - service_request
+      properties:
+        client_id:
+          type: string
+          description: User ID = username.
+          example: main_123
+        client_secret:
+          type: string
+          description: Client secret = password.
+          example: myPassword123
+        service_request:
+          $ref: '#/components/schemas/ServiceRequest'
+    ServiceRequest:
+      type: object
+      description: Spefification of the requested AI service.
+      required:
+        - service_id
+      properties:
+        service_id:
+          $ref: '#/components/schemas/ServiceId'
+        service_options:
+          type: object
+          additionalProperties: true
+          description: Service specific options as JSON value
+          example: { "foo": "123", "bar": "Demo 123 setting", "restriction": {"validUntil": "2029-12-31T00:00:00.000Z" } }
+
+    APIAccessToken:
+      type: object
+      required:
+        - access_token
+        - token_type
+      properties:
+        access_token:
+          type: string
+          description: Access token for subsequent calls of other pathes of this API. NOT the access token for the actual AI service
+          example: 'my.unique.accEsstoKEN123'
+        token_type:
+          type: string
+          description: HTTP Authenication type of the access_token
+          enum:
+            - Bearer
+          # default: Bearer
+          example: Bearer
+
+
+    #
+    # service related schemas: request-related
+    #
+  
+    ConversationRequest:
+      type: object
+      description: Send a message to the AI service and get the response.
+      required:
+        - messages
+      properties:
+        messages:
+          type: array
+          description: List of messages (prompts, media, ...) to send to the AI service for the conversation specified in `conversation_state`.
+          items:
+            $ref: '#/components/schemas/InputMessage'
+        conversation_state:
+          $ref: '#/components/schemas/ConversationState'
+
+        request_media:
+          $ref: '#/components/schemas/RequestMedia'
+        request_options:
+          $ref: '#/components/schemas/RequestOptions'
+
+        intern_options:
+          #type: any
+          description: >-
+            Service implementation specific opts.
+            Try to avoid using them because they are NOT portable!!!
+          example: { "foo": "123", "bar": "Demo 123 setting", "restriction": {"validUntil": "2029-12-31T00:00:00.000Z" } }
+        client_user: 
+          $ref: '#/components/schemas/ClientUser'
+
+        stream_progress:
+          type: boolean
+          description: >-
+            If set to true, partial message deltas will be sent, like in ChatGPT. 
+            Tokens will be sent as data-only server-sent events as they become available, with the stream terminated by a data: [DONE]
+          example: true
+
+    RequestMedia: # TODO: alternative names: ???, ExpectedMedia
+      type: object
+      description: Request a media response (text, image, audio, and/or video) from the AI service.
+      properties:
+        text: # TODO: better naming, like `want_text_response`
+          $ref: '#/components/schemas/RequestMediaText'
+          #description: Must be set (e.g.  `{}`) if a text response is requested.
+        image:
+          $ref: '#/components/schemas/RequestMediaImage'
+          #description: Must be set if an image response is requested.
+        audio:
+          $ref: '#/components/schemas/RequestMediaAudio'
+          #description: Must be set if an audio response is requested.
+        video:
+          $ref: '#/components/schemas/RequestMediaVideo'
+          #description: Must be set if a video response is requested.
+
+    RequestMediaText: # TODO: alternative names: TextResponseOpts, TextGenerationOpts, ExpectedText
+      type: object
+      description: >-
+        The existence of this objects shows that a text response is requested.
+        An empty object is possible to just indicated that a text repsonse is wanted.
+      properties:
+        language_code:
+          $ref: '#/components/schemas/LanguageCode'
+      example: {}
+
+    RequestMediaImage: # TODO: alternative names: ImageResponseOpts, ImageGeneration, ExpectedImage, FavoredImageResult,  ImageRequestContext
+      type: object
+      description: An image response is requested. Here we specify the favored image result.
+      properties:
+        width:
+          type: integer
+          description: favored width of output image. Respect of limits of your service and engine. It's not guaranteed that the result fits into it.
+          example: 1024
+        height:
+          type: integer
+          description: favored height of output image. Respect of limits of your service and engine. It's not guaranteed that the result fits into it.
+          example: 768
+        delivery:
+          type: string
+          description: favored delivery format. It's not guaranteed that the service uses it.
+          enum:
+            - url
+            - base64
+          example: url
+        format:
+          type: string
+          description: favored image format. It's not guaranteed that the service uses it.
+          enum:
+            - jpeg
+            - png
+            - gif
+          example: jpeg
+
+    RequestMediaAudio:
+      #type: any
+      description: More details to be specified later. # TODO
+      example: {}
+
+    RequestMediaVideo:
+      #type: any
+      description: More details to be specified later. # TODO
+      example: {}
+
+
+    RequestOptions:
+      type: object
+      description: General (not servcie specific) options for the AI service request.
+      properties:
+        engine_id:
+          $ref: '#/components/schemas/EngineId'
+        max_total_tokens: # naming?
+          type: integer
+          description: Spening limit for this request+respone (most services get paid by tokens).
+          minimum: 1
+          maximum: 100000
+          example: 100
+        number_of_alternative_responses: # naming?
+          type: integer
+          description: Number of alternative responses to generate (aka `samples`).
+          minimum: 1
+          maximum: 100
+          example: 1
+
+
+    #
+    # some basic schemas
+    #
+
+    ConversationState:
+      type: string
+      description:  >-
+        The value presents the conversation, i.e. the mistory of all (relevant) messages of the conversation.
+        Not set for the first call of a conversation.
+        The `conversation_state` value is returned by previous call of the same conversation.
+        The value is opaque to the client, it could be e.g. a conversation ID or the full conversation state as base64-encoded JSON string or ...
+      example: "123-convID-456"
+
+    ClientUser:
+      type: string
+      description:  >-
+        A unique identifier representing the end-user, which can help the AI service to monitor and detect abuse.
+        ( e.g. https://platform.openai.com/docs/guides/safety-best-practices/end-user-ids )
+        the value is opaque to the API.
+        Do not use emails or other personally identifiable information (PII);
+        instead use temporary identifies or hashed or encrypted values.
+        ALternatively, this field can also be used for tracing and debugging purposes.
+
+    EngineId:
+      type: string
+      description: service specific engine/model ID
+      example: 'chat/gpt-3.5-turbo-0301'   # or 'chat/text-similarity-davinci-001'
+      #"service_id: "OpenAI",
+      #"engine_id": "chat/text-similarity-davinci-001"
+
+    ServiceId:
+      type: string
+      description: Service ID = connected service. Usually, one service can handle multiple AI services represent by service-specific engines.
+      example: OpenAI
+
+    Engine:
+      type: object
+      description: AI service and its engine.
+      required:
+        - service_id
+        - engine_id
+      properties:
+        service_id:
+          $ref: '#/components/schemas/ServiceId'
+        engine_id:
+          $ref: '#/components/schemas/EngineId'
+
+    LanguageCode:
+      type: string
+      description: >-
+        ISO 639-1 language code. 
+        See https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
+      example: 'en'
+
+
+    #
+    # service related schemas: response-related
+    #
+
+    ConversationResponse:
+      type: object
+      description: Response received from the AI service. Can also be a partial response in the case of streaming/HTTP SSE.
+      required:
+        - object
+        - outputs
+      properties:
+        object:
+          type: string
+          description: Name of the object type. For debugging only, because the specific values can change at any time.
+        outputs:
+          type: array
+          description: List of messages (prompts, media, ...) received from the AI service int he context of `conversation_state`.
+          items:
+            $ref: '#/components/schemas/OutputMessage'
+
+    FinalConversationResponse:
+      type: object
+      description: Full/last response received for a request from the AI service.
+      required:
+        - object
+        - outputs
+        - conversation_state
+        - usage
+      allOf:
+        - $ref: '#/components/schemas/ConversationResponse'
+        - type: object
+          properties:
+            conversation_state:
+              $ref: '#/components/schemas/ConversationState'
+            usage:
+              $ref: '#/components/schemas/Usage'
+            intern_response:
+              #type: any
+              description: >-
+                Service implementation specific reponse values.
+                Try to avoid using them because theay are NOT portable!!!
+              example: { "foo": "123", "bar": "Demo 123 setting", "restriction": {"validUntil": "2029-12-31T00:00:00.000Z" } }
+
+    Usage:
+      type: object
+      description: Details about the used AI service.
+      required:
+        - engine
+        - total_milliseconds
+      properties:
+        engine:
+          $ref: '#/components/schemas/Engine'
+        engine_id:
+          $ref: '#/components/schemas/EngineId'
+        #"prompt_tokens": 25,
+        #"completion_tokens": 32,
+        total_tokens:
+          type: integer
+          description: Total number of tokens used for this request+response.
+          example: 57
+        total_milliseconds:
+          type: integer
+          description: Total number of milliseconds used for this request+response.
+          example: 1234
+        service_hints:
+          type: array
+          description: >-
+            List of human readable free-text hints or warnings from the service to the client developer(s).
+            The client should display them to the user.
+          items:
+            type: string
+            example: "Warning: The response is not very helpful because the input text is too short."
+
+
+    #
+    # service related schemas: message-related (general)
+    #
+
+    Message:
+      type: object
+      description: A message sent to (request) or from (reponse) the AI service.
+      required:
+        - role
+      properties:
+        object:
+          type: string
+          description: Name of the object type. For debugging only, because the specific values can change at any time.
+          #"enum": [
+          #  "InputText",
+          #  "OutputText",
+          #  "OutputImage",
+          #],
+          #example: "InputText"
+        role:
+          type: string
+          description: Role of the message creator.
+          #"enum": [
+          #  "system",
+          #  "user",
+          #  "mask",
+          #  "assistant",
+          #],
+          example: "user"
+
+    #
+    # service related schemas: message-related (input)
+    #
+
+    InputMessage: # TODO: rename to Input???
+      type: object
+      description: >-
+        A message sent to the AI service. 
+        This is usually NOT a response to a previous request/reponse of the same conversation,
+        because previous messages are stored in the conversation_state.
+      allOf:
+        - $ref: '#/components/schemas/Message'
+
+    TextInputMessage:
+      type: object
+      description: A text message sent to the AI service.
+      required:
+        - role
+        - text
+      allOf:
+        - $ref: '#/components/schemas/InputMessage'
+        - type: object
+          properties:
+            role:
+              type: string
+              description: Role of the (input) message creator.
+              enum:
+                - system
+                - user
+              example: 'user'
+            text:
+              type: string
+              description: The text message.
+              example: Hello, how are you?
+            weight:
+              type: number
+              description: 1.0 means normal prompt (default), 0.0 means ignore, -1.0 means negative prompt; >1.0 or <-1.0 applifies the prompt
+              example: 1.0
+              default: 1.0
+
+    ImageInputMessage:
+      type: object
+      description: An image message sent to the AI service.
+      required:
+        - role
+        - image
+      allOf:
+        - $ref: '#/components/schemas/InputMessage'
+        - type: object
+          properties:
+            role:
+              type: string
+              description: >-
+                Role of the (input) message creator/input image.
+                * "user": The image to edit or to respond to. Must be a valid PNG file, less than 4MB, and square. If mask is not provided, image must have transparency, which will be used as the mask.
+                * "mask": An additional image whose fully transparent areas (e.g. where alpha is zero) indicate where image should be edited. Must be a valid PNG file, less than 4MB, and have the same dimensions as image.
+              enum:
+                - user
+                - mask
+              example: user
+            base64:
+              type: string
+              description: The image, base64-encoded; either url or base64 must be set.
+              example: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHR...'
+            url:
+              type: string
+              description: The image, url-encoded; either url or base64 must be set.
+              example: 'https://client.example.com/image.jpg'
+
+    # TODO: VideoInputMessage
+
+    # TODO: AudioInputMessage
+
+
+
+    #
+    # service related schemas: message-related (output)
+    #
+
+    OutputMessage: # TODO: rename to Output???
+      type: object
+      description: A reponse message sent from the AI service.
+      allOf:
+        - $ref: '#/components/schemas/Message'
+        - type: object
+          required:
+            - index
+          properties:
+            index:
+              type: integer
+              description: Index of the message in the request - relevant to distinguest multiple alternatives if request_ops.number_of_alternative_responses>1.
+              default: 0
+              example: 0
+            is_delta:
+              type: boolean
+              description: >-
+                If set to true, the message is a delta (and to append) to the previous message, usually used while streaming the reponse.
+                If false, it's a full message.
+              default: false
+              example: true
+            is_processing:
+              type: boolean
+              description: >-
+                If set to true, the message is still work in progress.
+                If false, the message is the final response.
+              default: false
+              example: true
+
+    TextOutputMessage:
+      type: object
+      description: A text message response from the AI service.
+      required:
+        - object
+        - role
+        - text
+      allOf:
+        - $ref: '#/components/schemas/OutputMessage'
+        - type: object
+          properties:
+            object:
+              type: string
+              description: Name of the object type. For debugging only, because the specific values can change at any time.
+              "enum":
+                - TextOutputMessage 
+              example: "TextOutputMessage"
+            text:
+              type: string
+              description: The text message.
+              example: "This is a response text message from the AI service."
+
+    ImageOutputMessage:
+      type: object
+      description: An image response from the AI service.
+      required:
+        - object
+        - role
+      allOf:
+        - $ref: '#/components/schemas/OutputMessage'
+        - type: object
+          properties:
+            object:
+              type: string
+              description: Name of the object type. For debugging only, because the specific values can change at any time.
+              "enum":
+                - ImageOutputMessage 
+              example: "ImageOutputMessage"
+            base64:
+              type: string
+              description: The image, base64-encoded; either url or base64 must be set.
+              example: '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHR...'
+            url:
+              type: string
+              description: The image, url-encoded; either url or base64 must be set.
+              example: 'https://service.example.com/image.jpg'
+
+    # TODO: VideoOutputMessage
+
+    # TODO: AudioOutputMessage
+
+
+
+
+  #securitySchemes:
+  #  accessCode:
+  #    type: oauth2
+  #    flows:
+  #      authorizationCode:
+  #        authorizationUrl: 'http://example.com/oauth/auth'
+  #        tokenUrl: 'http://example.com/oauth/token'
+  #        scopes:
+  #          write: allows modifying resources
+  #          read: allows reading resources
+
+#
+# OpenAPI examples:
+#components:
+#  responses:
+#    sampleObjectResponse:
+#      content:
+#        application/json:
+#          schema:
+#            oneOf:
+#              - $ref: '#/components/schemas/simpleObject'
+#              - $ref: '#/components/schemas/complexObject'
+
+
+# responses:
+#   sampleObjectResponse:
+#     content:
+#       application/json:
+#         schema:
+#           oneOf:
+#             - $ref: '#/components/schemas/Object1'
+#             - $ref: '#/components/schemas/Object2'
+#             - $ref: 'sysObject.json#/sysObject'
+#           discriminator:
+#             propertyName: objectType # or: `object`
+#             mapping:
+#               obj1: '#/components/schemas/Object1'
+#   obj2: '#/components/schemas/Object2'
+#               system: 'sysObject.json#/sysObject'
+# …
+# schemas:
+#   Object1:
+#     type: object
+#     required:
+#       - objectType
+#     properties:
+#       objectType:
+#         type: string
+#     …
+#   Object2:
+#     type: object
+#     required:
+#       - objectType
+#     properties:
+#       objectType:
+#         type: string
+#     …

@@ -9,6 +9,8 @@ This project provides an interface/API/SDK to access different AI APIs (OpenAI C
 
 Steps:
 
+    cd aisbreaker-api/
+
     # install dependencies
     npm install
 
@@ -21,9 +23,11 @@ Steps:
     ./start.sh
 
 
-## Build and Publish an npm Package
+## Build and Publish the npm Package `aisbreaker-api`
 
 Steps:
+
+    cd aisbreaker-api/
 
     # adjust/increase version in package.json (must be unique)
     vi package.json
@@ -50,3 +54,10 @@ Test the package installation
 
     # start from npm repo
     npx aisbreaker-api
+    
+    
+## Generate TypeScript Classes from OpenAPI Spec
+
+See: openapi-spec/README.md
+
+

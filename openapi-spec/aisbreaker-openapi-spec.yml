@@ -386,17 +386,21 @@ components:
       type: object
       description: Response received from the AI service. Can also be a partial response in the case of streaming/HTTP SSE.
       required:
-        - object
+        - object_type
         - outputs
       properties:
-        object:
+        object_type:
           type: string
-          description: Name of the object type. For debugging only, because the specific values can change at any time.
+          description: Name of the object type. For type mapping and debugging only. Should not be analysed be the client app.
         outputs:
           type: array
           description: List of messages (prompts, media, ...) received from the AI service int he context of `conversation_state`.
           items:
             $ref: '#/components/schemas/OutputMessage'
+      discriminator:
+        propertyName: object_type
+        #mapping:
+        #  foo: FinalConversationResponse
 
     FinalConversationResponse:
       type: object
@@ -409,6 +413,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/ConversationResponse'
         - type: object
+          # all other properties specific to this class
           properties:
             conversation_state:
               $ref: '#/components/schemas/ConversationState'
@@ -420,6 +425,8 @@ components:
                 Service implementation specific reponse values.
                 Try to avoid using them because theay are NOT portable!!!
               example: { "foo": "123", "bar": "Demo 123 setting", "restriction": {"validUntil": "2029-12-31T00:00:00.000Z" } }
+      discriminator:
+        propertyName: object_type
 
     Usage:
       type: object
@@ -460,17 +467,12 @@ components:
       type: object
       description: A message sent to (request) or from (reponse) the AI service.
       required:
+        - object_type
         - role
       properties:
-        object:
+        object_type:
           type: string
-          description: Name of the object type. For debugging only, because the specific values can change at any time.
-          #"enum": [
-          #  "InputText",
-          #  "OutputText",
-          #  "OutputImage",
-          #],
-          #example: "InputText"
+          description: Name of the object type. For type mapping and debugging only. Should not be analysed be the client app.
         role:
           type: string
           description: Role of the message creator.
@@ -481,6 +483,10 @@ components:
           #  "assistant",
           #],
           example: "user"
+      discriminator:
+        propertyName: object_type
+        #mapping:
+        #  foo: InputMessage
 
     #
     # service related schemas: message-related (input)
@@ -494,11 +500,14 @@ components:
         because previous messages are stored in the conversation_state.
       allOf:
         - $ref: '#/components/schemas/Message'
+      discriminator:
+        propertyName: object_type
 
     TextInputMessage:
       type: object
       description: A text message sent to the AI service.
       required:
+        - object_type
         - role
         - text
       allOf:
@@ -521,13 +530,16 @@ components:
               description: 1.0 means normal prompt (default), 0.0 means ignore, -1.0 means negative prompt; >1.0 or <-1.0 applifies the prompt
               example: 1.0
               default: 1.0
+      discriminator:
+        propertyName: object_type
 
     ImageInputMessage:
       type: object
       description: An image message sent to the AI service.
       required:
+        - object_type
         - role
-        - image
+        #- base64 | url
       allOf:
         - $ref: '#/components/schemas/InputMessage'
         - type: object
@@ -550,6 +562,8 @@ components:
               type: string
               description: The image, url-encoded; either url or base64 must be set.
               example: 'https://client.example.com/image.jpg'
+      discriminator:
+        propertyName: object_type
 
     # TODO: VideoInputMessage
 
@@ -568,6 +582,8 @@ components:
         - $ref: '#/components/schemas/Message'
         - type: object
           required:
+            - object_type
+            - role
             - index
           properties:
             index:
@@ -589,45 +605,38 @@ components:
                 If false, the message is the final response.
               default: false
               example: true
+      discriminator:
+        propertyName: object_type
 
     TextOutputMessage:
       type: object
       description: A text message response from the AI service.
       required:
-        - object
+        - object_type
         - role
         - text
       allOf:
         - $ref: '#/components/schemas/OutputMessage'
         - type: object
           properties:
-            object:
-              type: string
-              description: Name of the object type. For debugging only, because the specific values can change at any time.
-              "enum":
-                - TextOutputMessage 
-              example: "TextOutputMessage"
             text:
               type: string
               description: The text message.
               example: "This is a response text message from the AI service."
+      discriminator:
+        propertyName: object_type
 
     ImageOutputMessage:
       type: object
       description: An image response from the AI service.
       required:
-        - object
+        - object_type
         - role
+        #- base64 | url
       allOf:
         - $ref: '#/components/schemas/OutputMessage'
         - type: object
           properties:
-            object:
-              type: string
-              description: Name of the object type. For debugging only, because the specific values can change at any time.
-              "enum":
-                - ImageOutputMessage 
-              example: "ImageOutputMessage"
             base64:
               type: string
               description: The image, base64-encoded; either url or base64 must be set.
@@ -636,6 +645,8 @@ components:
               type: string
               description: The image, url-encoded; either url or base64 must be set.
               example: 'https://service.example.com/image.jpg'
+      discriminator:
+        propertyName: object_type
 
     # TODO: VideoOutputMessage
 

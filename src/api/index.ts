@@ -1,21 +1,22 @@
+export * from "./models/index.js"
+
+
 import Keyv from "keyv"
 import crypto from 'crypto';
-
-import OpenAIChatClient from "./openai-chat-client.js"
-import { Input } from "./api/models/Input.js";
-import { RequestMedia } from "./api/models/RequestMedia.js";
 import { RequestOptions } from "https";
-import { ResponseEvent } from "./api/models/ResponseEvent.js";
-import { ResponseFinal } from "./api/models/ResponseFinal.js";
 
-import { InputText } from "./api/models/InputText.js";
-import { InputImage } from "./api/models/InputImage.js";
-import { Output } from "./api/models/Output.js";
-import { Request } from "./api/models/Request.js";
-import { Message } from "./api/models/Message.js";
-import { Usage } from "./api/models/Usage.js";
-import { OutputText } from "./api/models/OutputText.js";
-import { OutputImage } from "./api/models/OutputImage.js";
+import {
+    Input, 
+    RequestMedia,
+    ResponseEvent,
+    ResponseFinal,
+    Output,
+    Request,
+    Message,
+    Usage,
+    OutputText,
+    OutputImage,
+} from './models/index.js'
 
 
 

@@ -1,29 +1,33 @@
-import crypto from 'crypto';
-import Keyv from 'keyv';
-import { fetchEventSource, FetchEventSourceInit } from '@waylaidwanderer/fetch-event-source';
-import { Agent } from 'undici';
+import crypto from 'crypto'
+import Keyv from 'keyv'
+import { fetchEventSource, FetchEventSourceInit } from '@waylaidwanderer/fetch-event-source'
+import { Agent } from 'undici'
 
-//import './fetch-polyfill.js';
+//import './fetch-polyfill.js'
 import {
     fetch, Headers, /*Request,*/ Response,
-} from 'undici';
-import { ApiBase, ApiOptions, ResponseCollector } from './api.js';
-import { ResponseFinal } from './api/models/ResponseFinal';
-import { Request, StreamProgressFunction } from './api/models/Request';
-import { Output } from './api/models/Output';
-import { Usage } from './api/models/Usage';
-import { Engine } from './api/models/Engine';
-//import * as gen from "./api/generated/models/all.js";
-
+} from 'undici'
 //import { get_encoding, encoding_for_model } from Tiktoken
-import { encoding_for_model, Tiktoken } from 'tiktoken';
-import { Input } from './api/models/Input';
-import { InputText } from './api/models/InputText';
-import { OutputText } from './api/models/OutputText';
-import { Message } from './api/models/Message';
-import { ResponseEvent } from './api/models/ResponseEvent';
+import { encoding_for_model, Tiktoken } from 'tiktoken'
 
-const CHATGPT_MODEL = 'gpt-3.5-turbo';
+import {
+    Engine,
+    ApiBase,
+    ApiOptions,
+    Input,
+    InputText,
+    Message,
+    Output,
+    OutputText,
+    Request,
+    ResponseCollector,
+    ResponseEvent,
+    ResponseFinal,
+    Usage,
+} from './api/index.js'
+
+
+const CHATGPT_MODEL = 'gpt-3.5-turbo'
 
 //
 // general API implementation for OpenAI / ChatGPT API

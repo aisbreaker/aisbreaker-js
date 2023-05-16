@@ -3,10 +3,14 @@
 //
 // simple test to see if the API is working
 //
-import { StreamProgressFunction } from "./api/models/Request.js"
-import { ResponseEvent } from "./api/models/ResponseEvent.js"
-import { API, TrivialAssistantAPI, TrivialAssistantAPIOptions } from "./api.js"
-import { OpenAIAPI, OpenAIAPIOptions } from "./openai-chat-client.js"
+import {
+     API,
+     ResponseEvent,
+     StreamProgressFunction, 
+     TrivialAssistantAPI, 
+     TrivialAssistantAPIOptions 
+} from './api/index.js'
+import { OpenAIAPI, OpenAIAPIOptions } from './openaichat.js'
 
 const isTrivialAssistant = false
 let api: API

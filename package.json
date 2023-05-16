@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-api",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "This package provides an interface/API/SDK to access different AI APIs (OpenAI ChatGPT/Completion, Google Bart and more) in the same way by providing a uniform interface/API inclusive SDK for NodeJS/TypeScript/JavaScript",
   "type": "module",
   "main": "build/index.js",
@@ -22,6 +22,7 @@
     "keyv": "^4.5.2",
     "keyv-file": "^0.2.0",
     "node-fetch": "^2.6.9",
+    "tiktoken": "^1.0.7",
     "undici": "^5.20.0"
   }
 }

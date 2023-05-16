@@ -1,4 +1,5 @@
 //
 // export relevant classes/interfaces of this package
 //
-export { API, TrivialAssistantAPI, TrivialAssistantAPIOptions, OpenAIAPI, OpenAIAPIOptions } from "./api.js"
+export { API, TrivialAssistantAPI, TrivialAssistantAPIOptions } from "./api.js"
+export { OpenAIAPI, OpenAIAPIOptions } from "./openai-chat-client.js"

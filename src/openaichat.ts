@@ -97,9 +97,18 @@ export class OpenAIAPI extends ApiBase {
                 // call upstream progress function
                 streamProgressFunc(responseEvent)
             }
-            // call OpenAI API
-            await this.openaiChatClient.sendMessageWithStream(allOpenAIChatMessages, request.internOptions, streamOpenAIProgressFunc)
-                // it waits until streaming is finished
+            // call OpenAI API (it waits until streaming is finished)
+            await this.openaiChatClient.getCompletion(
+                allOpenAIChatMessages,
+                request.internOptions,
+                streamOpenAIProgressFunc,
+                (request.internOptions?.abortController) || new AbortController(),
+            )
+    
+            // avoids some rendering issues when using a CLI app
+            if (this.openaiChatClient?.options?.debug) {
+                console.debug();
+            }
 
             // summarize the streamed result, incl. usage caclulation
             const inputsTokens = this.countInputsTokens(request.inputs)
@@ -116,8 +125,20 @@ export class OpenAIAPI extends ApiBase {
             // expect synchronous result
             //
 
-            // call OpenAI API
-            const response: OpenAIChatResponse = await this.openaiChatClient.sendMessageWithoutStream(allOpenAIChatMessages, request.internOptions) 
+            // call OpenAI API and wait for the response
+            const response0: OpenAIChatResponse | undefined = await this.openaiChatClient.getCompletion(
+                allOpenAIChatMessages,
+                request.internOptions,
+                undefined,
+                (request.internOptions?.abortController) || new AbortController(),
+            )
+            if (this.openaiChatClient?.options?.debug) {
+                console.debug(JSON.stringify(response0))
+            }
+            if (!response0) {
+                throw new Error('No result from OpenAI')
+            }
+            const response: OpenAIChatResponse = response0
             const r = response as any
 
             // summarize the synchronous result result, incl. usage
@@ -435,40 +456,6 @@ ${botMessage.message}
             .trim();
     }
     */
-
-    async sendMessageWithoutStream(messages: OpenAIChatMessage[], internOptions: any = {}): Promise<OpenAIChatResponse> {
-        // request and wait for the response
-        let result: OpenAIChatResponse | undefined = await this.getCompletion(
-            messages,
-            internOptions,
-            undefined,
-            internOptions.abortController || new AbortController(),
-        )
-        if (this.options.debug) {
-            console.debug(JSON.stringify(result))
-        }
-        if (!result) {
-            throw new Error('No result from OpenAI')
-        }
-
-        return result
-    }
-
-
-    async sendMessageWithStream(messages: OpenAIChatMessage[], internOptions: any = {}, streamProgressFunc: OpenAIChatSSEFunc): Promise<void> {
-        // request, result streaming, and await for streaming end
-        let resultToIgnore /*: undefined*/ = await this.getCompletion(
-            messages,
-            internOptions,
-            streamProgressFunc,
-            internOptions.abortController || new AbortController(),
-        )
- 
-        // avoids some rendering issues when using a CLI app
-        if (this.options.debug) {
-            console.debug();
-        }
-    }
 
 
     /** 

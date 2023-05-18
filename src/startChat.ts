@@ -1,50 +1,33 @@
 #!/usr/bin/node
 
-//
-// simple test to see if the API is working
-//
 import {
-     API,
-     ResponseEvent,
-     StreamProgressFunction, 
-     TrivialAssistantAPI, 
-     TrivialAssistantAPIOptions 
-} from './api/index.js'
-import { OpenAIAPI, OpenAIAPIOptions } from './openaichat.js'
+    API,
+    OpenAIChatAPI,
+    OpenAIChatAPIOptions,
+    ResponseEvent,
+    StreamProgressFunction,
+    TrivialAssistantAPI, 
+    TrivialAssistantAPIOptions,
+} from './index.js'
 
+
+//
+// simple test to see if the API is working:  text chat
+//
+
+const prompt1 = "Give me a sentence with any animal in it."
+const prompt2 = "And now in German."
+
+// initialize API
 const isTrivialAssistant = false
 let api: API
 if (isTrivialAssistant) {
     api = new TrivialAssistantAPI()
 } else {
-    api = new OpenAIAPI({
+    api = new OpenAIChatAPI({
         //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     })
 }
-
-
-const prompt1 = "Give me a sentence with any animal in it."
-const prompt2 = "And now in German."
-
-/*
-// use the API without "async/await"
-api.sendMessage({
-    inputs: [ {
-        text: {
-            role: 'user',
-            content: prompt1,
-        },
-    } ],
-    //streamProgressFunction: f,
-}).then((response) => {
-    console.log("----------------------------------")
-    console.log("-- Response:")
-    console.log(JSON.stringify(response, undefined, 2))
-
-    // now use the function with "async/await"
-    actionWithAsync() 
-})
-*/
 
 // use the function with "async/await"
 async function actionWithAsync() {
@@ -79,3 +62,24 @@ async function actionWithAsync() {
     console.log(JSON.stringify(response2, undefined, 2))
 }
 actionWithAsync()
+
+
+/* ALTERNATIVE:
+// use the API without "async/await"
+api.sendMessage({
+    inputs: [ {
+        text: {
+            role: 'user',
+            content: prompt1,
+        },
+    } ],
+    //streamProgressFunction: f,
+}).then((response) => {
+    console.log("----------------------------------")
+    console.log("-- Response:")
+    console.log(JSON.stringify(response, undefined, 2))
+
+    // now use the function with "async/await"
+    actionWithAsync() 
+})
+*/

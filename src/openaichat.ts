@@ -33,15 +33,15 @@ const CHATGPT_MODEL = 'gpt-3.5-turbo'
 // general API implementation for OpenAI / ChatGPT API
 //
 
-export interface OpenAIAPIOptions extends ApiOptions {
+export interface OpenAIChatAPIOptions extends ApiOptions {
     openaiApiKey?: string
 }
 
-export class OpenAIAPI extends ApiBase {
+export class OpenAIChatAPI extends ApiBase {
     openaiApiKey: string
     openaiChatClient: OpenAIChatClient
 
-    constructor(apiOptions: OpenAIAPIOptions) {
+    constructor(apiOptions: OpenAIChatAPIOptions) {
         super(apiOptions)
         this.openaiApiKey = (apiOptions && apiOptions.openaiApiKey) || process.env.OPENAI_API_KEY || ""
 

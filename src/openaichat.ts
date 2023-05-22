@@ -32,6 +32,8 @@ const CHATGPT_MODEL = 'gpt-3.5-turbo'
 //
 // general API implementation for OpenAI / ChatGPT API
 //
+// API docs: https://platform.openai.com/docs/api-reference/chat/create
+//
 
 export interface OpenAIChatAPIOptions extends ApiOptions {
     openaiApiKey?: string

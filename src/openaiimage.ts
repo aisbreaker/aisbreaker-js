@@ -27,6 +27,8 @@ const engine: Engine = {
 //
 // general API implementation for OpenAI / ChatGPT API
 //
+// API docs: https://platform.openai.com/docs/api-reference/images/create
+//
 
 export interface OpenAIImageAPIOptions extends ApiOptions {
     openaiApiKey?: string

@@ -18,7 +18,7 @@ const prompt = "Give me a cute teddy bear sitting in the forest."
 
 // initialize API
 const isTrivialAssistant = false
-const isStableAI = true
+const isStableAI = false
 let api: API
 if (isTrivialAssistant) {
     api = new TrivialAssistantAPI()
@@ -38,8 +38,8 @@ if (isTrivialAssistant) {
 function veryLongStringReplacer(key: any, value: any) {
     // Filtering out properties
     if (typeof value === "string") {
-        if (value.length > 100) {
-            return value.substring(0, 100) + " ... (truncated)"
+        if (value.length > 512) {
+            return value.substring(0, 100) + ` ... (truncated from len=${value.length})`
         } else {
             return value
         }

@@ -26,6 +26,9 @@ const engine: Engine = {
 //
 // general API implementation for stability.ai API
 //
+// API docs: https://platform.stability.ai/rest-api#tag/v1generation/operation/textToImage
+// Authentication/getting STABILITY_API_KEY: https://platform.stability.ai/docs/getting-started/authentication
+//
 
 export interface StabilityAIText2ImageAPIOptions extends ApiOptions {
     stabilityApiKey?: string

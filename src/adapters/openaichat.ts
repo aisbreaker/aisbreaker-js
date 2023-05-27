@@ -1,5 +1,3 @@
-import crypto from 'crypto'
-import Keyv from 'keyv'
 import { fetchEventSource, FetchEventSourceInit } from '@waylaidwanderer/fetch-event-source'
 import { Agent } from 'undici'
 
@@ -11,20 +9,22 @@ import {
 import { encoding_for_model, Tiktoken } from 'tiktoken'
 
 import {
+    AIsAPI,
+    AIsProps,
+    AIsAPIFactory,
     Engine,
-    ApiBase,
-    ApiOptions,
     Input,
     InputText,
     Message,
     Output,
     OutputText,
     Request,
-    ResponseCollector,
     ResponseEvent,
     ResponseFinal,
     Usage,
-} from './api/index.js'
+} from '../api'
+import { ResponseCollector } from "../utils/ResponseCollector.js"
+import { DefaultConversationState } from '../utils/SessionUtil.js'
 
 
 const CHATGPT_MODEL = 'gpt-3.5-turbo'
@@ -35,20 +35,42 @@ const CHATGPT_MODEL = 'gpt-3.5-turbo'
 // API docs: https://platform.openai.com/docs/api-reference/chat/create
 //
 
-export interface OpenAIChatAPIOptions extends ApiOptions {
+export interface OpenAIChatParams {
     openaiApiKey?: string
 }
+export interface OpenAIChatProps extends OpenAIChatParams, AIsProps {
+}
+export class OpenAIChat implements OpenAIChatProps {
+    serviceId: string = 'OpenAIChat'
+    openaiApiKey?: string
 
-export class OpenAIChatAPI extends ApiBase {
+    constructor(props: OpenAIChatParams) {
+        this.openaiApiKey = props.openaiApiKey
+    }
+}
+
+export class OpenAIChatFactroy implements AIsAPIFactory<OpenAIChatProps,OpenAIChatAPI> {
+    serviceId: string = 'OpenAIChat'
+
+    constructor() {
+    }
+
+    createAIsAPI(props: OpenAIChatProps): OpenAIChatAPI {
+        return new OpenAIChatAPI(props)
+    }
+}
+
+export class OpenAIChatAPI implements AIsAPI {
+    serviceId: string = 'OpenAIChat'
+
     openaiApiKey: string
     openaiChatClient: OpenAIChatClient
 
-    constructor(apiOptions: OpenAIChatAPIOptions) {
-        super(apiOptions)
-        this.openaiApiKey = (apiOptions && apiOptions.openaiApiKey) || process.env.OPENAI_API_KEY || ""
+    constructor(props: OpenAIChatProps) {
+        this.openaiApiKey = (props && props.openaiApiKey) || process.env.OPENAI_API_KEY || ""
 
         // backend
-        this.openaiChatClient = new OpenAIChatClient(this.openaiApiKey, this.keyv, apiOptions)
+        this.openaiChatClient = new OpenAIChatClient(this.openaiApiKey, props)
     }
 
     /*
@@ -75,11 +97,11 @@ export class OpenAIChatAPI extends ApiBase {
         const responseCollector = new ResponseCollector(request)
 
         // update conversation (before OpenAI API request-response)
-        const conversationId = request.conversationState || crypto.randomUUID()
-        await this.addMessagesToConversation(conversationId, request.inputs, [])
+        const conversationState = DefaultConversationState.fromBase64(request.conversationState)
+        conversationState.addInputs(request.inputs)
 
         // get all messages so far - this is the conversation context
-        const allMessages = await this.getMessagesOfConversation(conversationId)
+        const allMessages = conversationState.getMessages()
         const allOpenAIChatMessages = messages2OpenAIChatMessages(allMessages)
 
         // the result
@@ -161,12 +183,12 @@ export class OpenAIChatAPI extends ApiBase {
         */
 
         // update conversation (after OpenAI API request-response)
-        await this.addMessagesToConversation(conversationId, [], resultOutputs)
+        conversationState.addOutputs(resultOutputs)
 
         // return response
         const response: ResponseFinal = {
             outputs: resultOutputs,
-            conversationState: conversationId,
+            conversationState: conversationState.toBase64(),
             usage: resultUsage,
             internResponse: resultInternResponse,
         }
@@ -367,7 +389,6 @@ type OpenAIChatResponse = object
 
 export default class OpenAIChatClient {
     apiKey: string
-    conversationsCache: Keyv
     options: any
     modelOptions: any
     isChatGptModel = true // this.modelOptions.model.startsWith('gpt-');
@@ -376,15 +397,12 @@ export default class OpenAIChatClient {
 
     constructor(
         apiKey: string,
-        conversationsCache: Keyv,
         options: any = {},
     ) {
         this.apiKey = apiKey;
         if (options && options.debug) {
             console.debug(`API key: ${apiKey}`);
         } 
-
-        this.conversationsCache = conversationsCache;
 
         this.setOptions(options);
     }
@@ -604,12 +622,3 @@ ${botMessage.message}
         return response.json() as OpenAIChatResponse
     }
 }
-
-
-//
-// generic helper functions
-//
-async function delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-

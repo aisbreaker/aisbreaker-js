@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-api",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "This package provides an interface/API/SDK to access different AI APIs (OpenAI ChatGPT/Completion, Google Bart and more) in the same way by providing a uniform interface/API inclusive SDK for NodeJS/TypeScript/JavaScript",
   "type": "module",
   "main": "build/index.js",
@@ -11,6 +11,7 @@
     "start": "echo \"Try startChat or startCreateImage\" && exit 1",
     "startChat":  "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startChat.js",
     "startImage": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startImage.js",
+    "startTest":  "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startTest.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "aisbreaker",

@@ -1,0 +1,284 @@
+
+import {
+    Engine,
+    ApiBase,
+    ApiOptions,
+    Input,
+    InputText,
+    Message,
+    Output,
+    OutputText,
+    Request,
+    ResponseCollector,
+    ResponseEvent,
+    ResponseFinal,
+    Usage,
+} from './../index.js'
+import crypto from 'crypto'
+
+
+
+export type AIsAdapterProps = {
+    serviceId: string
+}
+
+export type AIsProxyProps = {
+    url?: string
+    accessToken: string
+}
+
+export class AIsProxy implements AIsProxyProps {
+    url?: string
+    accessToken: string
+
+    constructor(props: AIsProxyProps) {
+        this.url = props.url
+        this.accessToken = props.accessToken
+    }
+}
+
+export interface AIsAPI {
+    serviceId: string
+
+    sendMessage(request: Request): Promise<ResponseFinal>
+}
+
+export interface AIsAPIFactory {
+    serviceId: string
+
+    getInstance(props: BaseProps): AIsAPI
+}
+
+export class AIsBreaker {
+    static serviceId2FacoryMapping = new Map<string, AIsAPIFactory>()
+
+
+    static registerAdapterFactory(adapterFactory: AIsAPIFactory) {
+        this.serviceId2FacoryMapping.set(adapterFactory.serviceId, adapterFactory)
+    }
+
+    static getAdapter(props: BaseProps): AIsAPI {
+        const serviceId = props.serviceId
+        const factory = this.serviceId2FacoryMapping.get(serviceId)
+        if (!factory) {
+            throw new Error(`No adapter registered for serviceId '${serviceId}'`)
+        }
+        return factory.getInstance(props)
+    }
+
+    static async createSession() {
+        throw new Error("Not implemented")
+    }
+}
+
+
+////
+
+export type TrivialProxyProps = /*AIsAdapterProps &*/ {
+    //serviceId: string //'TrivialProxy'
+    url?: string
+    embeddedService: AIsAdapterProps
+    accessToken: string
+}
+
+export interface BaseProps {
+    serviceId: string
+}
+
+
+//type TrivialProxyServiceId = 'TrivialProxy'
+export class TrivialProxy implements TrivialProxyProps, BaseProps {
+    serviceId: string = 'TrivialProxy'
+    //serviceId: 'TrivialProxy' = 'TrivialProxy'
+    url?: string
+    embeddedService: AIsAdapterProps
+    accessToken: string
+
+    constructor(props: TrivialProxyProps) {
+        this.url = props.url
+        this.embeddedService = props.embeddedService
+        this.accessToken = props.accessToken
+    }
+}
+class TrivialProxyFactroy implements AIsAPIFactory {
+    serviceId: string = 'TrivialProxy'
+
+    getInstance(props: TrivialProxy): AIsAPI {
+        return new TrivialProxyAPI(props)
+    }
+}
+class TrivialProxyAPI extends ApiBase implements AIsAPI {
+    serviceId: string = 'TrivialProxy'
+
+    props: TrivialProxyProps
+    embeddedAPI: AIsAPI
+
+    constructor(props: TrivialProxyProps) {
+        super({})
+        this.props = props
+        this.embeddedAPI = AIsBreaker.getAdapter(props.embeddedService)
+    }
+
+    async sendMessage(request: Request): Promise<ResponseFinal> {
+        console.log(`${this.serviceId}/${this.props.accessToken}: sendMessage()`)
+        return this.embeddedAPI.sendMessage(request)
+    }
+}
+
+
+
+export type TrivialAssistantProps = /*AIsAdapterProps &*/ {
+}
+export class TrivialAssistant implements TrivialAssistantProps, BaseProps {
+    serviceId: string = 'TrivialAssistant'
+
+    constructor(props: TrivialAssistantProps) {
+    }
+}
+class TrivialAssistantFactroy implements AIsAPIFactory {
+    serviceId: string = 'TrivialAssistant'
+
+    getInstance(props: TrivialAssistantProps): AIsAPI {
+        return new TrivialAssistantAPI(props)
+    }
+}
+class TrivialAssistantAPI extends ApiBase implements AIsAPI {
+    serviceId: string = 'TrivialAssistant'
+
+    async sendMessage(request: Request): Promise<ResponseFinal> {
+        const input = request.inputs[0]
+        let messageText = '???'
+         if (input.text) {
+            // it's a TextInputMessage message
+            messageText = input.text.content
+        }
+
+        /* alternative
+        const messageT = p.messagesT[0]
+        if (messageT.type === 'TextInput') {
+            // it's a TextInputMessage message
+            console.log(messageT.text)
+        }
+        if (messageT.type === 'ImageInput') {
+            // it's a TextInputMessage message
+            console.log(messageT.url)
+        }       
+        */
+
+        // generate output
+        const outputs: Output[] = [{
+            text: {
+                index: 0,
+                role: 'assistant',
+                content: `The answer to '${messageText}' from TrivialAssistantAPI is unknown ...`,  
+            }
+        }]
+
+        // update conversation
+        const conversationId = request.conversationState || crypto.randomUUID()
+        await this.addMessagesToConversation(conversationId, request.inputs, outputs)
+
+        // calculate usage
+        const usage: Usage = {
+            engine: {
+                serviceId: 'TrivialAssistant',
+                engineId: 'default',
+            },
+            totalMilliseconds: 1,
+        }
+
+        // return response
+        const response: ResponseFinal = {
+            outputs: outputs,
+            conversationState: conversationId,
+            usage: usage,
+        }
+        return response
+    }
+}
+
+class TrivialConversationAPI extends TrivialAssistantAPI implements AIsAPI {
+    //serviceId: string = 'TrivialConversation'
+    static serviceId = 'TrivialConversation'
+
+    async sendMessage(request: Request): Promise<ResponseFinal> {
+        console.log(this.serviceId+": sendMessage()")
+        return super.sendMessage(request)
+    }
+}
+
+
+
+/////// TEST
+
+console.log("================================= AIsProxy started")
+
+// initialize API
+const conversational = new TrivialConversationAPI()
+AIsBreaker.registerAdapterFactory(new TrivialProxyFactroy())
+AIsBreaker.registerAdapterFactory(new TrivialAssistantFactroy())
+//AIsBreaker.registerAdapterFactory(new TrivialProxyFactroy(conversational))
+//AIsBreaker.registerAdapterFactory(new TrivialProxyAPI(new TrivialProxyAPI(conversational)))
+
+
+// initialize use of API
+const trivialProxy1 = new TrivialProxy({
+    embeddedService: new TrivialConversationAPI(),
+    accessToken: '1234567890',
+})
+const trivialProxy1a = new TrivialProxy(trivialProxy1)
+const trivialProxy2 = new TrivialProxy({
+    embeddedService: trivialProxy1a,
+    accessToken: 'abcdefghij',
+})
+
+console.log("trivialProxy1: ", JSON.stringify(trivialProxy1, undefined, 2))
+console.log("trivialProxy1a: ", JSON.stringify(trivialProxy1a, undefined, 2))
+console.log("trivialProxy2: ", JSON.stringify(trivialProxy2, undefined, 2))
+
+const api2 = AIsBreaker.getAdapter(trivialProxy2)
+
+console.log("api2: ", JSON.stringify(api2, undefined, 2))
+const api = api2
+
+
+// define prompts
+const prompt1 = "Hello"
+const prompt2 = "How are you?"
+
+// use the function with "async/await"
+async function actionWithAsync() {
+    console.log("")
+    console.log("================================= actionWithAsync() started")
+
+    console.log("----- request/response 1 - without streaming")
+    const response1 = await api.sendMessage({
+        inputs: [ {
+            text: {
+                role: 'user',
+                content: prompt1,
+            },
+        } ],
+    })
+    console.log("-- Response 1:")
+    console.log(JSON.stringify(response1, undefined, 2))
+
+    console.log("----- request/response 2 - with streaming")
+    //const streamProgress: StreamProgressFunction = (responseEvent: ResponseEvent) => {  console.log("streamProgress: ", JSON.stringify(responseEvent, undefined, 2)) }
+    const response2 = await api.sendMessage({
+        inputs: [ {
+            text: {
+                role: 'user',
+                content: prompt2,
+            },
+        } ],
+        conversationState: response1.conversationState,
+        //streamProgressFunction: streamProgress,
+    })
+    console.log("-- Response 2:")
+    console.log(JSON.stringify(response2, undefined, 2))
+}
+actionWithAsync()
+
+
+createSession() // TODO

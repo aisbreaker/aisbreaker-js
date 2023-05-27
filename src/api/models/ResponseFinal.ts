@@ -13,7 +13,7 @@ export type ResponseFinal = {
     outputs: Array<Output>
 
     /**
-    * The value presents the conversation, i.e. the mistory of all (relevant) messages of the conversation. Not set for the first call of a conversation. The `conversation_state` value is returned by previous call of the same conversation. The value is opaque to the client, it could be e.g. a conversation ID or the full conversation state as base64-encoded JSON string or ...
+    * The value presents the conversation, i.e. the history of all (relevant) messages of the conversation. Not set for the first call of a conversation. The `conversation_state` value is returned by previous call of the same conversation. The value is opaque to the client, it could be e.g. a conversation ID or the full conversation state as base64-encoded JSON string or ...
     */
     conversationState?: string
 
@@ -24,4 +24,3 @@ export type ResponseFinal = {
     */
     internResponse?: any
 }
-

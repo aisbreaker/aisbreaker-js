@@ -6,17 +6,19 @@ import {
 } from 'undici'
 
 import {
+    AIsAPI,
+    AIsProps,
+    AIsAPIFactory,
     Engine,
-    ApiBase,
-    ApiOptions,
     Message,
     Output,
     OutputImage,
     Request,
-    ResponseCollector,
     ResponseFinal,
     Usage,
-} from './api/index.js'
+} from '../api/index.js'
+import { ResponseCollector } from "../utils/ResponseCollector.js"
+import { DefaultConversationState } from '../utils/SessionUtil.js'
 
 
 const engine: Engine = {
@@ -30,19 +32,41 @@ const engine: Engine = {
 // API docs: https://platform.openai.com/docs/api-reference/images/create
 //
 
-export interface OpenAIImageAPIOptions extends ApiOptions {
+export interface OpenAIImageParams {
     openaiApiKey?: string
     debug?: boolean
 }
+export interface OpenAIImageProps extends OpenAIImageParams, AIsProps {
+}
+export class OpenAIImage implements OpenAIImageProps {
+    serviceId: string = 'OpenAIImage'
+    openaiApiKey?: string
 
-export class OpenAIImageAPI extends ApiBase {
+    constructor(props: OpenAIImageParams) {
+        this.openaiApiKey = props.openaiApiKey
+    }
+}
+
+export class OpenAIImageFactroy implements AIsAPIFactory<OpenAIImageProps,OpenAIImageAPI> {
+    serviceId: string = 'OpenAIImage'
+
+    constructor() {
+    }
+
+    createAIsAPI(props: OpenAIImageProps): OpenAIImageAPI {
+        return new OpenAIImageAPI(props)
+    }
+}
+
+export class OpenAIImageAPI implements AIsAPI {
+    serviceId: string = 'OpenAIImage'
+
     openaiApiKey: string
-    apiOptions: OpenAIImageAPIOptions
+    props: OpenAIImageProps
 
-    constructor(apiOptions: OpenAIImageAPIOptions) {
-        super(apiOptions)
-        this.apiOptions = apiOptions
-        this.openaiApiKey = (apiOptions && apiOptions.openaiApiKey) || process.env.OPENAI_API_KEY || ""
+    constructor(props: OpenAIImageProps) {
+        this.props = props
+        this.openaiApiKey = (props && props.openaiApiKey) || process.env.OPENAI_API_KEY || ""
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {
@@ -50,11 +74,11 @@ export class OpenAIImageAPI extends ApiBase {
         const responseCollector = new ResponseCollector(request)
 
         // update conversation (before OpenAI API request-response)
-        const conversationId = request.conversationState || crypto.randomUUID()
-        await this.addMessagesToConversation(conversationId, request.inputs, [])
+        const conversationState = DefaultConversationState.fromBase64(request.conversationState)
+        conversationState.addInputs(request.inputs)
 
         // get all messages so far - this is the conversation context
-        const allMessages = await this.getMessagesOfConversation(conversationId)
+        const allMessages = conversationState.getMessages()
         const prompt = inputMessages2SinglePrompt(allMessages)
 
         // requested image details
@@ -112,7 +136,7 @@ export class OpenAIImageAPI extends ApiBase {
             }
             throw error;
         }
-        if (this.apiOptions?.debug) {
+        if (this.props?.debug) {
             console.debug(JSON.stringify(response))
         }
 
@@ -126,12 +150,12 @@ export class OpenAIImageAPI extends ApiBase {
         let resultInternResponse: any = responseJson
 
         // update conversation (after OpenAI API request-response)
-        await this.addMessagesToConversation(conversationId, [], resultOutputs)
+        conversationState.addOutputs(resultOutputs)
 
         // return response
         const responseFinal: ResponseFinal = {
             outputs: resultOutputs,
-            conversationState: conversationId,
+            conversationState: conversationState.toBase64(),
             usage: resultUsage,
             internResponse: resultInternResponse,
         }

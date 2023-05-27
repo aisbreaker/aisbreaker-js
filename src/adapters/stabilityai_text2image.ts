@@ -6,17 +6,18 @@ import {
 } from 'undici'
 import fs from 'fs'
 import {
+    AIsAPI,
+    AIsProps,
+    AIsAPIFactory,
     Engine,
-    ApiBase,
-    ApiOptions,
     Message,
     Output,
     OutputImage,
     Request,
-    ResponseCollector,
     ResponseFinal,
     Usage,
-} from './api/index.js'
+} from '../api/index.js'
+import { ResponseCollector } from "../utils/ResponseCollector.js"
 
 const engine: Engine = {
     serviceId: 'StabilityAIText2Image',
@@ -30,31 +31,48 @@ const engine: Engine = {
 // Authentication/getting STABILITY_API_KEY: https://platform.stability.ai/docs/getting-started/authentication
 //
 
-export interface StabilityAIText2ImageAPIOptions extends ApiOptions {
+export interface StabilityAIText2ImageParams {
     stabilityApiKey?: string
     debug?: boolean
 }
+export interface StabilityAIText2ImageProps extends StabilityAIText2ImageParams, AIsProps {
+}
+export class StabilityAIText2Image implements StabilityAIText2ImageProps {
+    serviceId: string = 'StabilityAIText2Image'
+    stabilityApiKey?: string
 
-export class StabilityAIText2ImageAPI extends ApiBase {
+    constructor(props: StabilityAIText2ImageParams) {
+        this.stabilityApiKey = props.stabilityApiKey
+    }
+}
+
+export class StabilityAIText2ImageFactroy implements AIsAPIFactory<StabilityAIText2ImageProps,StabilityAIText2ImageAPI> {
+    serviceId: string = 'StabilityAIText2Image'
+
+    constructor() {
+    }
+
+    createAIsAPI(props: StabilityAIText2ImageProps): StabilityAIText2ImageAPI {
+        return new StabilityAIText2ImageAPI(props)
+    }
+}
+
+export class StabilityAIText2ImageAPI implements AIsAPI {
+    serviceId: string = 'StabilityAIText2Image'
+
     stabilityApiKey: string
-    apiOptions: StabilityAIText2ImageAPIOptions
+    props: StabilityAIText2ImageProps
 
-    constructor(apiOptions: StabilityAIText2ImageAPIOptions) {
-        super(apiOptions)
-        this.apiOptions = apiOptions
-        this.stabilityApiKey = (apiOptions && apiOptions.stabilityApiKey) || process.env.STABILITY_API_KEY || ""
+    constructor(props: StabilityAIText2ImageProps) {
+        this.props = props
+        this.stabilityApiKey = (props && props.stabilityApiKey) || process.env.STABILITY_API_KEY || ""
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {
         // prepare collection/aggregation of partial responses
         const responseCollector = new ResponseCollector(request)
 
-        // update conversation (before stability.ai API request-response)
-        //const conversationId = request.conversationState || crypto.randomUUID()
-        //await this.addMessagesToConversation(conversationId, request.inputs, [])
-
-        // get all messages so far - this is the conversation context
-        //const allMessages = await this.getMessagesOfConversation(conversationId)
+        // build prompt from input(s)
         const allMessages: Message[] = []
         for (const input of request.inputs) {
             const message: Message = {input: input}
@@ -98,7 +116,7 @@ export class StabilityAIText2ImageAPI extends ApiBase {
             }
             throw error;
         }
-        if (this.apiOptions?.debug) {
+        if (this.props?.debug) {
             console.debug(JSON.stringify(response))
         }
 
@@ -114,13 +132,10 @@ export class StabilityAIText2ImageAPI extends ApiBase {
         // write base64 images to files
         writeBase64ImageOutputsToFile(resultOutputs)
 
-        // update conversation (after stability.ai API request-response)
-        //await this.addMessagesToConversation(conversationId, [], resultOutputs)
-
         // return response
         const responseFinal: ResponseFinal = {
             outputs: resultOutputs,
-            //conversationState: conversationId,
+            //conversationState: undefined,
             usage: resultUsage,
             internResponse: resultInternResponse,
         }
@@ -222,7 +237,7 @@ function imageDimension(dim: number): number {
 type StabilityAIText2ImageResponse = {
     artifacts: {
         base64: string,
-        finishReason: string, // Enum: CONTENT_FILTERED ERROR SUCCESS
+        finishReason: string, // Enum: 'CONTENT_FILTERED' | 'ERROR' | 'SUCCESS'
         seed: number,
     }[]
 }

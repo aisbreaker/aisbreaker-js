@@ -1,40 +1,44 @@
 #!/usr/bin/node
 
 import {
-    API,
-    OpenAIImageAPI,
-    OpenAIImageAPIOptions,
-    TrivialAssistantAPI, 
-    TrivialAssistantAPIOptions,
+    AIsAPI,
+    AIsBreaker,
+    AIsProps,
+    OpenAIImage,
+    TrivialAssistant,
 } from './index.js'
-import { StabilityAIText2ImageAPI } from './stabilityai_text2image.js'
+import { StabilityAIText2Image } from './adapters/stabilityai_text2image.js'
 
 
 //
 // simple test to see if the API is working:  generate an image
 //
 
+// define prompt(s)
 const prompt = "Give me a cute teddy bear sitting in the forest."
 
-// initialize API
-const isTrivialAssistant = false
-const isStableAI = false
-let api: API
-if (isTrivialAssistant) {
-    api = new TrivialAssistantAPI()
-} else {
-    if (isStableAI) {
-        api = new StabilityAIText2ImageAPI({
-            //stabilityApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        })
-    } else {
-        api = new OpenAIImageAPI({
+// select and initialize API
+const serviceId: 'TrivialAssistant' | 'OpenAIImage' | 'StabilityAIText2Image' | string = 'OpenAIImage'
+let apiProps: AIsProps
+switch (serviceId) {
+    case 'TrivialAssistant':
+        apiProps = new TrivialAssistant({extraMsg: 'start-trivial'})
+        break
+    case 'OpenAIImage':
+        apiProps = new OpenAIImage({
             //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         })
-    }
+        break
+    case 'StabilityAIText2Image':
+        apiProps = new StabilityAIText2Image({
+            //stabilityApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        })
+    default:
+        throw new Error(`Unknown serviceId: ${serviceId}`)
 }
+const api: AIsAPI = AIsBreaker.getInstance().createAIsAPI(apiProps)
 
-
+// helper
 function veryLongStringReplacer(key: any, value: any) {
     // Filtering out properties
     if (typeof value === "string") {
@@ -53,7 +57,7 @@ async function actionWithAsync() {
     console.log("================================= started")
 
     let requestMedia = {}
-    if (isStableAI) {
+    if (serviceId === 'StabilityAIText2Image') {
         requestMedia = {
             image: {
                 width: 512,
@@ -62,7 +66,7 @@ async function actionWithAsync() {
         }
     }
 
-    console.log("----- request/response")
+    console.log("----- Request")
     const response1 = await api.sendMessage({
         inputs: [ {
             text: {

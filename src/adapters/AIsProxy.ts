@@ -16,7 +16,7 @@ import { AIsProxyRequest } from '../api/models/AIsProxyRequest'
 //
 // AIsProxy: access a remote AIsBreaker proxy service
 //
-const DEFAULT_URL = 'http://localhost:3000' // https://aisproxy.demo.aisbreaker.org
+const DEFAULT_AISPROXY_URL = 'http://localhost:3000' // https://aisproxy.demo.aisbreaker.org
 
 export interface AIsProxyParams {
     accessKeyId?: string
@@ -33,11 +33,13 @@ export class AIsProxy implements AIsProxyProps {
     accessKeyId: string = 'AIsProxy'
     accessKey?: string
 
-    url: string = DEFAULT_URL
+    url: string = DEFAULT_AISPROXY_URL
     remoteService: AIsProps
 
     constructor(props: AIsProxyParams) {
-        this.url = props.url || DEFAULT_URL
+        this.url = props.url || DEFAULT_AISPROXY_URL
+        this.accessKeyId = props.accessKeyId || 'AIsProxy'
+        this.accessKey = props.accessKey
         this.remoteService = props.remoteService
     }
 }
@@ -71,8 +73,9 @@ export class AIsProxyService implements AIsService {
             service: this.props.remoteService,
             request,
         }
+        const url = `${this.props.url || DEFAULT_AISPROXY_URL}/api/v1/task`
         const response = await fetch(
-            this.props.url  || DEFAULT_URL,
+            url,
             {
                 method: 'POST',
                 headers: {

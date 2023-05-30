@@ -1,4 +1,4 @@
-import { AIsBreaker, TrivialProxy, TrivialProxyFactory,  TrivialAssistant, TrivialAssistantFactory, AIsProps, AIsService } from './index.js'
+import { AIsBreaker, TrivialProxy, TrivialProxyFactory,  TrivialAssistant, TrivialAssistantFactory, AIsProps, AIsService, AIsProxy, OpenAIChat } from './index.js'
 import { LoggingFilterStatelessAPI } from './filters/LoggingFilter.js'
 
 
@@ -10,7 +10,7 @@ import { LoggingFilterStatelessAPI } from './filters/LoggingFilter.js'
 console.log("================================= startTest started");
 
 // define prompts
-const prompt1 = "Hello"
+const prompt1 = "Hello, do you have a name?"
 const prompt2 = "How are you?"
 
 // initialize API adapters of the proxy
@@ -19,7 +19,7 @@ remoteAIs.registerFactory(new TrivialAssistantFactory())
 
 // select and initialize API
 const enableLoggingfilter: boolean = true
-const serviceId: 'TrivialAssistant' | 'TrivialProxy' | string = 'TrivialProxy'
+const serviceId: 'TrivialAssistant' | 'TrivialProxy' | 'AisProxy2OpenAIChat' | string = 'AisProxy2OpenAIChat'
 let apiProps: AIsProps
 switch (serviceId) {
     case 'TrivialAssistant':
@@ -39,6 +39,16 @@ switch (serviceId) {
         apiProps = new TrivialProxy(apiProps0)
         console.log("apiProps: ", JSON.stringify(apiProps, undefined, 2));
         break
+    case 'AisProxy2OpenAIChat':
+        apiProps = new AIsProxy({
+            url: 'http://localhost:3000',
+            accessKey: process.env.AISPROXY_API_KEY || "",
+            remoteService: new OpenAIChat({
+            })
+        })
+        console.log("apiProps: ", JSON.stringify(apiProps, undefined, 2))
+        break
+
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }

@@ -16,8 +16,8 @@ import {
     Request,
     ResponseFinal,
     Usage,
-} from '../api/index.js'
-import { ResponseCollector } from "../utils/ResponseCollector.js"
+} from '../../api/index.js'
+import { ResponseCollector } from "../../utils/ResponseCollector.js"
 
 const engine: Engine = {
     serviceId: 'StabilityAIText2Image',
@@ -32,19 +32,19 @@ const engine: Engine = {
 //
 
 export interface StabilityAIText2ImageParams {
-    accessKey?: string
-    accessKeyId?: string
+    apiKey?: string
+    apiKeyId?: string
     debug?: boolean
 }
 export interface StabilityAIText2ImageProps extends StabilityAIText2ImageParams, AIsProps {
 }
 export class StabilityAIText2Image implements StabilityAIText2ImageProps {
     serviceId: string = 'StabilityAIText2Image'
-    accessKeyId: string = 'StabilityAI'
-    accessKey?: string
+    apiKeyId: string = 'StabilityAI'
+    apiKey?: string
 
     constructor(props: StabilityAIText2ImageParams) {
-        this.accessKey = props.accessKey
+        this.apiKey = props.apiKey
     }
 }
 
@@ -67,7 +67,7 @@ export class StabilityAIText2ImageService implements AIsService {
 
     constructor(props: StabilityAIText2ImageProps) {
         this.props = props
-        this.stabilityApiKey = props?.accessKey || process.env.STABILITY_API_KEY || ""
+        this.stabilityApiKey = props?.apiKey || process.env.STABILITY_API_KEY || ""
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {

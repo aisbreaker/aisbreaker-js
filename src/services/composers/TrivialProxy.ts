@@ -6,7 +6,7 @@ import {
     AIsService,
     Request,
     ResponseFinal,
-} from '../api'
+} from '../../api'
 
 
 //

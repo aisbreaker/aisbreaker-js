@@ -15,9 +15,9 @@ import {
     Request,
     ResponseFinal,
     Usage,
-} from '../api/index.js'
-import { ResponseCollector } from "../utils/ResponseCollector.js"
-import { DefaultConversationState } from '../utils/SessionUtil.js'
+} from '../../api/index.js'
+import { ResponseCollector } from "../../utils/ResponseCollector.js"
+import { DefaultConversationState } from '../../utils/SessionUtil.js'
 
 
 const engine: Engine = {
@@ -32,19 +32,19 @@ const engine: Engine = {
 //
 
 export interface OpenAIImageParams {
-    accessKey?: string
-    accessKeyId?: string
+    apiKey?: string
+    apiKeyId?: string
     debug?: boolean
 }
 export interface OpenAIImageProps extends OpenAIImageParams, AIsProps {
 }
 export class OpenAIImage implements OpenAIImageProps {
     serviceId: string = 'OpenAIImage'
-    accessKeyId: string = 'OpenAI'
-    accessKey?: string
+    apiKeyId: string = 'OpenAI'
+    apiKey?: string
 
     constructor(props: OpenAIImageParams) {
-        this.accessKey = props.accessKey
+        this.apiKey = props.apiKey
     }
 }
 
@@ -67,7 +67,7 @@ export class OpenAIImageService implements AIsService {
 
     constructor(props: OpenAIImageProps) {
         this.props = props
-        this.openaiApiKey = props?.accessKey || process.env.OPENAI_API_KEY || ""
+        this.openaiApiKey = props?.apiKey || process.env.OPENAI_API_KEY || ""
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {

@@ -1,4 +1,4 @@
-import { AIsService, AIsBreaker, AIsProps, Request, ResponseFinal, AIsAPIFactory } from '../api/index.js'
+import { AIsService, AIsBreaker, AIsProps, Request, ResponseFinal, AIsAPIFactory } from '../../api/index.js'
 
 //
 // DelegateService: delegate to another service

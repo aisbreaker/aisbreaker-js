@@ -21,9 +21,9 @@ import {
     ResponseEvent,
     ResponseFinal,
     Usage,
-} from '../api'
-import { ResponseCollector } from "../utils/ResponseCollector.js"
-import { DefaultConversationState } from '../utils/SessionUtil.js'
+} from '../../api'
+import { ResponseCollector } from "../../utils/ResponseCollector.js"
+import { DefaultConversationState } from '../../utils/SessionUtil.js'
 
 
 const CHATGPT_MODEL = 'gpt-3.5-turbo'
@@ -35,18 +35,18 @@ const CHATGPT_MODEL = 'gpt-3.5-turbo'
 //
 
 export interface OpenAIChatParams {
-    accessKey?: string
-    accessKeyId?: string
+    apiKey?: string
+    apiKeyId?: string
 }
 export interface OpenAIChatProps extends OpenAIChatParams, AIsProps {
 }
 export class OpenAIChat implements OpenAIChatProps {
     serviceId: string = 'OpenAIChat'
-    accessKeyId: string = 'OpenAI'
-    accessKey?: string
+    apiKeyId: string = 'OpenAI'
+    apiKey?: string
 
     constructor(props: OpenAIChatParams) {
-        this.accessKey = props.accessKey
+        this.apiKey = props.apiKey
     }
 }
 
@@ -68,7 +68,7 @@ export class OpenAIChatService implements AIsService {
     openaiChatClient: OpenAIChatClient
 
     constructor(props: OpenAIChatProps) {
-        this.openaiApiKey = props?.accessKey || process.env.OPENAI_API_KEY || ""
+        this.openaiApiKey = props?.apiKey || process.env.OPENAI_API_KEY || ""
 
         // backend
         this.openaiChatClient = new OpenAIChatClient(this.openaiApiKey, props)

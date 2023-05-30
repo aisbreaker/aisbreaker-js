@@ -1,5 +1,5 @@
 import { AIsBreaker, TrivialProxy, TrivialProxyFactory,  TrivialAssistant, TrivialAssistantFactory, AIsProps, AIsService, AIsProxy, OpenAIChat } from './index.js'
-import { LoggingFilterStatelessAPI } from './filters/LoggingFilter.js'
+import { LoggingFilterStatelessAPI } from './services/filters/LoggingFilter.js'
 
 
 //
@@ -42,7 +42,7 @@ switch (serviceId) {
     case 'AisProxy2OpenAIChat':
         apiProps = new AIsProxy({
             url: 'http://localhost:3000',
-            accessKey: process.env.AISPROXY_API_KEY || "",
+            apiKey: process.env.AISPROXY_API_KEY || "",
             remoteService: new OpenAIChat({
             })
         })

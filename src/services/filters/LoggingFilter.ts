@@ -8,14 +8,14 @@ import {
     ResponseEvent,
     ResponseFinal,
     Usage,
-} from '../api/index.js'
-import { ResponseCollector } from "../utils/ResponseCollector.js"
+} from '../../api/index.js'
+import { ResponseCollector } from "../../utils/ResponseCollector.js"
 
 import {
     AIsProps,
     AIsAPIFactory,
     AIsService,
-} from '../api/AIsService.js'
+} from '../../api/AIsService.js'
 
 
 //

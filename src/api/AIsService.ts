@@ -13,14 +13,14 @@ export interface AIsService {
 }
 
 /**
- * Every AIsService can be parametereized with a service-specific implementation of this props.
+ * Every AIsService can be parameterized with a service-specific implementation of this props.
  */
 export interface AIsProps {
     serviceId: string
 
-    /** If the service needs an access key than an accessKey and/or accessKeyId must be set */
-    accessKey?: string
-    accessKeyId?: string
+    /** If the service needs an API key/access key than an apiKey and/or apiKeyId must be set */
+    apiKey?: string
+    apiKeyId?: string
 }
 
 /**

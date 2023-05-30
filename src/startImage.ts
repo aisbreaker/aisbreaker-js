@@ -7,7 +7,7 @@ import {
     OpenAIImage,
     TrivialAssistant,
 } from './index.js'
-import { StabilityAIText2Image } from './adapters/stabilityai_text2image.js'
+import { StabilityAIText2Image } from './services/adapters/stabilityai_text2image.js'
 
 
 //

@@ -5,11 +5,11 @@ import {
     StabilityAIText2ImageFactroy,
     TrivialAssistantFactory,
     AIsProxyFactory,
-} from '../adapters/index.js'
+} from '../services/adapters/index.js'
 import { 
     DelegateFactory,
     TrivialProxyFactory,
-} from '../composers/index.js'
+} from '../services/composers/index.js'
 
 /**
  * Class to create and manage service APIs.

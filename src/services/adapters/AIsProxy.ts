@@ -9,8 +9,8 @@ import {
     AIsService,
     Request,
     ResponseFinal,
-} from '../api'
-import { AIsProxyRequest } from '../api/models/AIsProxyRequest'
+} from '../../api'
+import { AIsProxyRequest } from './AIsProxyRequest'
 
 
 //
@@ -19,8 +19,8 @@ import { AIsProxyRequest } from '../api/models/AIsProxyRequest'
 const DEFAULT_AISPROXY_URL = 'http://localhost:3000' // https://aisproxy.demo.aisbreaker.org
 
 export interface AIsProxyParams {
-    accessKeyId?: string
-    accessKey?: string
+    apiKeyId?: string
+    apiKey?: string
 
     url?: string
     /** access this service on the remote/proxy site */
@@ -30,16 +30,16 @@ export interface AIsProxyProps extends AIsProxyParams, AIsProps {
 }
 export class AIsProxy implements AIsProxyProps {
     serviceId: string = 'AIsProxy'
-    accessKeyId: string = 'AIsProxy'
-    accessKey?: string
+    apiKeyId: string = 'AIsProxy'
+    apiKey?: string
 
     url: string = DEFAULT_AISPROXY_URL
     remoteService: AIsProps
 
     constructor(props: AIsProxyParams) {
         this.url = props.url || DEFAULT_AISPROXY_URL
-        this.accessKeyId = props.accessKeyId || 'AIsProxy'
-        this.accessKey = props.accessKey
+        this.apiKeyId = props.apiKeyId || 'AIsProxy'
+        this.apiKey = props.apiKey
         this.remoteService = props.remoteService
     }
 }
@@ -80,7 +80,7 @@ export class AIsProxyService implements AIsService {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.props.accessKey || 'NoAccessKey'}`,
+                    'Authorization': `Bearer ${this.props.apiKey || 'NoApiKey'}`,
                 },
                 body: JSON.stringify(aisProxyRequest),
                 dispatcher: new Agent({

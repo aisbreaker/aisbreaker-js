@@ -1,8 +1,8 @@
 
 
-import { AIsService, AIsProps, AIsAPIFactory, Output, Request, ResponseFinal, Usage } from "../api"
+import { AIsService, AIsProps, AIsAPIFactory, Output, Request, ResponseFinal, Usage } from "../../api"
 
-import { DefaultConversationState } from "../utils/SessionUtil.js"
+import { DefaultConversationState } from "../../utils/SessionUtil.js"
 
 //
 // TrivialAssistant API

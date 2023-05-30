@@ -1,5 +1,5 @@
-import { AIsProps } from '../AIsService'
-import { Request } from './Request'
+import { AIsProps } from '../../api/AIsService'
+import { Request } from '../../api/models/Request'
 
 /**
 * Send a message to the AI service via the AIsBreaker proxy.

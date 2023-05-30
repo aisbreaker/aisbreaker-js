@@ -1,4 +1,4 @@
-export * from './AIsProxyRequest.js'
+export * from '../../services/adapters/AIsProxyRequest.js'
 export * from './Engine.js'
 export * from './Input.js'
 export * from './InputImage.js'

@@ -1,9 +1,8 @@
 import { fetchEventSource, FetchEventSourceInit } from '@waylaidwanderer/fetch-event-source'
-import { Agent } from 'undici'
 
 //import './fetch-polyfill.js'
 import {
-    fetch, Headers, /*Request,*/ Response,
+    Agent, fetch, Headers, /*Request,*/ Response,
 } from 'undici'
 //import { get_encoding, encoding_for_model } from Tiktoken
 import { encoding_for_model, Tiktoken } from 'tiktoken'
@@ -36,16 +35,18 @@ const CHATGPT_MODEL = 'gpt-3.5-turbo'
 //
 
 export interface OpenAIChatParams {
-    openaiApiKey?: string
+    accessKey?: string
+    accessKeyId?: string
 }
 export interface OpenAIChatProps extends OpenAIChatParams, AIsProps {
 }
 export class OpenAIChat implements OpenAIChatProps {
     serviceId: string = 'OpenAIChat'
-    openaiApiKey?: string
+    accessKeyId: string = 'OpenAI'
+    accessKey?: string
 
     constructor(props: OpenAIChatParams) {
-        this.openaiApiKey = props.openaiApiKey
+        this.accessKey = props.accessKey
     }
 }
 
@@ -67,7 +68,7 @@ export class OpenAIChatAPI implements AIsAPI {
     openaiChatClient: OpenAIChatClient
 
     constructor(props: OpenAIChatProps) {
-        this.openaiApiKey = (props && props.openaiApiKey) || process.env.OPENAI_API_KEY || ""
+        this.openaiApiKey = props?.accessKey || process.env.OPENAI_API_KEY || ""
 
         // backend
         this.openaiChatClient = new OpenAIChatClient(this.openaiApiKey, props)

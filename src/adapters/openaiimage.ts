@@ -33,17 +33,19 @@ const engine: Engine = {
 //
 
 export interface OpenAIImageParams {
-    openaiApiKey?: string
+    accessKey?: string
+    accessKeyId?: string
     debug?: boolean
 }
 export interface OpenAIImageProps extends OpenAIImageParams, AIsProps {
 }
 export class OpenAIImage implements OpenAIImageProps {
     serviceId: string = 'OpenAIImage'
-    openaiApiKey?: string
+    accessKeyId: string = 'OpenAI'
+    accessKey?: string
 
     constructor(props: OpenAIImageParams) {
-        this.openaiApiKey = props.openaiApiKey
+        this.accessKey = props.accessKey
     }
 }
 
@@ -66,7 +68,7 @@ export class OpenAIImageAPI implements AIsAPI {
 
     constructor(props: OpenAIImageProps) {
         this.props = props
-        this.openaiApiKey = (props && props.openaiApiKey) || process.env.OPENAI_API_KEY || ""
+        this.openaiApiKey = props?.accessKey || process.env.OPENAI_API_KEY || ""
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {

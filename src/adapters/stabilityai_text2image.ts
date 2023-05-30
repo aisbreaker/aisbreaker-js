@@ -32,17 +32,19 @@ const engine: Engine = {
 //
 
 export interface StabilityAIText2ImageParams {
-    stabilityApiKey?: string
+    accessKey?: string
+    accessKeyId?: string
     debug?: boolean
 }
 export interface StabilityAIText2ImageProps extends StabilityAIText2ImageParams, AIsProps {
 }
 export class StabilityAIText2Image implements StabilityAIText2ImageProps {
     serviceId: string = 'StabilityAIText2Image'
-    stabilityApiKey?: string
+    accessKeyId: string = 'StabilityAI'
+    accessKey?: string
 
     constructor(props: StabilityAIText2ImageParams) {
-        this.stabilityApiKey = props.stabilityApiKey
+        this.accessKey = props.accessKey
     }
 }
 
@@ -65,7 +67,7 @@ export class StabilityAIText2ImageAPI implements AIsAPI {
 
     constructor(props: StabilityAIText2ImageProps) {
         this.props = props
-        this.stabilityApiKey = (props && props.stabilityApiKey) || process.env.STABILITY_API_KEY || ""
+        this.stabilityApiKey = props?.accessKey || process.env.STABILITY_API_KEY || ""
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {

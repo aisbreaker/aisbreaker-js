@@ -17,6 +17,9 @@ export interface AIsAPI {
  */
 export interface AIsProps {
     serviceId: string
+    /** If the service needs an access key than either an accessKey or accessKeyId is set */
+    //TODO: accessKey?: string
+    accessKeyId?: string
 }
 
 /**

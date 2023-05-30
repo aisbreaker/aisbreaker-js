@@ -1,4 +1,3 @@
-import crypto from 'crypto'
 
 //import './fetch-polyfill.js'
 import {
@@ -6,7 +5,7 @@ import {
 } from 'undici'
 
 import {
-    AIsAPI,
+    AIsService,
     AIsProps,
     AIsAPIFactory,
     Engine,
@@ -49,18 +48,18 @@ export class OpenAIImage implements OpenAIImageProps {
     }
 }
 
-export class OpenAIImageFactroy implements AIsAPIFactory<OpenAIImageProps,OpenAIImageAPI> {
+export class OpenAIImageFactroy implements AIsAPIFactory<OpenAIImageProps,OpenAIImageService> {
     serviceId: string = 'OpenAIImage'
 
     constructor() {
     }
 
-    createAIsAPI(props: OpenAIImageProps): OpenAIImageAPI {
-        return new OpenAIImageAPI(props)
+    createAIsAPI(props: OpenAIImageProps): OpenAIImageService {
+        return new OpenAIImageService(props)
     }
 }
 
-export class OpenAIImageAPI implements AIsAPI {
+export class OpenAIImageService implements AIsService {
     serviceId: string = 'OpenAIImage'
 
     openaiApiKey: string

@@ -3,5 +3,5 @@
 //
 
 export * from './models/index.js'
-export * from './AIsAPIs.js'
+export * from './AIsService.js'
 export * from './AIsBreaker.js'

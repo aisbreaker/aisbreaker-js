@@ -1,4 +1,4 @@
-import { AIsBreaker, TrivialProxy, TrivialProxyFactory,  TrivialAssistant, TrivialAssistantFactory, AIsProps, AIsAPI } from './index.js'
+import { AIsBreaker, TrivialProxy, TrivialProxyFactory,  TrivialAssistant, TrivialAssistantFactory, AIsProps, AIsService } from './index.js'
 import { LoggingFilterStatelessAPI } from './filters/LoggingFilter.js'
 
 
@@ -42,7 +42,7 @@ switch (serviceId) {
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }
-let api: AIsAPI = AIsBreaker.getInstance().createAIsAPI(apiProps)
+let api: AIsService = AIsBreaker.getInstance().createAIsService(apiProps)
 if (enableLoggingfilter) {
     api = new LoggingFilterStatelessAPI({
         serviceId: 'LoggingFilter',

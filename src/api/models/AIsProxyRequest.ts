@@ -1,4 +1,4 @@
-import { AIsProps } from '../AIsAPIs'
+import { AIsProps } from '../AIsService'
 import { Request } from './Request'
 
 /**

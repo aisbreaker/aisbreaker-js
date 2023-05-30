@@ -1,7 +1,7 @@
 #!/usr/bin/node
 
 import {
-    AIsAPI,
+    AIsService,
     AIsBreaker,
     AIsProps,
     OpenAIImage,
@@ -36,7 +36,7 @@ switch (serviceId) {
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }
-const api: AIsAPI = AIsBreaker.getInstance().createAIsAPI(apiProps)
+const api: AIsService = AIsBreaker.getInstance().createAIsService(apiProps)
 
 // helper
 function veryLongStringReplacer(key: any, value: any) {

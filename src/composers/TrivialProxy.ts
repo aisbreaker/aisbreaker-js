@@ -3,7 +3,7 @@ import {
     AIsBreaker,
     AIsProps,
     AIsAPIFactory,
-    AIsAPI,
+    AIsService,
     Request,
     ResponseFinal,
 } from '../api'
@@ -33,18 +33,18 @@ export class TrivialProxy implements TrivialProxyProps {
     }
 }
 
-export class TrivialProxyFactory implements AIsAPIFactory<TrivialProxyProps,TrivialProxyAPI> {
+export class TrivialProxyFactory implements AIsAPIFactory<TrivialProxyProps,TrivialProxyService> {
     serviceId: string = 'TrivialProxy'
 
     constructor() {
     }
 
-    createAIsAPI(props: TrivialProxyProps): TrivialProxyAPI {
-        return new TrivialProxyAPI(props)
+    createAIsAPI(props: TrivialProxyProps): TrivialProxyService {
+        return new TrivialProxyService(props)
     }
 }
 
-export class TrivialProxyAPI implements AIsAPI {
+export class TrivialProxyService implements AIsService {
     serviceId: string = 'TrivialProxy'
 
     props: TrivialProxyProps
@@ -54,7 +54,7 @@ export class TrivialProxyAPI implements AIsAPI {
     }
 
     async sendMessage(request: Request): Promise<ResponseFinal> {
-        const aisBaseAPI = this.props.remoteAIsBreaker.createAIsAPI(this.props.forward2RemoteService)
+        const aisBaseAPI = this.props.remoteAIsBreaker.createAIsService(this.props.forward2RemoteService)
 
         console.log(`TrivialProxyAPI.sendMessage(name=${this.props.name}) forward to ${aisBaseAPI.serviceId} START`)
         const result = await aisBaseAPI.sendMessage(request)

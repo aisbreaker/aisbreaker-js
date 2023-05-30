@@ -1,7 +1,7 @@
 #!/usr/bin/node
 
 import {
-    AIsAPI,
+    AIsService,
     OpenAIChat,
     ResponseEvent,
     StreamProgressFunction,
@@ -38,7 +38,7 @@ switch (serviceId) {
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }
-const api: AIsAPI = AIsBreaker.getInstance().createAIsAPI(apiProps)
+const api: AIsService = AIsBreaker.getInstance().createAIsService(apiProps)
 
 // use the function with "async/await"
 async function actionWithAsync() {

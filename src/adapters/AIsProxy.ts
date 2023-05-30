@@ -6,7 +6,7 @@ import {
 import {
     AIsProps,
     AIsAPIFactory,
-    AIsAPI,
+    AIsService,
     Request,
     ResponseFinal,
 } from '../api'
@@ -42,18 +42,18 @@ export class AIsProxy implements AIsProxyProps {
     }
 }
 
-export class AIsProxyFactory implements AIsAPIFactory<AIsProxyProps,AIsProxyAPI> {
+export class AIsProxyFactory implements AIsAPIFactory<AIsProxyProps,AIsProxyService> {
     serviceId: string = 'AIsProxy'
 
     constructor() {
     }
 
-    createAIsAPI(props: AIsProxyProps): AIsProxyAPI {
-        return new AIsProxyAPI(props)
+    createAIsAPI(props: AIsProxyProps): AIsProxyService {
+        return new AIsProxyService(props)
     }
 }
 
-export class AIsProxyAPI implements AIsAPI {
+export class AIsProxyService implements AIsService {
     serviceId: string = 'AIsProxy'
 
     props: AIsProxyProps
@@ -64,7 +64,7 @@ export class AIsProxyAPI implements AIsAPI {
 
     async sendMessage(request: Request): Promise<ResponseFinal> {
         const remoteService = this.props.remoteService
-        console.log(`AIsProxyAPI.sendMessage() forward to ${remoteService.serviceId} START`)
+        console.log(`AIsProxyService.sendMessage() forward to ${remoteService.serviceId} START`)
         
         // remote access - no streaming of partial responses right now (TODO: implement streaming)
         const aisProxyRequest: AIsProxyRequest = {
@@ -101,7 +101,7 @@ export class AIsProxyAPI implements AIsAPI {
         }
         const result = await response.json() as ResponseFinal
         
-        console.log(`AIsProxyAPI.sendMessage() forward to ${remoteService.serviceId} END`)
+        console.log(`AIsProxyService.sendMessage() forward to ${remoteService.serviceId} END`)
         return result
     }
 }

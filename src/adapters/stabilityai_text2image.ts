@@ -6,7 +6,7 @@ import {
 } from 'undici'
 import fs from 'fs'
 import {
-    AIsAPI,
+    AIsService,
     AIsProps,
     AIsAPIFactory,
     Engine,
@@ -48,18 +48,18 @@ export class StabilityAIText2Image implements StabilityAIText2ImageProps {
     }
 }
 
-export class StabilityAIText2ImageFactroy implements AIsAPIFactory<StabilityAIText2ImageProps,StabilityAIText2ImageAPI> {
+export class StabilityAIText2ImageFactroy implements AIsAPIFactory<StabilityAIText2ImageProps,StabilityAIText2ImageService> {
     serviceId: string = 'StabilityAIText2Image'
 
     constructor() {
     }
 
-    createAIsAPI(props: StabilityAIText2ImageProps): StabilityAIText2ImageAPI {
-        return new StabilityAIText2ImageAPI(props)
+    createAIsAPI(props: StabilityAIText2ImageProps): StabilityAIText2ImageService {
+        return new StabilityAIText2ImageService(props)
     }
 }
 
-export class StabilityAIText2ImageAPI implements AIsAPI {
+export class StabilityAIText2ImageService implements AIsService {
     serviceId: string = 'StabilityAIText2Image'
 
     stabilityApiKey: string

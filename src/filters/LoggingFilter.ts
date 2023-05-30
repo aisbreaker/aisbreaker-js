@@ -14,8 +14,8 @@ import { ResponseCollector } from "../utils/ResponseCollector.js"
 import {
     AIsProps,
     AIsAPIFactory,
-    AIsAPI,
-} from '../api/AIsAPIs.js'
+    AIsService,
+} from '../api/AIsService.js'
 
 
 //
@@ -23,13 +23,13 @@ import {
 //
 
 export interface LoggingFilterProps extends AIsProps {
-    forward2Service: AIsAPI
+    forward2Service: AIsService
     logLevel: string
 }
 export class LoggingFilter implements LoggingFilterProps {
     serviceId: string = 'LoggingFilter'
 
-    forward2Service: AIsAPI
+    forward2Service: AIsService
     logLevel: string
 
     constructor(props: LoggingFilterProps) {
@@ -49,7 +49,7 @@ export class LoggingFilterFactroy implements AIsBaseAPIFactory<LoggingFilterProp
     }
 }
 */
-export class LoggingFilterStatelessAPI implements AIsAPI {
+export class LoggingFilterStatelessAPI implements AIsService {
     serviceId: string = 'LoggingFilter'
 
     props: LoggingFilterProps

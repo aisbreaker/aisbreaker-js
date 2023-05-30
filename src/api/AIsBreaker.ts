@@ -1,12 +1,15 @@
-import { AIsAPIFactory, AIsProps, AIsAPI } from "./AIsAPIs"
+import { AIsAPIFactory, AIsProps, AIsService } from "./AIsService"
 import { 
     OpenAIChatFactroy,
     OpenAIImageFactroy,
     StabilityAIText2ImageFactroy,
     TrivialAssistantFactory,
-    TrivialProxy,
-    TrivialProxyFactory,
+    AIsProxyFactory,
 } from '../adapters/index.js'
+import { 
+    DelegateFactory,
+    TrivialProxyFactory,
+} from '../composers/index.js'
 
 /**
  * Class to create and manage service APIs.
@@ -17,7 +20,7 @@ import {
 export class AIsBreaker {
     private static defaultAIsBreaker?: AIsBreaker
 
-    private serviceId2FactoryMapping = new Map<string, AIsAPIFactory<AIsProps, AIsAPI>>()
+    private serviceId2FactoryMapping = new Map<string, AIsAPIFactory<AIsProps, AIsService>>()
 
     constructor() {
     }
@@ -32,11 +35,14 @@ export class AIsBreaker {
 
     registerAllDefaultFactories(): AIsBreaker {
         // register
-        this.registerFactory(new TrivialAssistantFactory())
-        this.registerFactory(new TrivialProxyFactory())
+        this.registerFactory(new AIsProxyFactory())
         this.registerFactory(new OpenAIChatFactroy())
         this.registerFactory(new OpenAIImageFactroy())
         this.registerFactory(new StabilityAIText2ImageFactroy())
+        this.registerFactory(new TrivialAssistantFactory())
+
+        this.registerFactory(new DelegateFactory())
+        this.registerFactory(new TrivialProxyFactory())
 
         return this
     }
@@ -44,11 +50,11 @@ export class AIsBreaker {
     /**
      * Register a service API factory with its serviceId.
      */
-    registerFactory(factory: AIsAPIFactory<AIsProps, AIsAPI>) {
+    registerFactory(factory: AIsAPIFactory<AIsProps, AIsService>) {
         this.serviceId2FactoryMapping.set(factory.serviceId, factory)
     }
 
-    private getFactory(props: AIsProps): AIsAPIFactory<AIsProps, AIsAPI> {
+    private getFactory(props: AIsProps): AIsAPIFactory<AIsProps, AIsService> {
         const serviceId = props.serviceId
         const factory = this.serviceId2FactoryMapping.get(serviceId)
         if (!factory) {
@@ -65,7 +71,7 @@ export class AIsBreaker {
      * @param props    of the requested service (incl. propos.serviceId)
      * @returns
      */
-    createAIsAPI(props: AIsProps): AIsAPI {
+    createAIsService(props: AIsProps): AIsService {
         // get API
         const factory = this.getFactory(props)
         const plainAIsAPI = factory.createAIsAPI(props)
@@ -76,7 +82,7 @@ export class AIsBreaker {
         return aisAPIWithFilters
     }
 
-    private applyAllDefaultFilters(api: AIsAPI): AIsAPI {
+    private applyAllDefaultFilters(api: AIsService): AIsService {
         // TODO
         return api
     }

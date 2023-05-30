@@ -8,7 +8,7 @@ import {
 import { encoding_for_model, Tiktoken } from 'tiktoken'
 
 import {
-    AIsAPI,
+    AIsService,
     AIsProps,
     AIsAPIFactory,
     Engine,
@@ -50,18 +50,18 @@ export class OpenAIChat implements OpenAIChatProps {
     }
 }
 
-export class OpenAIChatFactroy implements AIsAPIFactory<OpenAIChatProps,OpenAIChatAPI> {
+export class OpenAIChatFactroy implements AIsAPIFactory<OpenAIChatProps,OpenAIChatService> {
     serviceId: string = 'OpenAIChat'
 
     constructor() {
     }
 
-    createAIsAPI(props: OpenAIChatProps): OpenAIChatAPI {
-        return new OpenAIChatAPI(props)
+    createAIsAPI(props: OpenAIChatProps): OpenAIChatService {
+        return new OpenAIChatService(props)
     }
 }
 
-export class OpenAIChatAPI implements AIsAPI {
+export class OpenAIChatService implements AIsService {
     serviceId: string = 'OpenAIChat'
 
     openaiApiKey: string

@@ -1,6 +1,6 @@
 
 
-import { AIsAPI, AIsProps, AIsAPIFactory, Output, Request, ResponseFinal, Usage } from "../api"
+import { AIsService, AIsProps, AIsAPIFactory, Output, Request, ResponseFinal, Usage } from "../api"
 
 import { DefaultConversationState } from "../utils/SessionUtil.js"
 
@@ -22,18 +22,18 @@ export class TrivialAssistant implements TrivialAssistantProps {
     }
 }
 
-export class TrivialAssistantFactory implements AIsAPIFactory<TrivialAssistantProps,TrivialAssistantAPI> {
+export class TrivialAssistantFactory implements AIsAPIFactory<TrivialAssistantProps,TrivialAssistantService> {
     serviceId: string = 'TrivialAssistant'
 
     constructor() {
     }
 
-    createAIsAPI(props: TrivialAssistantProps): TrivialAssistantAPI {
-        return new TrivialAssistantAPI(props)
+    createAIsAPI(props: TrivialAssistantProps): TrivialAssistantService {
+        return new TrivialAssistantService(props)
     }
 }
 
-export class TrivialAssistantAPI implements AIsAPI {
+export class TrivialAssistantService implements AIsService {
     serviceId: string = 'TrivialAssistant'
     props: TrivialAssistantProps
 

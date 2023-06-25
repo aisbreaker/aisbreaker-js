@@ -1,7 +1,7 @@
 {
   "name": "aisbreaker-api",
-  "version": "0.0.14",
-  "description": "This package provides an interface/API/SDK to access different AI APIs (OpenAI ChatGPT/Completion, Google Bart and more) in the same way by providing a uniform interface/API inclusive SDK for NodeJS/TypeScript/JavaScript",
+  "version": "0.0.15",
+  "description": "This package contains AIsBreaker which provides an easy-to-use and service-agnostic API to access different AI services (like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more) in a uniform way. More details: https://aisbreaker.org/",
   "type": "module",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -9,9 +9,9 @@
   "scripts": {
     "build": "rm -rf ./build && tsc && chmod a+x build/start*.js",
     "start": "echo \"Try startChat or startCreateImage\" && exit 1",
-    "startChat":  "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startChat.js",
+    "startChat": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startChat.js",
     "startImage": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startImage.js",
-    "startTest":  "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startTest.js",
+    "startTest": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startTest.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "aisbreaker",
@@ -23,10 +23,8 @@
   },
   "dependencies": {
     "@waylaidwanderer/fetch-event-source": "^3.0.1",
-    "keyv": "^4.5.2",
-    "keyv-file": "^0.2.0",
-    "node-fetch": "^2.6.9",
-    "tiktoken": "^1.0.7",
-    "undici": "^5.20.0"
+    "ky": "^0.33.3",
+    "ky-universal": "^0.11.0",
+    "tiktoken": "^1.0.7"
   }
 }

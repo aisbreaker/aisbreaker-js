@@ -1,10 +1,7 @@
+import ky from 'ky-universal'
 import crypto from 'crypto'
-
-//import './fetch-polyfill.js'
-import {
-    fetch, Headers, /*Request,*/ Response,
-} from 'undici'
 import fs from 'fs'
+
 import {
     AIsService,
     AIsProps,
@@ -17,7 +14,9 @@ import {
     ResponseFinal,
     Usage,
 } from '../../api/index.js'
-import { ResponseCollector } from "../../utils/ResponseCollector.js"
+import { ResponseCollector } from "../../utils/index.js"
+
+
 
 const engine: Engine = {
     serviceId: 'StabilityAIText2Image',
@@ -91,39 +90,21 @@ export class StabilityAIText2ImageService implements AIsService {
             height: imageDimension(request.requestMedia?.image?.height || 256),
         }
         console.log("Rest request body: " + JSON.stringify(body))
-        const response = await fetch(
+        const responseJson = await ky.post(
             url,
             {
-                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json', // optional because set automatically
                     'Authorization': `Bearer ${this.stabilityApiKey}`,
                 },
-                body: JSON.stringify(body),
-            },
-        )
-
-        // synchronous HTTP reponse handling
-        if (!response) {
-            throw new Error('No result from stability.ai')
-        }        
-        if (response.status !== 200) {
-            const body = await response.text();
-            const error: any = new Error(`Failed to send message. HTTP ${response.status} - ${body}`);
-            error.status = response.status;
-            try {
-                error.json = JSON.parse(body);
-            } catch {
-                error.body = body;
+                json: body,
             }
-            throw error;
-        }
+        ).json()
         if (this.props?.debug) {
-            console.debug(JSON.stringify(response))
+            console.debug(JSON.stringify(responseJson))
         }
 
         // convert the result
-        let responseJson = await response.json()
         let resultOutputs = StabilityAIText2ImageResponse2Outputs(responseJson as StabilityAIText2ImageResponse)
         let resultUsage: Usage = {
             engine: engine,

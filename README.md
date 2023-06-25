@@ -2,7 +2,11 @@
 
 ## Introduction
 
-This project provides an interface/API/SDK to access different AI APIs (OpenAI ChatGPT/Completion, Google Bart and more) in the same way by providing a uniform interface/API inclusive SDK for NodeJS/TypeScript/JavaScript and maybe more.
+AIsBreaker provides an easy-to-use and service-agnostic API to access different AI services
+(like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more)
+in a uniform way. More details: [AIsBreaker.org](https://aisbreaker.org/)
+
+This repo contains the AIsBreaker API/SDK for NodeJS/TypeScript/JavaScript.
 
 
 ## Run a simple Test

@@ -1,9 +1,7 @@
-import { fetchEventSource, FetchEventSourceInit } from '@waylaidwanderer/fetch-event-source'
+import ky from 'ky-universal'
+import { getLines, getMessages } from '@waylaidwanderer/fetch-event-source/parse'
 
-//import './fetch-polyfill.js'
-import {
-    Agent, fetch, Headers, /*Request,*/ Response,
-} from 'undici'
+
 //import { get_encoding, encoding_for_model } from Tiktoken
 import { encoding_for_model, Tiktoken } from 'tiktoken'
 
@@ -508,6 +506,7 @@ ${botMessage.message}
             console.debug();
         }
         const opts = {
+            /* TODO: DELETE/REPLACE:
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -518,6 +517,7 @@ ${botMessage.message}
                 bodyTimeout: 0,
                 headersTimeout: 0,
             }),
+            */
         };
         if (debug) {
             console.debug(opts)
@@ -529,64 +529,59 @@ ${botMessage.message}
             // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
                 try {
-                    let done = false;
-                    await fetchEventSource(url, {
-                        ...opts,
-                        signal: abortController.signal,
-                        async onopen(response) {
-                            if (response.status === 200) {
-                                return;
-                            }
-                            if (debug) {
-                                console.debug(response);
-                            }
-                            let error: any;
-                            try {
-                                const body = await response.text();
-                                error = new Error(`Failed to send message. HTTP ${response.status} - ${body}`);
-                                error.status = response.status;
-                                error.json = JSON.parse(body);
-                            } catch {
-                                error = error || new Error(`Failed to send message. HTTP ${response.status}`);
-                            }
-                            throw error;
-                        },
-                        onclose() {
-                            if (debug) {
-                                console.debug('Server closed the connection unexpectedly, returning...');
-                            }
-                            // workaround for private API not sending [DONE] event
-                            if (!done) {
-                                // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                                abortController.abort();
-                                resolve(undefined);
-                            }
-                        },
-                        onerror(err) {
-                            if (debug) {
-                                console.debug(err);
-                            }
-                            // rethrow to stop the operation
-                            throw err;
-                        },
-                        onmessage(message) {
-                            if (debug) {
-                                console.debug(message);
-                            }
-                            if (!message.data || message.event === 'ping') {
-                                return;
-                            }
-                            if (message.data === '[DONE]') {
-                                // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                                abortController.abort();
-                                resolve(undefined)
-                                done = true;
-                                return;
-                            }
-                            const dataObj = JSON.parse(message.data)
-                            streamProgressFunc(dataObj) // TODO: as OpenAIChatSSE
-                        },
-                    } as FetchEventSourceInit);
+                    let done = false
+                    let onMessage = function(message: any) {
+                        //console.log('onMessage() called', message)
+                        if (debug) {
+                            console.debug(message);
+                        }
+                        if (!message.data || message.event === 'ping') {
+                            return;
+                        }
+                        if (message.data === '[DONE]') {
+                            // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
+                            abortController.abort();
+                            resolve(undefined)
+                            done = true;
+                            return;
+                        }
+                        const dataObj = JSON.parse(message.data)
+                        streamProgressFunc(dataObj) // TODO: as OpenAIChatSSE
+                    }
+                    let onChunk: (arr: Uint8Array) => void = getLines(getMessages(onMessage,
+                        
+                        id => {
+                            /*
+                         if (id) {
+                             // store the id and send it back on the next retry:
+                             headers[LastEventId] = id;
+                         } else {
+                             // don't send the last-event-id header anymore:
+                             delete headers[LastEventId];
+                         }
+                         */
+                        }, retry => {
+                            /*
+                            retryInterval = retry;
+                            */
+                        }))
+
+                    const finalReponseJson = await ky.post(
+                        url,
+                        {
+                            headers: {
+                                'Content-Type': 'application/json', // set automatically
+                                'Authorization': `Bearer ${this.apiKey}`,
+                            },
+            
+                            onDownloadProgress: (progress, chunk) => {
+                                onChunk(chunk)
+                            },
+                            json: modelOptions,
+                        }
+                    ).json()
+            
+
                 } catch (err) {
                     reject(err);
                 }
@@ -600,26 +595,19 @@ ${botMessage.message}
         }
         // no stream:
 
-        const response = await fetch(
+        const reponseJson = await ky.post(
             url,
             {
-                ...opts,
-                signal: abortController.signal,
-            },
-        )
-        // synchronous HTTP reponse handling
-        if (response.status !== 200) {
-            const body = await response.text();
-            const error: any = new Error(`Failed to send message. HTTP ${response.status} - ${body}`);
-            error.status = response.status;
-            try {
-                error.json = JSON.parse(body);
-            } catch {
-                error.body = body;
+                headers: {
+                    'Content-Type': 'application/json', // set automatically
+                    'Authorization': `Bearer ${this.apiKey}`,
+                },
+                json: modelOptions,
             }
-            throw error;
-        }
-        
-        return response.json() as OpenAIChatResponse
+        ).json()
+
+        console.log(`ky SUCCESS: reponseJson: ${JSON.stringify(reponseJson)}`)
+
+        return reponseJson as OpenAIChatResponse
     }
 }

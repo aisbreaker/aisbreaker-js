@@ -1,6 +1,5 @@
 import ky from 'ky-universal'
-import { getLines, getMessages } from '@waylaidwanderer/fetch-event-source/parse'
-
+import { kyOnDownloadProgress4onMessage, ResponseCollector, DefaultConversationState } from "../../utils/index.js"
 
 //import { get_encoding, encoding_for_model } from Tiktoken
 import { encoding_for_model, Tiktoken } from 'tiktoken'
@@ -20,8 +19,6 @@ import {
     ResponseFinal,
     Usage,
 } from '../../api'
-import { ResponseCollector } from "../../utils/ResponseCollector.js"
-import { DefaultConversationState } from '../../utils/SessionUtil.js'
 
 
 const CHATGPT_MODEL = 'gpt-3.5-turbo'
@@ -530,42 +527,6 @@ ${botMessage.message}
             return new Promise(async (resolve, reject) => {
                 try {
                     let done = false
-                    let onMessage = function(message: any) {
-                        //console.log('onMessage() called', message)
-                        if (debug) {
-                            console.debug(message);
-                        }
-                        if (!message.data || message.event === 'ping') {
-                            return;
-                        }
-                        if (message.data === '[DONE]') {
-                            // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                            abortController.abort();
-                            resolve(undefined)
-                            done = true;
-                            return;
-                        }
-                        const dataObj = JSON.parse(message.data)
-                        streamProgressFunc(dataObj) // TODO: as OpenAIChatSSE
-                    }
-                    let onChunk: (arr: Uint8Array) => void = getLines(getMessages(onMessage,
-                        
-                        id => {
-                            /*
-                         if (id) {
-                             // store the id and send it back on the next retry:
-                             headers[LastEventId] = id;
-                         } else {
-                             // don't send the last-event-id header anymore:
-                             delete headers[LastEventId];
-                         }
-                         */
-                        }, retry => {
-                            /*
-                            retryInterval = retry;
-                            */
-                        }))
-
                     const finalReponseJson = await ky.post(
                         url,
                         {
@@ -573,11 +534,26 @@ ${botMessage.message}
                                 'Content-Type': 'application/json', // set automatically
                                 'Authorization': `Bearer ${this.apiKey}`,
                             },
-            
-                            onDownloadProgress: (progress, chunk) => {
-                                onChunk(chunk)
-                            },
                             json: modelOptions,
+                            onDownloadProgress: kyOnDownloadProgress4onMessage((message: any) => {
+                                //console.log('onMessage() called', message)
+                                if (debug) {
+                                    console.debug(message);
+                                }
+                                if (!message.data || message.event === 'ping') {
+                                    return;
+                                }
+                                if (message.data === '[DONE]') {
+                                    // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
+                                    abortController.abort();
+                                    resolve(undefined)
+                                    done = true;
+                                    return;
+                                }
+                                const dataObj = JSON.parse(message.data)
+                                streamProgressFunc(dataObj) // TODO: as OpenAIChatSSE
+                               
+                            }),
                         }
                     ).json()
             

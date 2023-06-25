@@ -51,6 +51,7 @@ export class AIsBreaker {
      * Register a service API factory with its serviceId.
      */
     registerFactory(factory: AIsAPIFactory<AIsProps, AIsService>) {
+        console.log(`Registering factory for serviceId '${factory.serviceId}'`)
         this.serviceId2FactoryMapping.set(factory.serviceId, factory)
     }
 

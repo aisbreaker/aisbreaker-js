@@ -1,7 +1,4 @@
-//import './fetch-polyfill.js'
-import {
-    Agent, fetch, Headers, /*Request,*/ Response,
-} from 'undici'
+import ky from 'ky-universal'
 
 import {
     AIsProps,
@@ -74,35 +71,24 @@ export class AIsProxyService implements AIsService {
             request,
         }
         const url = `${this.props.url || DEFAULT_AISPROXY_URL}/api/v1/task`
-        const response = await fetch(
+        const responseJson = await ky.post(
             url,
             {
-                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json', // optional because set automatically
                     'Authorization': `Bearer ${this.props.apiKey || 'NoApiKey'}`,
                 },
-                body: JSON.stringify(aisProxyRequest),
+                json: aisProxyRequest,
+                /*
                 dispatcher: new Agent({
                     bodyTimeout: 0,
                     headersTimeout: 0,
-            }),
-            signal: new AbortController().signal,
-        })
-
-        // synchronous HTTP reponse handling
-        if (response.status !== 200) {
-            const body = await response.text();
-            const error: any = new Error(`Failed to send message. HTTP ${response.status} - ${body}`);
-            error.status = response.status;
-            try {
-                error.json = JSON.parse(body);
-            } catch {
-                error.body = body;
+                }),
+                */
+                signal: new AbortController().signal,
             }
-            throw error;
-        }
-        const result = await response.json() as ResponseFinal
+        ).json()
+        const result = responseJson as ResponseFinal
         
         console.log(`AIsProxyService.sendMessage() forward to ${remoteService.serviceId} END`)
         return result

@@ -1,8 +1,5 @@
 
-//import './fetch-polyfill.js'
-import {
-    fetch, Headers, /*Request,*/ Response,
-} from 'undici'
+import ky from 'ky-universal'
 
 import {
     AIsService,
@@ -16,8 +13,7 @@ import {
     ResponseFinal,
     Usage,
 } from '../../api/index.js'
-import { ResponseCollector } from "../../utils/ResponseCollector.js"
-import { DefaultConversationState } from '../../utils/SessionUtil.js'
+import { ResponseCollector, DefaultConversationState } from "../../utils/index.js"
 
 
 const engine: Engine = {
@@ -110,39 +106,21 @@ export class OpenAIImageService implements AIsService {
             user: request.clientUser,
         }
         console.log("OpenAIImageAPI.sendMessage() body: " + JSON.stringify(body))
-        const response = await fetch(
+        const responseJson = await ky.post(
             url,
             {
-                method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json', // optional because set automatically
                     'Authorization': `Bearer ${this.openaiApiKey}`,
                 },
-                body: JSON.stringify(body),
-            },
-        )
-
-        // synchronous HTTP reponse handling
-        if (!response) {
-            throw new Error('No result from OpenAI')
-        }        
-        if (response.status !== 200) {
-            const body = await response.text();
-            const error: any = new Error(`Failed to send message. HTTP ${response.status} - ${body}`);
-            error.status = response.status;
-            try {
-                error.json = JSON.parse(body);
-            } catch {
-                error.body = body;
+                json: body,
             }
-            throw error;
-        }
+        ).json()
         if (this.props?.debug) {
-            console.debug(JSON.stringify(response))
+            console.debug(JSON.stringify(responseJson))
         }
 
         // convert the result
-        let responseJson = await response.json()
         let resultOutputs = openAIImageResponse2Outputs(responseJson as OpenAIImageResponse)
         let resultUsage: Usage = {
             engine: engine,

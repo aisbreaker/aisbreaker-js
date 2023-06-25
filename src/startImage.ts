@@ -33,6 +33,7 @@ switch (serviceId) {
         apiProps = new StabilityAIText2Image({
             //stabilityApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         })
+        break
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }

@@ -531,7 +531,7 @@ ${botMessage.message}
                         url,
                         {
                             headers: {
-                                'Content-Type': 'application/json', // set automatically
+                                'Content-Type': 'application/json', // optional because set automatically
                                 'Authorization': `Bearer ${this.apiKey}`,
                             },
                             json: modelOptions,
@@ -571,19 +571,17 @@ ${botMessage.message}
         }
         // no stream:
 
-        const reponseJson = await ky.post(
+        const responseJson = await ky.post(
             url,
             {
                 headers: {
-                    'Content-Type': 'application/json', // set automatically
+                    'Content-Type': 'application/json', // optional because set automatically
                     'Authorization': `Bearer ${this.apiKey}`,
                 },
                 json: modelOptions,
             }
         ).json()
 
-        console.log(`ky SUCCESS: reponseJson: ${JSON.stringify(reponseJson)}`)
-
-        return reponseJson as OpenAIChatResponse
+        return responseJson as OpenAIChatResponse
     }
 }

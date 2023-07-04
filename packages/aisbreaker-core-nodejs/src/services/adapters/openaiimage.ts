@@ -1,22 +1,7 @@
-
+import { api, utils } from 'aisbreaker-api-js'
 import ky from 'ky-universal'
 
-import {
-    AIsService,
-    AIsProps,
-    AIsAPIFactory,
-    Engine,
-    Message,
-    Output,
-    OutputImage,
-    Request,
-    ResponseFinal,
-    Usage,
-} from '../../api/index.js'
-import { ResponseCollector, DefaultConversationState } from "../../utils/index.js"
-
-
-const engine: Engine = {
+const engine: api.Engine = {
     serviceId: 'OpenAIImage',
     engineId: 'unknown',
 }
@@ -32,7 +17,7 @@ export interface OpenAIImageParams {
     apiKeyId?: string
     debug?: boolean
 }
-export interface OpenAIImageProps extends OpenAIImageParams, AIsProps {
+export interface OpenAIImageProps extends OpenAIImageParams, api.AIsProps {
 }
 export class OpenAIImage implements OpenAIImageProps {
     serviceId: string = 'OpenAIImage'
@@ -44,7 +29,7 @@ export class OpenAIImage implements OpenAIImageProps {
     }
 }
 
-export class OpenAIImageFactroy implements AIsAPIFactory<OpenAIImageProps,OpenAIImageService> {
+export class OpenAIImageFactroy implements api.AIsAPIFactory<OpenAIImageProps,OpenAIImageService> {
     serviceId: string = 'OpenAIImage'
 
     constructor() {
@@ -55,7 +40,7 @@ export class OpenAIImageFactroy implements AIsAPIFactory<OpenAIImageProps,OpenAI
     }
 }
 
-export class OpenAIImageService implements AIsService {
+export class OpenAIImageService implements api.AIsService {
     serviceId: string = 'OpenAIImage'
 
     openaiApiKey: string
@@ -66,12 +51,12 @@ export class OpenAIImageService implements AIsService {
         this.openaiApiKey = props?.apiKey || process.env.OPENAI_API_KEY || ""
     }
 
-    async sendMessage(request: Request): Promise<ResponseFinal> {
+    async sendMessage(request: api.Request): Promise<api.ResponseFinal> {
         // prepare collection/aggregation of partial responses
-        const responseCollector = new ResponseCollector(request)
+        const responseCollector = new utils.ResponseCollector(request)
 
         // update conversation (before OpenAI API request-response)
-        const conversationState = DefaultConversationState.fromBase64(request.conversationState)
+        const conversationState = utils.DefaultConversationState.fromBase64(request.conversationState)
         conversationState.addInputs(request.inputs)
 
         // get all messages so far - this is the conversation context
@@ -122,7 +107,7 @@ export class OpenAIImageService implements AIsService {
 
         // convert the result
         let resultOutputs = openAIImageResponse2Outputs(responseJson as OpenAIImageResponse)
-        let resultUsage: Usage = {
+        let resultUsage: api.Usage = {
             engine: engine,
             totalMilliseconds: responseCollector.getMillisSinceStart(),
         }
@@ -132,7 +117,7 @@ export class OpenAIImageService implements AIsService {
         conversationState.addOutputs(resultOutputs)
 
         // return response
-        const responseFinal: ResponseFinal = {
+        const responseFinal: api.ResponseFinal = {
             outputs: resultOutputs,
             conversationState: conversationState.toBase64(),
             usage: resultUsage,
@@ -142,21 +127,21 @@ export class OpenAIImageService implements AIsService {
     }
 }
 
-function openAIImageResponse2Outputs(res: OpenAIImageResponse): Output[] {
-    const outputs: Output[] = []
+function openAIImageResponse2Outputs(res: OpenAIImageResponse): api.Output[] {
+    const outputs: api.Output[] = []
 
     if (res.data) {
         let index = 0
         for (const d of res.data) {
             if (d.url || d.b64_json) {
-                const outputImage: OutputImage = {
+                const outputImage: api.OutputImage = {
                     index: index,
                     role: 'assistant',
                     url: d.url,
                     base64: d.b64_json,
                     isProcessing: false,
                 }
-                const output: Output = {
+                const output: api.Output = {
                     image: outputImage,
                 }
                 outputs.push(output)
@@ -179,7 +164,7 @@ interface OpenAIChatMessage {
     content: string
 }
 
-function inputMessages2SinglePrompt(messages: Message[]): string {
+function inputMessages2SinglePrompt(messages: api.Message[]): string {
     let result: string = ''
     for (const message of messages) {
         if (message.input && message.input?.text?.content) {
@@ -212,3 +197,8 @@ type OpenAIImageResponse = {
     }[]
 }
 
+
+//
+// register this service/adapter
+//
+api.AIsBreaker.getInstance().registerFactory(new OpenAIImageFactroy())

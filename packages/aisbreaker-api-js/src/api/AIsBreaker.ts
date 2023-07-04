@@ -1,8 +1,10 @@
 import { AIsAPIFactory, AIsProps, AIsService } from "./AIsService"
 import { 
+    /*
     OpenAIChatFactroy,
     OpenAIImageFactroy,
     StabilityAIText2ImageFactroy,
+    */
     TrivialAssistantFactory,
     AIsProxyFactory,
 } from '../services/adapters/index.js'
@@ -36,9 +38,11 @@ export class AIsBreaker {
     registerAllDefaultFactories(): AIsBreaker {
         // register
         this.registerFactory(new AIsProxyFactory())
+        /*
         this.registerFactory(new OpenAIChatFactroy())
         this.registerFactory(new OpenAIImageFactroy())
         this.registerFactory(new StabilityAIText2ImageFactroy())
+        */
         this.registerFactory(new TrivialAssistantFactory())
 
         this.registerFactory(new DelegateFactory())

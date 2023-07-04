@@ -1,3 +1,5 @@
 #!/bin/sh
 
-npm run startTest
+cd packages/aisbreaker-core-nodejs/
+./start_test.sh
+

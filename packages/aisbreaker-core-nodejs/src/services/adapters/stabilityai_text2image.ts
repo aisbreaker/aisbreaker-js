@@ -1,24 +1,11 @@
+import { api, utils } from 'aisbreaker-api-js'
 import ky from 'ky-universal'
 import crypto from 'crypto'
 import fs from 'fs'
 
-import {
-    AIsService,
-    AIsProps,
-    AIsAPIFactory,
-    Engine,
-    Message,
-    Output,
-    OutputImage,
-    Request,
-    ResponseFinal,
-    Usage,
-} from '../../api/index.js'
-import { ResponseCollector } from "../../utils/index.js"
 
 
-
-const engine: Engine = {
+const engine: api.Engine = {
     serviceId: 'StabilityAIText2Image',
     engineId: 'stable-diffusion-v1-5',
 }
@@ -35,7 +22,7 @@ export interface StabilityAIText2ImageParams {
     apiKeyId?: string
     debug?: boolean
 }
-export interface StabilityAIText2ImageProps extends StabilityAIText2ImageParams, AIsProps {
+export interface StabilityAIText2ImageProps extends StabilityAIText2ImageParams, api.AIsProps {
 }
 export class StabilityAIText2Image implements StabilityAIText2ImageProps {
     serviceId: string = 'StabilityAIText2Image'
@@ -47,7 +34,7 @@ export class StabilityAIText2Image implements StabilityAIText2ImageProps {
     }
 }
 
-export class StabilityAIText2ImageFactroy implements AIsAPIFactory<StabilityAIText2ImageProps,StabilityAIText2ImageService> {
+export class StabilityAIText2ImageFactroy implements api.AIsAPIFactory<StabilityAIText2ImageProps,StabilityAIText2ImageService> {
     serviceId: string = 'StabilityAIText2Image'
 
     constructor() {
@@ -58,7 +45,7 @@ export class StabilityAIText2ImageFactroy implements AIsAPIFactory<StabilityAITe
     }
 }
 
-export class StabilityAIText2ImageService implements AIsService {
+export class StabilityAIText2ImageService implements api.AIsService {
     serviceId: string = 'StabilityAIText2Image'
 
     stabilityApiKey: string
@@ -69,14 +56,14 @@ export class StabilityAIText2ImageService implements AIsService {
         this.stabilityApiKey = props?.apiKey || process.env.STABILITY_API_KEY || ""
     }
 
-    async sendMessage(request: Request): Promise<ResponseFinal> {
+    async sendMessage(request: api.Request): Promise<api.ResponseFinal> {
         // prepare collection/aggregation of partial responses
-        const responseCollector = new ResponseCollector(request)
+        const responseCollector = new utils.ResponseCollector(request)
 
         // build prompt from input(s)
-        const allMessages: Message[] = []
+        const allMessages: api.Message[] = []
         for (const input of request.inputs) {
-            const message: Message = {input: input}
+            const message: api.Message = {input: input}
             allMessages.push(message)
         }
         const prompts = inputMessages2StabilityPrompts(allMessages)
@@ -106,7 +93,7 @@ export class StabilityAIText2ImageService implements AIsService {
 
         // convert the result
         let resultOutputs = StabilityAIText2ImageResponse2Outputs(responseJson as StabilityAIText2ImageResponse)
-        let resultUsage: Usage = {
+        let resultUsage: api.Usage = {
             engine: engine,
             totalMilliseconds: responseCollector.getMillisSinceStart(),
         }
@@ -116,7 +103,7 @@ export class StabilityAIText2ImageService implements AIsService {
         writeBase64ImageOutputsToFile(resultOutputs)
 
         // return response
-        const responseFinal: ResponseFinal = {
+        const responseFinal: api.ResponseFinal = {
             outputs: resultOutputs,
             //conversationState: undefined,
             usage: resultUsage,
@@ -126,7 +113,7 @@ export class StabilityAIText2ImageService implements AIsService {
     }
 }
 
-function writeBase64ImageOutputsToFile(outputs: Output[]) {
+function writeBase64ImageOutputsToFile(outputs: api.Output[]) {
     const randomUUID = crypto.randomUUID()
     for (const output of outputs) {
         if (output?.image?.base64) {
@@ -143,20 +130,20 @@ function writeBase64ImageToFile(base64: string, filename: string) {
     });
 }
 
-function StabilityAIText2ImageResponse2Outputs(res: StabilityAIText2ImageResponse): Output[] {
-    const outputs: Output[] = []
+function StabilityAIText2ImageResponse2Outputs(res: StabilityAIText2ImageResponse): api.Output[] {
+    const outputs: api.Output[] = []
 
     let index = 0
     if (res.artifacts) {
         for (const r of res.artifacts) {
             if (r.base64) {
-                const outputImage: OutputImage = {
+                const outputImage: api.OutputImage = {
                     index: index,
                     role: 'assistant',
                     base64: r.base64,
                     isProcessing: false,
                 }
-                const output: Output = {
+                const output: api.Output = {
                     image: outputImage,
                 }
                 outputs.push(output)
@@ -173,7 +160,7 @@ function StabilityAIText2ImageResponse2Outputs(res: StabilityAIText2ImageRespons
 // internal stability.ai specific stuff
 //
 
-function inputMessages2StabilityPrompts(messages: Message[]): StabilityPrompt[] {
+function inputMessages2StabilityPrompts(messages: api.Message[]): StabilityPrompt[] {
     let prompts: StabilityPrompt[] = []
     for (const message of messages) {
         if (message.input && message.input?.text?.content) {

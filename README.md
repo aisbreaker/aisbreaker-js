@@ -4,9 +4,16 @@
 
 AIsBreaker provides an easy-to-use and service-agnostic API to access different AI services
 (like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more)
-in a uniform way. More details: [AIsBreaker.org](https://aisbreaker.org/)
+in a uniform way. 
 
-This repo contains the AIsBreaker API/SDK for NodeJS/TypeScript/JavaScript.
+More details:
+- [AIsBreaker.org](https://aisbreaker.org/)
+- [AIsBreaker Modules](https://aisbreaker.org/docs/aisbreaker-modules.html) or [AIsBreaker Packages](https://aisbreaker.org/docs/aisbreaker-packages.html)
+
+This repo is a [Monorepo](https://aisbreaker.org/docs/monorepo.html) that combines several npm packages/modules.
+Technically, we use [npm Workspaces](https://docs.npmjs.com/cli/v9/using-npm/workspaces). 
+
+Source code inclusive further READMEs of the packages/modules: [./packages/](./packages/)
 
 
 ## Run a simple Test
@@ -22,27 +29,18 @@ Steps:
     . ../../setenv.sh
 
     # run the simple test chat
-    ./start.sh
+    ./start_chat.sh
 
 
-## Build and Publish an npm Package
+## Build and Publish all npm Packages with the same Version
 
 Steps:
 
-    # adjust/increase version in package.json (must be unique)
-    vi package.json
+    # TODO
 
-    # build (compile TypeScript)
-    npm run build
 
-    # publish to npmjs.com
-    npm login
-        # login in webbrowser as user aisbreaker
 
-    npm publish
-
-Test the package installation
-
+Test the package installation (TODO: REVIEW AND ADAPT):
     # new dir
     mkdir tmp
     cd tmp/
@@ -53,4 +51,5 @@ Test the package installation
     . ../../setenv.sh
 
     # start from npm repo
-    npx aisbreaker-api
+    npx aisbreaker-core-nodejs
+

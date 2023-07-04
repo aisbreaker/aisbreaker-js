@@ -1,4 +1,5 @@
 #!/bin/sh
 
-#npm start
-npm run startChat
+cd packages/aisbreaker-core-nodejs/
+./start_chat.sh
+

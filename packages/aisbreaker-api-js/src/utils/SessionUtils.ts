@@ -3,7 +3,7 @@ import {
     Output,
     Message,
 } from '../api/models/index.js'
-
+import * as StringUtils from './StringUtils.js'
 
 export interface ConverstationState {
     messages: Message[]
@@ -57,7 +57,9 @@ export class DefaultConversationState implements ConverstationState {
         }
 
         // decode base64 string
-        const json = Buffer.from(base64, 'base64').toString('utf8') 
+        //TODO: const json = Buffer.from(base64, 'base64').toString('utf8') 
+        console.log("XXXXXXXXXXXXXXXXX fromBase64()")
+        const json = StringUtils.base64ToString(base64)
 
         // parse JSON string and create ConversationState
         return DefaultConversationState.fromJSON(json)
@@ -74,7 +76,9 @@ export class DefaultConversationState implements ConverstationState {
     /** Export to JSON string of a ConversationState object */
     toBase64(): string {
         const json = this.toJSON()
-        return Buffer.from(json).toString('base64')
+        console.log("YYYYYYYYYYYYYYYYYYYYYY toBase64()")
+        return StringUtils.stringToBase64(json)
+        //return Buffer.from(json).toString('base64')
     }
 
     /** Get content from the conversaton. */

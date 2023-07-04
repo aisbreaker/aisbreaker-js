@@ -1,16 +1,6 @@
 #!/usr/bin/node
 
-import {
-    AIsService,
-    OpenAIChat,
-    ResponseEvent,
-    StreamProgressFunction,
-    TrivialAssistant,
-    AIsProps,
-    AIsBreaker,
-    TrivialAssistantFactory,
-    OpenAIChatFactroy,
-} from './index.js'
+import { api, services } from './index.js' /* 'aisbreaker-api-js' */
 
 
 //
@@ -24,21 +14,23 @@ const prompt1 = "Give me a sentence with any animal in it."
 const prompt2 = "And now in German."
 
 // select and initialize API
-const serviceId: 'TrivialAssistant' | 'OpenAIChat' | string = 'OpenAIChat'
-let apiProps: AIsProps
+const serviceId: 'TrivialAssistant' | 'OpenAIChat' | string = 'TrivialAssistant'
+let apiProps: api.AIsProps
 switch (serviceId) {
     case 'TrivialAssistant':
-        apiProps = new TrivialAssistant({extraMsg: 'start-chat-trivial'})
+        apiProps = new services.TrivialAssistant({extraMsg: 'start-chat-trivial'})
         break
+        /*
     case 'OpenAIChat':
-        apiProps = new OpenAIChat({
+        apiProps = new services.OpenAIChat({
             //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         })
         break
+        */
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }
-const api: AIsService = AIsBreaker.getInstance().createAIsService(apiProps)
+const aiService: api.AIsService = api.AIsBreaker.getInstance().createAIsService(apiProps)
 
 // use the function with "async/await"
 async function actionWithAsync() {
@@ -46,7 +38,7 @@ async function actionWithAsync() {
     console.log("================================= actionWithAsync() started")
 
     console.log("----- Request - without streaming")
-    const response1 = await api.sendMessage({
+    const response1 = await aiService.sendMessage({
         inputs: [ {
             text: {
                 role: 'user',
@@ -58,8 +50,8 @@ async function actionWithAsync() {
     console.log(JSON.stringify(response1, undefined, 2))
 
     console.log("----- Request 2 - with streaming")
-    const streamProgress: StreamProgressFunction = (responseEvent: ResponseEvent) => {  console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) }
-    const response2 = await api.sendMessage({
+    const streamProgress: api.StreamProgressFunction = (responseEvent: api.ResponseEvent) => {  console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) }
+    const response2 = await aiService.sendMessage({
         inputs: [ {
             text: {
                 role: 'user',

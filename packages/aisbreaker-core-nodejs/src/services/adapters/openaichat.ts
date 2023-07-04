@@ -1,24 +1,6 @@
+import { api, utils } from 'aisbreaker-api-js'
 import ky from 'ky-universal'
-import { kyOnDownloadProgress4onMessage, ResponseCollector, DefaultConversationState } from "../../utils/index.js"
-
-//import { get_encoding, encoding_for_model } from Tiktoken
-import { encoding_for_model, Tiktoken } from 'tiktoken'
-
-import {
-    AIsService,
-    AIsProps,
-    AIsAPIFactory,
-    Engine,
-    Input,
-    InputText,
-    Message,
-    Output,
-    OutputText,
-    Request,
-    ResponseEvent,
-    ResponseFinal,
-    Usage,
-} from '../../api'
+import * as tiktoken from 'tiktoken'
 
 
 const CHATGPT_MODEL = 'gpt-3.5-turbo'
@@ -33,7 +15,7 @@ export interface OpenAIChatParams {
     apiKey?: string
     apiKeyId?: string
 }
-export interface OpenAIChatProps extends OpenAIChatParams, AIsProps {
+export interface OpenAIChatProps extends OpenAIChatParams, api.AIsProps {
 }
 export class OpenAIChat implements OpenAIChatProps {
     serviceId: string = 'OpenAIChat'
@@ -45,7 +27,7 @@ export class OpenAIChat implements OpenAIChatProps {
     }
 }
 
-export class OpenAIChatFactroy implements AIsAPIFactory<OpenAIChatProps,OpenAIChatService> {
+export class OpenAIChatFactroy implements api.AIsAPIFactory<OpenAIChatProps,OpenAIChatService> {
     serviceId: string = 'OpenAIChat'
 
     constructor() {
@@ -56,7 +38,7 @@ export class OpenAIChatFactroy implements AIsAPIFactory<OpenAIChatProps,OpenAICh
     }
 }
 
-export class OpenAIChatService implements AIsService {
+export class OpenAIChatService implements api.AIsService {
     serviceId: string = 'OpenAIChat'
 
     openaiApiKey: string
@@ -80,20 +62,20 @@ export class OpenAIChatService implements AIsService {
     }
     */
 
-    getEngine(model: string = CHATGPT_MODEL): Engine {
-        const engine: Engine = {
+    getEngine(model: string = CHATGPT_MODEL): api.Engine {
+        const engine: api.Engine = {
             serviceId: 'openai',
             engineId: `chat/${model}`,
         }
         return engine
     }
 
-    async sendMessage(request: Request): Promise<ResponseFinal> {
+    async sendMessage(request: api.Request): Promise<api.ResponseFinal> {
         // prepare collection/aggregation of partial responses
-        const responseCollector = new ResponseCollector(request)
+        const responseCollector = new utils.ResponseCollector(request)
 
         // update conversation (before OpenAI API request-response)
-        const conversationState = DefaultConversationState.fromBase64(request.conversationState)
+        const conversationState = utils.DefaultConversationState.fromBase64(request.conversationState)
         conversationState.addInputs(request.inputs)
 
         // get all messages so far - this is the conversation context
@@ -101,8 +83,8 @@ export class OpenAIChatService implements AIsService {
         const allOpenAIChatMessages = messages2OpenAIChatMessages(allMessages)
 
         // the result
-        let resultOutputs: Output[]
-        let resultUsage: Usage
+        let resultOutputs: api.Output[]
+        let resultUsage: api.Usage
         let resultInternResponse: any
 
         // stream or synchronous result?
@@ -182,7 +164,7 @@ export class OpenAIChatService implements AIsService {
         conversationState.addOutputs(resultOutputs)
 
         // return response
-        const response: ResponseFinal = {
+        const response: api.ResponseFinal = {
             outputs: resultOutputs,
             conversationState: conversationState.toBase64(),
             usage: resultUsage,
@@ -196,13 +178,13 @@ export class OpenAIChatService implements AIsService {
     // helpers for token counting
     //
 
-    private tiktokenEncoding = encoding_for_model(CHATGPT_MODEL)
+    private tiktokenEncoding = tiktoken.encoding_for_model(CHATGPT_MODEL)
     private countTextTokens(text: string): number {
         const tokens = this.tiktokenEncoding.encode(text)
         return tokens.length
     }
 
-    private countInputsTokens(inputs: Input[]) {
+    private countInputsTokens(inputs: api.Input[]) {
         let count = 0
         for (const input of inputs) {
             if (input.text) {
@@ -215,7 +197,7 @@ export class OpenAIChatService implements AIsService {
         return count
     }
 
-    private countOutputsTokens(outputs: Output[]) {
+    private countOutputsTokens(outputs: api.Output[]) {
         let count = 0
         for (const output of outputs) {
             if (output.text) {
@@ -229,16 +211,18 @@ export class OpenAIChatService implements AIsService {
     }
 }
 
-function createResponseEventFromOpenAIChatSSEAndCollectIt(data: OpenAIChatSSE, responseCollector: ResponseCollector) {
+function createResponseEventFromOpenAIChatSSEAndCollectIt(
+    data: OpenAIChatSSE, responseCollector: utils.ResponseCollector
+) {
     const d = data as any
-    const outputs: Output[] = []
+    const outputs: api.Output[] = []
 
     // text?
     const idx = 0
     if (d && d.choices && d.choices.length > idx && d.choices[idx].delta && d.choices[idx].delta.content) {
         // text part is in the data
         const deltaContent = d.choices[idx].delta.content
-        const outputText: OutputText = {
+        const outputText: api.OutputText = {
             index: idx,
             role: 'assistant',
             content: deltaContent,
@@ -259,7 +243,7 @@ function createResponseEventFromOpenAIChatSSEAndCollectIt(data: OpenAIChatSSE, r
     }
 
     // call upstream progress function
-    const responseEvent: ResponseEvent = {
+    const responseEvent: api.ResponseEvent = {
         outputs: outputs,
         internResponse: data
     }
@@ -270,14 +254,14 @@ function createResponseEventFromOpenAIChatSSEAndCollectIt(data: OpenAIChatSSE, r
     return responseEvent
 }
 
-function openAIChatReponse2Outputs(data: OpenAIChatResponse): Output[] {
+function openAIChatReponse2Outputs(data: OpenAIChatResponse): api.Output[] {
     const d = data as any
-    const outputs: Output[] = []
+    const outputs: api.Output[] = []
 
     if (d.choices) {
         for (const choice of d.choices) {
             if (choice.message && choice.message.content) {
-                const outputText: OutputText = {
+                const outputText: api.OutputText = {
                     index: choice.index || 0,
                     role: choice.message.role,
                     content: choice.message.content,
@@ -306,25 +290,25 @@ interface OpenAIChatMessage {
     content: string
 }
 
-function inputText2OpenAIChatMessage(input: InputText): OpenAIChatMessage {
+function inputText2OpenAIChatMessage(input: api.InputText): OpenAIChatMessage {
     const message: OpenAIChatMessage = {
         role: input.role,
         content: input.content,
     }
     return message
 }
-function outputText2OpenAIChatMessage(output: OutputText): OpenAIChatMessage {
+function outputText2OpenAIChatMessage(output: api.OutputText): OpenAIChatMessage {
     const message: OpenAIChatMessage = {
         role: output.role,
         content: output.content,
     }
     return message
 }
-function inputTexts2OpenAIChatMessages(input: InputText[]): OpenAIChatMessage[] {
+function inputTexts2OpenAIChatMessages(input: api.InputText[]): OpenAIChatMessage[] {
     const result = input.map(inputText2OpenAIChatMessage)
     return result
 }
-function messages2OpenAIChatMessages(messages: Message[]): OpenAIChatMessage[] {
+function messages2OpenAIChatMessages(messages: api.Message[]): OpenAIChatMessage[] {
     const result: OpenAIChatMessage[] = []
     for (const message of messages) {
         if (message.input && message.input.text) {
@@ -535,7 +519,7 @@ ${botMessage.message}
                                 'Authorization': `Bearer ${this.apiKey}`,
                             },
                             json: modelOptions,
-                            onDownloadProgress: kyOnDownloadProgress4onMessage((message: any) => {
+                            onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
                                 //console.log('onMessage() called', message)
                                 if (debug) {
                                     console.debug(message);
@@ -585,3 +569,8 @@ ${botMessage.message}
         return responseJson as OpenAIChatResponse
     }
 }
+
+//
+// register this service/adapter
+//
+api.AIsBreaker.getInstance().registerFactory(new OpenAIChatFactroy())

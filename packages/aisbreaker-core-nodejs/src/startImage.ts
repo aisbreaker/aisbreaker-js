@@ -1,13 +1,8 @@
 #!/usr/bin/node
 
-import {
-    AIsService,
-    AIsBreaker,
-    AIsProps,
-    OpenAIImage,
-    TrivialAssistant,
-} from './index.js'
-import { StabilityAIText2Image } from './services/adapters/stabilityai_text2image.js'
+import { api, services } from 'aisbreaker-api-js'
+
+import { services as coreServices } from './index.js' /* 'aisbreaker-core-nodejs' */
 
 
 //
@@ -18,26 +13,26 @@ import { StabilityAIText2Image } from './services/adapters/stabilityai_text2imag
 const prompt = "Give me a cute teddy bear sitting in the forest."
 
 // select and initialize API
-const serviceId: 'TrivialAssistant' | 'OpenAIImage' | 'StabilityAIText2Image' | string = 'OpenAIImage'
-let apiProps: AIsProps
+const serviceId: 'TrivialAssistant' | 'OpenAIImage' | 'StabilityAIText2Image' | string = 'TrivialAssistant'
+let apiProps: api.AIsProps
 switch (serviceId) {
     case 'TrivialAssistant':
-        apiProps = new TrivialAssistant({extraMsg: 'start-trivial'})
+        apiProps = new services.TrivialAssistant({extraMsg: 'start-trivial'})
         break
     case 'OpenAIImage':
-        apiProps = new OpenAIImage({
+        apiProps = new coreServices.OpenAIImage({
             //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         })
         break
     case 'StabilityAIText2Image':
-        apiProps = new StabilityAIText2Image({
+        apiProps = new coreServices.StabilityAIText2Image({
             //stabilityApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         })
         break
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }
-const api: AIsService = AIsBreaker.getInstance().createAIsService(apiProps)
+const aiService: api.AIsService = api.AIsBreaker.getInstance().createAIsService(apiProps)
 
 // helper
 function veryLongStringReplacer(key: any, value: any) {
@@ -68,7 +63,7 @@ async function actionWithAsync() {
     }
 
     console.log("----- Request")
-    const response1 = await api.sendMessage({
+    const response1 = await aiService.sendMessage({
         inputs: [ {
             text: {
                 role: 'user',

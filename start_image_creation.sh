@@ -1,3 +1,5 @@
 #!/bin/sh
 
-npm run startImage
+cd packages/aisbreaker-core-nodejs/
+./start_image_creation.sh
+

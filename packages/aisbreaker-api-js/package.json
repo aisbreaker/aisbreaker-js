@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-api-js",
-  "version": "0.0.19",
+  "version": "0.0.34",
   "description": "This package contains AIsBreaker pure JS API which provides an easy-to-use and service-agnostic API to access different AI services (like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more) in a uniform way. More details: https://aisbreaker.org/",
   "type": "module",
   "main": "build/index.js",
@@ -11,7 +11,9 @@
     "start": "echo \"Try startChat or startCreateImage\" && exit 1",
     "startChat": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startChat.js",
     "startImage": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startImage.js",
-    "startTest": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startTest.js",
+    "startTest": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startTest.js"
+  },
+  "//scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "aisbreaker",

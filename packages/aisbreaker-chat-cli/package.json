@@ -1,18 +1,18 @@
 {
   "name": "aisbreaker-chat-cli",
-  "version": "0.0.19",
+  "version": "0.0.35",
   "description": "Two demo applications to demonstrate the usage of `aisbreaker-api` in a JavaScript NodeJS application",
   "type": "module",
   "main": "chat-cli.js",
   "bin": "chat-cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "//test": "echo \"Error: no test specified\" && exit 1",
     "start": "chat-cli"
   },
   "author": "aisbreaker",
   "license": "MIT",
   "dependencies": {
-    "aisbreaker-api-js": "^0.0.19",
+    "aisbreaker-api-js": "^0.0.35",
     "boxen": "^7.0.1",
     "clipboardy": "^3.0.0",
     "inquirer": "^9.1.4",

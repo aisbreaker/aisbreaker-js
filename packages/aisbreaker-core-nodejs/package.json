@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-core-nodejs",
-  "version": "0.0.19",
+  "version": "0.0.35",
   "description": "This package contains core services and adapters for AIsBreaker with dependeny to the AIsBreaker API. For NodeJS. AIsBreaker provides an easy-to-use and service-agnostic API to access different AI services (like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more) in a uniform way. More details: https://aisbreaker.org/",
   "type": "module",
   "main": "build/index.js",
@@ -12,7 +12,7 @@
     "startChat": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startChat.js",
     "startImage": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startImage.js",
     "startTest": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/startTest.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "//test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "aisbreaker",
   "license": "MIT",
@@ -22,7 +22,7 @@
     "typescript": "^4.9.5"
   },
   "dependencies": {
-    "aisbreaker-api-js": "^0.0.19",
+    "aisbreaker-api-js": "^0.0.35",
     "ky": "^0.33.3",
     "ky-universal": "^0.11.0",
     "tiktoken": "^1.0.7"

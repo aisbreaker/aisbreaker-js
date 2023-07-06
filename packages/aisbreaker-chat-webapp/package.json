@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-chat-webapp",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "Webapp as frontend for and to demonstrate the usage of `aisbreaker-api` in a JavaScript. A Vue 3 application",
   "type": "module",
   "main": "chat-cli.js",
@@ -12,6 +12,6 @@
   "author": "aisbreaker",
   "license": "MIT",
   "dependencies": {
-    "aisbreaker-api-js": "^0.0.34"
+    "aisbreaker-api-js": "^0.0.35"
   }
 }

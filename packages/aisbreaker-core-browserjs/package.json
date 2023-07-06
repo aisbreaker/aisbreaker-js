@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-core-browser",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "This package contains core services and adapters for AIsBreaker with dependeny to the AIsBreaker API. For modern web browsers. AIsBreaker provides an easy-to-use and service-agnostic API to access different AI services (like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more) in a uniform way. More details: https://aisbreaker.org/",
   "type": "module",
   "scripts": {},
@@ -8,6 +8,6 @@
   "license": "MIT",
   "devDependencies": {},
   "dependencies": {
-    "aisbreaker-api-js": "^0.0.34"
+    "aisbreaker-api-js": "^0.0.35"
   }
 }

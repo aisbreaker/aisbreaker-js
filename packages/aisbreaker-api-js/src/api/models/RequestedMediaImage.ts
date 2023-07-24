@@ -2,7 +2,7 @@
 /**
 * An image response is requested. Here we specify the favored image result.
 */
-export type RequestMediaImage = {
+export interface RequestedMediaImage {
     /**
     * favored width of output image. Respect of limits of your service and engine. It\'s not guaranteed that the result fits into it.
     */
@@ -14,14 +14,12 @@ export type RequestMediaImage = {
     /**
     * favored delivery format. It\'s not guaranteed that the service uses it.
     */
-    delivery?: RequestMediaImageDeliveryType
+    delivery?: RequestedMediaImageDeliveryType
     /**
     * favored image format. It\'s not guaranteed that the service uses it.
     */
-    format?: RequestMediaImageFormatType
+    format?: RequestedMediaImageFormatType
 }
 
-
-export type RequestMediaImageDeliveryType = 'url' | 'base64'
-export type RequestMediaImageFormatType = 'jpeg' | 'png' | 'gif'
-
+export type RequestedMediaImageDeliveryType = 'url' | 'base64'
+export type RequestedMediaImageFormatType = 'jpeg' | 'png' | 'gif'

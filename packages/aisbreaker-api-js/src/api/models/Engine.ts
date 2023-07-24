@@ -1,15 +1,17 @@
 
 /**
-* AI service and its engine.
-*/
-export type Engine = {
+ * AI service and its engine.
+ */
+export interface Engine {
     /**
-    * Service ID = connected service. Usually, one service can handle multiple AI services represent by service-specific engines.
-    */
-    serviceId: string;
+     * Service ID = connected service. Ususally, inclusive the service-specific engine/model ID.
+     * 
+     * Details: https://aisbreaker.org/docs/serviceId
+     */
+    serviceId: string
     /**
     * service specific engine/model ID
-    */
     engineId: string;
+    */
 }
 

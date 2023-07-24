@@ -1,10 +1,10 @@
-import { Input } from "./Input";
-import { Output } from "./Output";
+import { Input } from "./Input.js"
+import { Output } from "./Output.js"
 
 /**
-* A message sent to (request) or from (reponse) the AI service.
-*/
-export type Message = {
+ * A message sent to (request) or from (reponse) the AI service.
+ */
+export interface Message {
     /**
      * An input message; either input or output must be set.
      */
@@ -15,5 +15,3 @@ export type Message = {
      */
     output?: Output
 }
-
-//export type MessageT = TextInputMessageT | ImageInputMessageT

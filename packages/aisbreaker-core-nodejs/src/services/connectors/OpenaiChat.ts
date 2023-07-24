@@ -1,76 +1,46 @@
-import { api, utils } from 'aisbreaker-api-js'
-import ky from 'ky-universal'
+import { api, base, utils } from 'aisbreaker-api-js'
+import ky, { HTTPError, TimeoutError } from 'ky-universal'
 import * as tiktoken from 'tiktoken'
 
-
-const CHATGPT_MODEL = 'gpt-3.5-turbo'
 
 //
 // general API implementation for OpenAI / ChatGPT API
 //
 // API docs: https://platform.openai.com/docs/api-reference/chat/create
+// API url:  https://api.openai.com/v1/chat/completions
 //
 
-export interface OpenAIChatParams {
-    apiKey?: string
-    apiKeyId?: string
-}
-export interface OpenAIChatProps extends OpenAIChatParams, api.AIsProps {
-}
-export class OpenAIChat implements OpenAIChatProps {
-    serviceId: string = 'OpenAIChat'
-    apiKeyId: string = 'OpenAI'
-    apiKey?: string
+const chatBaseServiceId = 'chat:openai.com'
 
-    constructor(props: OpenAIChatParams) {
-        this.apiKey = props.apiKey
-    }
-}
+const DEFAULT_CHATGPT_MODEL = 'gpt-3.5-turbo'
+const DEFAULT_URL = 'https://api.openai.com/v1/chat/completions'
+const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
-export class OpenAIChatFactroy implements api.AIsAPIFactory<OpenAIChatProps,OpenAIChatService> {
-    serviceId: string = 'OpenAIChat'
+export class OpenaiChatService extends base.BaseAIsService {
+    protected openaiChatClient: OpenaiChatClient
 
-    constructor() {
-    }
+    constructor(props: api.AIsServiceProps, auth?: api.Auth) {
+        super(props, auth)
 
-    createAIsAPI(props: OpenAIChatProps): OpenAIChatService {
-        return new OpenAIChatService(props)
-    }
-}
-
-export class OpenAIChatService implements api.AIsService {
-    serviceId: string = 'OpenAIChat'
-
-    openaiApiKey: string
-    openaiChatClient: OpenAIChatClient
-
-    constructor(props: OpenAIChatProps) {
-        this.openaiApiKey = props?.apiKey || process.env.OPENAI_API_KEY || ""
+        // check props
+        if (!auth?.secret) {
+            throw new Error(`OpenaiChatService: missing auth.secret`)
+        }
 
         // backend
-        this.openaiChatClient = new OpenAIChatClient(this.openaiApiKey, props)
+        (props as any).completionsUrl = props.url || DEFAULT_URL as string
+        (props as any).model = this.getModelFromServiceId(props.serviceId) || DEFAULT_CHATGPT_MODEL
+        this.openaiChatClient = new OpenaiChatClient(auth?.secret, props)
     }
 
-    /*
-    async sendMessage(
-        message: string,
-        conversationId: string | undefined = undefined,
-        onProgress: Function | undefined = undefined, opts: any = {}
-        ): Promise<any> {
-
-        return (await this.openaiChatClient.sendMessage(message, conversationId, onProgress, opts))
-    }
-    */
-
-    getEngine(model: string = CHATGPT_MODEL): api.Engine {
+    getEngine(model: string = DEFAULT_CHATGPT_MODEL): api.Engine {
         const engine: api.Engine = {
-            serviceId: 'openai',
-            engineId: `chat/${model}`,
+            serviceId: `${chatBaseServiceId}/${model}`
         }
         return engine
     }
 
-    async sendMessage(request: api.Request): Promise<api.ResponseFinal> {
+    async process(request: api.Request): Promise<api.ResponseFinal> {
         // prepare collection/aggregation of partial responses
         const responseCollector = new utils.ResponseCollector(request)
 
@@ -80,7 +50,7 @@ export class OpenAIChatService implements api.AIsService {
 
         // get all messages so far - this is the conversation context
         const allMessages = conversationState.getMessages()
-        const allOpenAIChatMessages = messages2OpenAIChatMessages(allMessages)
+        const allOpenaiChatMessages = messages2OpenaiChatMessages(allMessages)
 
         // the result
         let resultOutputs: api.Output[]
@@ -93,17 +63,17 @@ export class OpenAIChatService implements api.AIsService {
             // expect stream result
             //
             const streamProgressFunc = request.streamProgressFunction
-            const streamOpenAIProgressFunc: OpenAIChatSSEFunc = (data: OpenAIChatSSE) => {
+            const streamOpenaiProgressFunc: OpenaiChatSSEFunc = (data: OpenaiChatSSE) => {
                 // convert SSE to response event
-                const responseEvent = createResponseEventFromOpenAIChatSSEAndCollectIt(data, responseCollector)
+                const responseEvent = createResponseEventFromOpenaiChatSSEAndCollectIt(data, responseCollector)
                 // call upstream progress function
                 streamProgressFunc(responseEvent)
             }
             // call OpenAI API (it waits until streaming is finished)
             await this.openaiChatClient.getCompletion(
-                allOpenAIChatMessages,
+                allOpenaiChatMessages,
                 request.internOptions,
-                streamOpenAIProgressFunc,
+                streamOpenaiProgressFunc,
                 (request.internOptions?.abortController) || new AbortController(),
             )
     
@@ -118,7 +88,7 @@ export class OpenAIChatService implements api.AIsService {
             const outputsTokens = this.countOutputsTokens(resultOutputs)
             resultUsage = {
                 engine: this.getEngine(responseCollector.lastObservedEngineId),
-                totalTokens: inputsTokens + outputsTokens,
+                //totalTokens: inputsTokens + outputsTokens,
                 totalMilliseconds: responseCollector.getMillisSinceStart(),
             }
             resultInternResponse = responseCollector.getResponseFinalInternResponse()
@@ -128,8 +98,8 @@ export class OpenAIChatService implements api.AIsService {
             //
 
             // call OpenAI API and wait for the response
-            const response0: OpenAIChatResponse | undefined = await this.openaiChatClient.getCompletion(
-                allOpenAIChatMessages,
+            const response0: OpenaiChatResponse | undefined = await this.openaiChatClient.getCompletion(
+                allOpenaiChatMessages,
                 request.internOptions,
                 undefined,
                 (request.internOptions?.abortController) || new AbortController(),
@@ -138,16 +108,16 @@ export class OpenAIChatService implements api.AIsService {
                 console.debug(JSON.stringify(response0))
             }
             if (!response0) {
-                throw new Error('No result from OpenAI')
+                throw new Error('No result from OpenAI API')
             }
-            const response: OpenAIChatResponse = response0
+            const response: OpenaiChatResponse = response0
             const r = response as any
 
             // summarize the synchronous result result, incl. usage
-            resultOutputs = openAIChatReponse2Outputs(response)
+            resultOutputs = openaiChatReponse2Outputs(response)
             resultUsage = {
                 engine: this.getEngine(r?.model),
-                totalTokens: r?.usage?.total_tokens,
+                //totalTokens: r?.usage?.total_tokens,
                 totalMilliseconds: responseCollector.getMillisSinceStart(),
             }
             resultInternResponse = r
@@ -178,7 +148,7 @@ export class OpenAIChatService implements api.AIsService {
     // helpers for token counting
     //
 
-    private tiktokenEncoding = tiktoken.encoding_for_model(CHATGPT_MODEL)
+    private tiktokenEncoding = tiktoken.encoding_for_model(DEFAULT_CHATGPT_MODEL)
     private countTextTokens(text: string): number {
         const tokens = this.tiktokenEncoding.encode(text)
         return tokens.length
@@ -211,8 +181,8 @@ export class OpenAIChatService implements api.AIsService {
     }
 }
 
-function createResponseEventFromOpenAIChatSSEAndCollectIt(
-    data: OpenAIChatSSE, responseCollector: utils.ResponseCollector
+function createResponseEventFromOpenaiChatSSEAndCollectIt(
+    data: OpenaiChatSSE, responseCollector: utils.ResponseCollector
 ) {
     const d = data as any
     const outputs: api.Output[] = []
@@ -254,7 +224,7 @@ function createResponseEventFromOpenAIChatSSEAndCollectIt(
     return responseEvent
 }
 
-function openAIChatReponse2Outputs(data: OpenAIChatResponse): api.Output[] {
+function openaiChatReponse2Outputs(data: OpenaiChatResponse): api.Output[] {
     const d = data as any
     const outputs: api.Output[] = []
 
@@ -283,47 +253,47 @@ function openAIChatReponse2Outputs(data: OpenAIChatResponse): api.Output[] {
 // internal OpenAI specific stuff
 //
 
-interface OpenAIChatMessage {
+interface OpenaiChatMessage {
     // Attention: Additional properties are not allowed ('XXX' was unexpected) by OpenAI API
     // Therefore, we cannot just use type InputText
     role: 'system' | 'assistant' | 'user'
     content: string
 }
 
-function inputText2OpenAIChatMessage(input: api.InputText): OpenAIChatMessage {
-    const message: OpenAIChatMessage = {
+function inputText2OpenaiChatMessage(input: api.InputText): OpenaiChatMessage {
+    const message: OpenaiChatMessage = {
         role: input.role,
         content: input.content,
     }
     return message
 }
-function outputText2OpenAIChatMessage(output: api.OutputText): OpenAIChatMessage {
-    const message: OpenAIChatMessage = {
+function outputText2OpenaiChatMessage(output: api.OutputText): OpenaiChatMessage {
+    const message: OpenaiChatMessage = {
         role: output.role,
         content: output.content,
     }
     return message
 }
-function inputTexts2OpenAIChatMessages(input: api.InputText[]): OpenAIChatMessage[] {
-    const result = input.map(inputText2OpenAIChatMessage)
+function inputTexts2OpenaiChatMessages(input: api.InputText[]): OpenaiChatMessage[] {
+    const result = input.map(inputText2OpenaiChatMessage)
     return result
 }
-function messages2OpenAIChatMessages(messages: api.Message[]): OpenAIChatMessage[] {
-    const result: OpenAIChatMessage[] = []
+function messages2OpenaiChatMessages(messages: api.Message[]): OpenaiChatMessage[] {
+    const result: OpenaiChatMessage[] = []
     for (const message of messages) {
         if (message.input && message.input.text) {
-            result.push(inputText2OpenAIChatMessage(message.input.text))
+            result.push(inputText2OpenaiChatMessage(message.input.text))
         } else if (message.output && message.output.text) {
-            result.push(outputText2OpenAIChatMessage(message.output.text))
+            result.push(outputText2OpenaiChatMessage(message.output.text))
         }
     }
     return result
 }
 
 
-type OpenAIChatSSEFunc = (data: OpenAIChatSSE) => void
+type OpenaiChatSSEFunc = (data: OpenaiChatSSE) => void
 
-/* example OpenAIChatSSE object:
+/* example OpenaiChatSSE object:
     {
        "id":"chatcmpl-7GYzfZcZw0z8J6V4T9YhCJmcoKxYo",
        "object":"chat.completion.chunk",
@@ -340,9 +310,9 @@ type OpenAIChatSSEFunc = (data: OpenAIChatSSE) => void
        ]
     }
 */
-type OpenAIChatSSE = object
+type OpenaiChatSSE = object
 
-/* example OpenAIChatRespponse:
+/* example OpenaiChatRespponse:
      {
        "id":"chatcmpl-7GZaUtI4o3LTw3UrAtKlJUWbLaPa5",
        "object":"chat.completion",
@@ -365,14 +335,11 @@ type OpenAIChatSSE = object
        ]
     }
 */
-type OpenAIChatResponse = object
+type OpenaiChatResponse = object
 
-export default class OpenAIChatClient {
+export default class OpenaiChatClient {
     apiKey: string
     options: any
-    modelOptions: any
-    isChatGptModel = true // this.modelOptions.model.startsWith('gpt-');
-    isUnofficialChatGptModel = false // this.modelOptions.model.startsWith('text-chat') || this.modelOptions.model.startsWith('text-davinci-002-render');
     completionsUrl: string|undefined
 
     constructor(
@@ -388,38 +355,24 @@ export default class OpenAIChatClient {
     }
 
     setOptions(options: any) {
-        if (this.options && !this.options.replaceOptions) {
-            // nested options aren't spread properly, so we need to do this manually
-            this.options.modelOptions = {
-                ...this.options.modelOptions,
-                ...options.modelOptions,
-            };
-            delete options.modelOptions;
-            // now we can merge options
-            this.options = {
-                ...this.options,
-                ...options,
-            };
-        } else {
-            this.options = options;
+        //console.log('setOptions', options)
+
+        if (options.openaiApiKey) {
+            this.apiKey = options.openaiApiKey;
         }
 
-        if (this.options.openaiApiKey) {
-            this.apiKey = this.options.openaiApiKey;
-        }
-
-        const modelOptions = this.options.modelOptions || {};
-        this.modelOptions = {
-            ...modelOptions,
+        this.options = {
+            ...options,
             // set some good defaults (check for undefined in some cases because they may be 0)
-            model: modelOptions.model || CHATGPT_MODEL,
-            temperature: typeof modelOptions.temperature === 'undefined' ? 0.8 : modelOptions.temperature,
-            top_p: typeof modelOptions.top_p === 'undefined' ? 1 : modelOptions.top_p,
-            presence_penalty: typeof modelOptions.presence_penalty === 'undefined' ? 1 : modelOptions.presence_penalty,
-            stop: modelOptions.stop,
+            //model: modelOptions.model,
+            temperature: typeof options.temperature === 'undefined' ? 0.8 : options.temperature,
+            top_p: typeof options.top_p === 'undefined' ? 1 : options.top_p,
+            presence_penalty: typeof options.presence_penalty === 'undefined' ? 1 : options.presence_penalty,
+            stop: options.stop,
         };
+        //console.log('options', this.options)
 
-        this.completionsUrl = 'https://api.openai.com/v1/chat/completions'
+        this.completionsUrl = this.options.completionsUrl
 
         return this;
     }
@@ -464,98 +417,81 @@ ${botMessage.message}
      * @returns the OpenAI reponse object for non-streaming; undefined for streaming
      */
     async getCompletion(
-      messages: OpenAIChatMessage[],
+      messages: OpenaiChatMessage[],
       internOptions: any = {},
-      streamProgressFunc: OpenAIChatSSEFunc | undefined,
-      abortController: AbortController = new AbortController()): Promise<OpenAIChatResponse|undefined> {
-  
-        let modelOptions = { ...this.modelOptions }
+      streamProgressFunc: OpenaiChatSSEFunc | undefined,
+      abortController: AbortController = new AbortController()): Promise<OpenaiChatResponse|undefined> {
+        let options = this.options
+
         if (streamProgressFunc && typeof streamProgressFunc === 'function') {
-            modelOptions.stream = true
-        }
-        if (internOptions && typeof internOptions === 'object') {
-            modelOptions = { ...modelOptions, ...internOptions }
+            options.stream = true
         }
 
-        const { debug } = this.options;
+        const { debug } = options;
+        const modelOptions = {
+            messages: messages,
+            model: options.model,
+            stream: options.stream,
+            temperature: options.temperature,
+            top_p: options.top_p,
+            presence_penalty: options.presence_penalty,
+            stop: options.stop,
+        }
+
         const url = this.completionsUrl as string
-        modelOptions.messages = messages
         if (debug) {
             console.debug();
             console.debug(url);
             console.debug(modelOptions);
             console.debug();
         }
-        const opts = {
-            /* TODO: DELETE/REPLACE:
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.apiKey}`,
-            },
-            body: JSON.stringify(modelOptions),
-            dispatcher: new Agent({
-                bodyTimeout: 0,
-                headersTimeout: 0,
-            }),
-            */
-        };
-        if (debug) {
-            console.debug(opts)
-        } 
 
-        if (streamProgressFunc && modelOptions.stream) {
+        if (streamProgressFunc && options.stream) {
             // stream:
 
             // eslint-disable-next-line no-async-promise-executor
             return new Promise(async (resolve, reject) => {
-                try {
-                    let done = false
-                    const finalReponseJson = await ky.post(
-                        url,
-                        {
-                            headers: {
-                                'Content-Type': 'application/json', // optional because set automatically
-                                'Authorization': `Bearer ${this.apiKey}`,
-                            },
-                            json: modelOptions,
-                            onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
-                                //console.log('onMessage() called', message)
-                                if (debug) {
-                                    console.debug(message);
-                                }
-                                if (!message.data || message.event === 'ping') {
-                                    return;
-                                }
-                                if (message.data === '[DONE]') {
-                                    // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                                    abortController.abort();
-                                    resolve(undefined)
-                                    done = true;
-                                    return;
-                                }
-                                const dataObj = JSON.parse(message.data)
-                                streamProgressFunc(dataObj) // TODO: as OpenAIChatSSE
-                               
-                            }),
-                        }
-                    ).json()
-            
-
-                } catch (err) {
-                    reject(err);
-                }
+                let done = false
+                const finalKyReponse = await ky.post(
+                    url,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json', // optional because set automatically
+                            'Authorization': `Bearer ${this.apiKey}`,
+                        },
+                        json: modelOptions,
+                        timeout: TIMEOUT_MILLIS,
+                        hooks: utils.kyHooks(debug),
+                        onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
+                            if (debug) {
+                                console.log('onMessage() called', message)
+                            }
+                            if (!message.data || message.event === 'ping') {
+                                return;
+                            }
+                            if (message.data === '[DONE]') {
+                                // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
+                                abortController.abort();
+                                resolve(undefined)
+                                done = true;
+                                return;
+                            }
+                            const dataObj = JSON.parse(message.data)
+                            streamProgressFunc(dataObj) // TODO: as OpenaiChatSSE
+                        }),
+                    }
+                )
                 // done
 
                 // avoids some rendering issues when using the CLI app
-                if (this.options.debug) {
+                if (debug) {
                     console.debug();
                 }
             }); // return
         }
         // no stream:
-
-        const responseJson = await ky.post(
+        let responseJson
+        responseJson = await ky.post(
             url,
             {
                 headers: {
@@ -563,14 +499,24 @@ ${botMessage.message}
                     'Authorization': `Bearer ${this.apiKey}`,
                 },
                 json: modelOptions,
+                timeout: TIMEOUT_MILLIS,
+                hooks: utils.kyHooks(debug),
             }
         ).json()
 
-        return responseJson as OpenAIChatResponse
+        return responseJson as OpenaiChatResponse
     }
 }
 
+export class OpenaiChatFactory implements api.AIsAPIFactory<api.AIsServiceProps, OpenaiChatService> {
+    createAIsService(props: api.AIsServiceProps, auth?: api.Auth): OpenaiChatService {
+        return new OpenaiChatService(props, auth)
+    }
+}
+
+
 //
-// register this service/adapter
+// register this service/connector
 //
-api.AIsBreaker.getInstance().registerFactory(new OpenAIChatFactroy())
+api.AIsBreaker.getInstance().registerFactory({serviceId: chatBaseServiceId, factory: new OpenaiChatFactory()})
+api.AIsBreaker.getInstance().registerFactory({serviceId: chatBaseServiceId+'/gpt-4', factory: new OpenaiChatFactory()})

@@ -1,4 +1,4 @@
-import { ResponseEvent, Output, Request, OutputText, OutputImage } from '../api'
+import { ResponseEvent, Output, Request, OutputText, OutputImage } from '../api/models/index.js'
 
 /**
  * Collect all streamed ReponseEvents to create a FinalResponse at the end

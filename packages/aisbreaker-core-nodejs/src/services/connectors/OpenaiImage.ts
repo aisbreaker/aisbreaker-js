@@ -1,57 +1,43 @@
-import { api, utils } from 'aisbreaker-api-js'
+import { api, base, utils } from 'aisbreaker-api-js'
 import ky from 'ky-universal'
 
-const engine: api.Engine = {
-    serviceId: 'OpenAIImage',
-    engineId: 'unknown',
-}
 
 //
-// general API implementation for OpenAI / ChatGPT API
+// general API implementation for OpenAI API
 //
 // API docs: https://platform.openai.com/docs/api-reference/images/create
+// API url:  https://api.openai.com/v1/images/generations
 //
 
-export interface OpenAIImageParams {
-    apiKey?: string
-    apiKeyId?: string
-    debug?: boolean
-}
-export interface OpenAIImageProps extends OpenAIImageParams, api.AIsProps {
-}
-export class OpenAIImage implements OpenAIImageProps {
-    serviceId: string = 'OpenAIImage'
-    apiKeyId: string = 'OpenAI'
-    apiKey?: string
+const textToImageBaseServiceId = 'text-to-image:openai.com'
 
-    constructor(props: OpenAIImageParams) {
-        this.apiKey = props.apiKey
-    }
-}
+const DEFAULT_URL = 'https://api.openai.com/v1/images/generations'
+const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
-export class OpenAIImageFactroy implements api.AIsAPIFactory<OpenAIImageProps,OpenAIImageService> {
-    serviceId: string = 'OpenAIImage'
 
-    constructor() {
-    }
-
-    createAIsAPI(props: OpenAIImageProps): OpenAIImageService {
-        return new OpenAIImageService(props)
-    }
-}
-
-export class OpenAIImageService implements api.AIsService {
-    serviceId: string = 'OpenAIImage'
-
+export class OpenaiImageService extends base.BaseAIsService {
     openaiApiKey: string
-    props: OpenAIImageProps
 
-    constructor(props: OpenAIImageProps) {
-        this.props = props
-        this.openaiApiKey = props?.apiKey || process.env.OPENAI_API_KEY || ""
+    constructor(props: api.AIsServiceProps, auth?: api.Auth) {
+        super(props, auth)
+
+        // check props
+        if (!auth?.secret) {
+            throw new Error(`OpenaiImageService: missing auth.secret`)
+        }
+
+        // backend
+        this.openaiApiKey = auth.secret
     }
 
-    async sendMessage(request: api.Request): Promise<api.ResponseFinal> {
+    getEngine(): api.Engine {
+        const engine: api.Engine = {
+            serviceId: `${textToImageBaseServiceId}`
+        }
+        return engine
+    }
+
+    async process(request: api.Request): Promise<api.ResponseFinal> {
         // prepare collection/aggregation of partial responses
         const responseCollector = new utils.ResponseCollector(request)
 
@@ -65,9 +51,9 @@ export class OpenAIImageService implements api.AIsService {
 
         // requested image details
         let size = '256x256'
-        if (request.requestMedia?.image?.width && request.requestMedia?.image?.height) {
-            const rw = request.requestMedia.image.width
-            const rh = request.requestMedia.image.height
+        if (request.requested?.image?.width && request.requested?.image?.height) {
+            const rw = request.requested.image.width
+            const rh = request.requested.image.height
             if (rw > 256 || rh > 256) {
                 if (rw > 512 || rh > 512) {
                     size = '1024x1024'
@@ -77,20 +63,20 @@ export class OpenAIImageService implements api.AIsService {
             }
         }
         let responseFormat = 'url'
-        if (request.requestMedia?.image?.delivery === 'base64') {
+        if (request.requested?.image?.delivery === 'base64') {
             responseFormat = 'b64_json'
         }
 
         // call OpenAI API and wait for the response
-        const url = 'https://api.openai.com/v1/images/generations'
+        const url = this.serviceProps.url || DEFAULT_URL
         const body = {
             prompt: prompt,
-            n: request.requestOptions?.numberOfAlternativeResponses || 1,
+            n: request.requested?.samples || 1,
             size: size,
             response_format: responseFormat,
             user: request.clientUser,
         }
-        console.log("OpenAIImageAPI.sendMessage() body: " + JSON.stringify(body))
+        console.log("OpenaiImageService.process() body: " + JSON.stringify(body))
         const responseJson = await ky.post(
             url,
             {
@@ -99,16 +85,18 @@ export class OpenAIImageService implements api.AIsService {
                     'Authorization': `Bearer ${this.openaiApiKey}`,
                 },
                 json: body,
-            }
+                timeout: TIMEOUT_MILLIS,
+                hooks: utils.kyHooks(false),
+    }
         ).json()
-        if (this.props?.debug) {
+        if ((this as any).props?.debug) {
             console.debug(JSON.stringify(responseJson))
         }
 
         // convert the result
-        let resultOutputs = openAIImageResponse2Outputs(responseJson as OpenAIImageResponse)
+        let resultOutputs = openaiImageResponse2Outputs(responseJson as OpenaiImageResponse)
         let resultUsage: api.Usage = {
-            engine: engine,
+            engine: this.getEngine(),
             totalMilliseconds: responseCollector.getMillisSinceStart(),
         }
         let resultInternResponse: any = responseJson
@@ -127,7 +115,7 @@ export class OpenAIImageService implements api.AIsService {
     }
 }
 
-function openAIImageResponse2Outputs(res: OpenAIImageResponse): api.Output[] {
+function openaiImageResponse2Outputs(res: OpenaiImageResponse): api.Output[] {
     const outputs: api.Output[] = []
 
     if (res.data) {
@@ -157,13 +145,6 @@ function openAIImageResponse2Outputs(res: OpenAIImageResponse): api.Output[] {
 // internal OpenAI specific stuff
 //
 
-interface OpenAIChatMessage {
-    // Attention: Additional properties are not allowed ('XXX' was unexpected) by OpenAI API
-    // Therefore, we cannot just use type InputText
-    role: 'system' | 'assistant' | 'user'
-    content: string
-}
-
 function inputMessages2SinglePrompt(messages: api.Message[]): string {
     let result: string = ''
     for (const message of messages) {
@@ -176,7 +157,7 @@ function inputMessages2SinglePrompt(messages: api.Message[]): string {
     return result.trim()
 }
 
-/* example OpenAIImageResponse:
+/* example OpenaiImageResponse:
     {
     "created": 1589478378,
     "data": [
@@ -189,7 +170,7 @@ function inputMessages2SinglePrompt(messages: api.Message[]): string {
     ]
     }
 */
-type OpenAIImageResponse = {
+type OpenaiImageResponse = {
     created?: number
     data?: {
         url?: string
@@ -198,7 +179,14 @@ type OpenAIImageResponse = {
 }
 
 
+export class OpenaiImageFactory implements api.AIsAPIFactory<api.AIsServiceProps, OpenaiImageService> {
+    createAIsService(props: api.AIsServiceProps, auth?: api.Auth): OpenaiImageService {
+        return new OpenaiImageService(props, auth)
+    }
+}
+
+
 //
-// register this service/adapter
+// register this service/connector
 //
-api.AIsBreaker.getInstance().registerFactory(new OpenAIImageFactroy())
+api.AIsBreaker.getInstance().registerFactory({serviceId: textToImageBaseServiceId, factory: new OpenaiImageFactory()})

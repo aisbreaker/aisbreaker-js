@@ -1,4 +1,17 @@
 #!/usr/bin/env node
+
+//
+// interactive chat CLI for OpenAI/GPT.
+//
+// Run it with (alternative examples):
+//   ./chat-cli.js
+//   ./chat-cli.js --service=chat:openai.com
+//   ./chat-cli.js --service=chat:dummy
+//
+
+const DEBUG = false;
+const DEFAULT_SERVICEID = 'chat:openai.com';
+
 import fs from 'fs';
 import { pathToFileURL } from 'url';
 import { KeyvFile } from 'keyv-file';
@@ -7,11 +20,14 @@ import ora from 'ora';
 import clipboard from 'clipboardy';
 import inquirer from 'inquirer';
 import inquirerAutocompletePrompt from 'inquirer-autocomplete-prompt';
-import { AIsBreaker, OpenAIChat } from 'aisbreaker-api';
 import Keyv from 'keyv';
+import { api } from 'aisbreaker-core-nodejs';
 
 const arg = process.argv.find(_arg => _arg.startsWith('--settings'));
 const path = arg?.split('=')[1] ?? './settings.js';
+
+const arg2 = process.argv.find(_arg => _arg.startsWith('--service'));
+const serviceId = arg2?.split('=')[1] ?? DEFAULT_SERVICEID;
 
 let settings = {};
 if (fs.existsSync(path)) {
@@ -73,12 +89,17 @@ const availableCommands = [
 
 inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
 
-let client = AIsBreaker.getInstance().createAIsAPI(
-    new OpenAIChat({
-        //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-        ...settings,
-    })
-);
+// service initialization
+const servicePros = {
+    serviceId: serviceId,
+    debug: DEBUG,
+    ...settings,
+}
+const auth = {
+    secret: process.env.OPENAI_API_KEY || "",
+}
+const aisService = api.AIsBreaker.getInstance().getAIsService(servicePros, auth);
+
 
 console.log(tryBoxen('Chat CLI', {
     padding: 0.7, margin: 1, borderStyle: 'double', dimBorder: true,
@@ -145,16 +166,22 @@ async function onMessage(message) {
     spinner.prefixText = '\n   ';
     spinner.start();
     try {
-        const streamProgress/*: StreamProgressFunction*/ = (responseEvent/*: ResponseEvent*/) => {
-              //console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
-              const token = responseEvent?.outputs[0]?.text?.content || '';
-              reply += token;
-              const output = tryBoxen(`${reply.trim()}█`, {
-                  title: aiLabel, padding: 0.7, margin: 1, dimBorder: true,
-              });
-              spinner.text = `${spinnerPrefix}\n${output}`;
+        const streamProgressFunc/*: StreamProgressFunction*/ = (responseEvent/*: ResponseEvent*/) => {
+            if (DEBUG) {
+                console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
+            }
+            const token = responseEvent?.outputs[0]?.text?.content || '';    
+            if (DEBUG) {
+                console.log("token: ", token);
+                console.log("\n\n\n\n\n");
+            }
+            reply += token;
+            const output = tryBoxen(`${reply.trim()}█`, {
+                title: aiLabel, padding: 0.7, margin: 1, dimBorder: true,
+            });
+            spinner.text = `${spinnerPrefix}\n${output}`;
         };
-        const responseFinal = await client.sendMessage({
+        const responseFinal = await aisService.process({
             inputs: [ {
                 text: {
                     role: 'user',
@@ -162,9 +189,12 @@ async function onMessage(message) {
                 },
             } ],
             conversationState: currentConversationData.conversationState,
-            streamProgressFunction: streamProgress,
+            streamProgressFunction: streamProgressFunc,
         });
         let responseText = responseFinal?.outputs[0]?.text?.content;
+        if (DEBUG) {
+            console.log("responseText: ", responseText, "\n\n\n\n\n")
+        }
         currentConversationData.conversationState = responseFinal?.conversationState;
 
         clipboard.write(responseText).then(() => {}).catch(() => {});
@@ -219,7 +249,6 @@ async function newConversation() {
 
 async function deleteAllConversations() {
     await chatCliCache.clear();
-    await client.clearAllConversations();
     logSuccess('Deleted all conversations.');
     return conversation();
 }
@@ -232,7 +261,7 @@ async function copyConversation() {
     const messages = getMessagesOfConversation(currentConversationData.conversationState);
     const conversationString = messages.map(message => `#### ${message.role}:\n${message.message}`).join('\n\n');
     try {
-        await clipboard.write(`${conversationString}\n\n----\nMade with Chat CLI: <https://github.com/XXX>`);
+        await clipboard.write(`${conversationString}\n\n----\nMade with Chat CLI: <https://github.com/aisbreaker/aisbreaker-js/tree/main/packages/aisbreaker-chat-cli/>`);
         logSuccess('Copied conversation to clipboard.');
     } catch (error) {
         logError(error?.message || error);

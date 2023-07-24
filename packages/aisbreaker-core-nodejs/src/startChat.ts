@@ -2,34 +2,65 @@
 
 import { api, services } from 'aisbreaker-api-js'
 
-import { services as coreServices } from './index.js' /* 'aisbreaker-core-nodejs' */
+// import without 'from' for side-effect/to register the contained services:
+import './index.js' /* 'aisbreaker-core-nodejs' */
+
 
 //
 // simple test to see if the API is working:  text chat
 //
 
-console.log("================================= startChat started");
+const tool = "startChat"
+console.log(`================================= ${tool} started`)
 
 // define prompts
 const prompt1 = "Give me a sentence with any animal in it."
 const prompt2 = "And now in German."
 
-// select and initialize API
-const serviceId: 'TrivialAssistant' | 'OpenAIChat' | string = 'OpenAIChat'
-let apiProps: api.AIsProps
+// select API
+const serviceId: 'chat:dummy' | 'chat:openai.com' | 'chat:openai.com/gpt-4' | 'chat:openai.com-mirror'
+    | string = 'chat:openai.com'
+
+
+// initialize API
+let serviceProps: api.AIsServiceProps
+let auth: api.Auth | undefined = undefined
 switch (serviceId) {
-    case 'TrivialAssistant':
-        apiProps = new services.TrivialAssistant({extraMsg: 'start-chat-trivial'})
+    case 'chat:dummy':
+        serviceProps = {
+            serviceId: 'chat:dummy',
+            greeting: 'Hi Dude',
+        } as api.AIsServiceProps
         break
-    case 'OpenAIChat':
-        apiProps = new coreServices.OpenAIChat({
-            //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        })
+
+    case 'chat:openai.com':
+    case 'chat:openai.com/gpt-4':
+        serviceProps = {
+            serviceId: serviceId,
+            //debug: true,
+        } as api.AIsServiceProps
+        auth = {
+            secret: process.env.OPENAI_API_KEY || "",
+        }
         break
+
+    case 'chat:openai.com-mirror':
+        serviceProps = {
+            serviceId: 'aisbreaker:mirror',
+            forward2ServiceProps: {
+                serviceId: 'chat:openai.com',
+            },
+        } as api.AIsServiceProps
+        auth = {
+            secret: process.env.OPENAI_API_KEY || "",
+        }
+        break
+
     default:
-        throw new Error(`Unknown serviceId: ${serviceId}`)
+        throw new Error(`${tool}: Unknown serviceId: ${serviceId}`)
 }
-const aiService: api.AIsService = api.AIsBreaker.getInstance().createAIsService(apiProps)
+const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+
 
 // use the function with "async/await"
 async function actionWithAsync() {
@@ -37,7 +68,7 @@ async function actionWithAsync() {
     console.log("================================= actionWithAsync() started")
 
     console.log("----- Request - without streaming")
-    const response1 = await aiService.sendMessage({
+    const response1 = await aisService.process({
         inputs: [ {
             text: {
                 role: 'user',
@@ -49,8 +80,11 @@ async function actionWithAsync() {
     console.log(JSON.stringify(response1, undefined, 2))
 
     console.log("----- Request 2 - with streaming")
-    const streamProgress: api.StreamProgressFunction = (responseEvent: api.ResponseEvent) => {  console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) }
-    const response2 = await aiService.sendMessage({
+    const streamProgress: api.StreamProgressFunction =
+        (responseEvent: api.ResponseEvent) => {
+            console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
+        }
+    const response2 = await aisService.process({
         inputs: [ {
             text: {
                 role: 'user',

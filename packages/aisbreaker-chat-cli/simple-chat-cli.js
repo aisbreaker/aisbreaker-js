@@ -1,19 +1,29 @@
 #!/usr/bin/env node
 
-import { AIsBreaker, OpenAIChat } from 'aisbreaker-api';
+//
+// Simple chat CLI for OpenAI/GPT.
+//
+// Run it with:
+//   ./simple-chat-cli.js "What is the meaning of life?"
+//
+
+import { api } from 'aisbreaker-core-nodejs';
+
 
 async function action() {
     console.log("simple-chat-cli");
     console.log("---------------");
 
-    // initialization
-    const api = AIsBreaker.getInstance().createAIsAPI(
-        new OpenAIChat({
-            //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        })
-    );
+    // service initialization
+    const servicePros = {
+        serviceId: 'chat:openai.com',
+    }
+    const auth = {
+        secret: process.env.OPENAI_API_KEY || "",
+    }
+    const aisService = api.AIsBreaker.getInstance().getAIsService(servicePros, auth);
 
-    // 1 question
+    // 1st question
     const question1 = process.argv[2];
     console.log(`Question: ${question1}`);
     if (!question1) {
@@ -22,7 +32,7 @@ async function action() {
     }
 
     // 1st: answer
-    const response1 = await api.sendMessage({
+    const response1 = await aisService.process({
         inputs: [ {
             text: {
                 role: 'user',
@@ -30,15 +40,15 @@ async function action() {
             },
         } ],
     });
-    console.log(`(1) Answer: ${response1.outputs[0].text.content}`);
+    console.log(`(1) Answer:\n${response1.outputs[0].text.content}`);
 
     // 2nd: use a hard-coded prompt
     const prompt2 = `
-        If the previous message was in English, then please translate it to German.
-        Otherwise, please translate it to English.
+        If your previous answer in English, then translate your answser to German.
+        If your previous answer was not English, then translate your answser to English.
         Only provide the translated text.
         `;
-    const response2 = await api.sendMessage({
+    const response2 = await aisService.process({
         inputs: [ {
             text: {
                 role: 'system',
@@ -47,7 +57,7 @@ async function action() {
         } ],
         conversationState: response1.conversationState,
     })
-    console.log(`(2) Translated answer: ${response2.outputs[0].text.content}`);
+    console.log(`(2) Translated answer:\n${response2.outputs[0].text.content}`);
 }
 
 action();

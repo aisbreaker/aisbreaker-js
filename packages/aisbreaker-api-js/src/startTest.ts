@@ -1,96 +1,101 @@
+#!/usr/bin/node
+
 import { api, services } from './index.js' /* 'aisbreaker-api-js' */
 
 
 //
-// simple test to see if the API is working
-// and to test new features:  text chat with or without proxy
+// simple test to see if the API is working:  text chat
 //
-
-console.log("================================= startTest started");
+const tool = "startTest"
+console.log(`================================= ${tool} started`)
 
 // define prompts
-const prompt1 = "Hello, do you have a name?"
-const prompt2 = "How are you?"
+const prompt1 = "Give me a sentence with any animal in it."
+const prompt2 = "And now in German."
 
-// initialize API adapters of the proxy
-const remoteAIs = new api.AIsBreaker()
-remoteAIs.registerFactory(new services.TrivialAssistantFactory())
+// select API
+const serviceId: 'chat:dummy' | 'chat:echo' | 'chat:echo-mirror' | 'chat:proxy-openai.com/gpt'
+    | string = 'chat:proxy-openai.com/gpt'
 
-// select and initialize API
-const enableLoggingfilter: boolean = true
-const serviceId: 'TrivialAssistant' | 'TrivialProxy' | 'AisProxy2OpenAIChat' | string = 'AisProxy2OpenAIChat'
-let apiProps: api.AIsProps
+// initialize API
+let serviceProps: api.AIsServiceProps
+let auth: api.Auth | undefined = undefined
 switch (serviceId) {
-    case 'TrivialAssistant':
-        apiProps = new services.TrivialAssistant({
-            extraMsg: 'local',
-        })
-        console.log("apiProps: ", JSON.stringify(apiProps, undefined, 2))
+    case 'chat:dummy':
+        serviceProps = {
+            serviceId: 'chat:dummy',
+            greeting: 'Hi Dude',
+        } as api.AIsServiceProps
         break
-    case 'TrivialProxy':
-        const apiProps0 = new services.TrivialProxy({
-            name: 'trivialProxyX',
-            remoteAIsBreaker: remoteAIs,
-            forward2RemoteService: new services.TrivialAssistant({
-                extraMsg: 'remote',
-            }),
-        });
-        apiProps = new services.TrivialProxy(apiProps0)
-        console.log("apiProps: ", JSON.stringify(apiProps, undefined, 2));
+
+    case 'chat:echo':
+        serviceProps = {
+            serviceId: 'chat:echo',
+        }
         break
-        /*
-    case 'AisProxy2OpenAIChat':
-        apiProps = new api.AIsProxy({
-            url: 'http://localhost:3000',
-            apiKey: process.env.AISPROXY_API_KEY || "",
-            remoteService: new services.OpenAIChat({
-            })
-        })
-        console.log("apiProps: ", JSON.stringify(apiProps, undefined, 2))
+
+    case 'chat:dummy-mirror':
+        serviceProps = {
+            serviceId: 'aisbreaker:mirror',
+            forward2ServiceProps: {
+                serviceId: 'chat:dummy',
+            },
+        } as api.AIsServiceProps
         break
-        */
+
+    case 'chat:proxy-openai.com/gpt':
+        serviceProps = {
+            serviceId: 'aisbreaker:proxy',
+            //url: 'http://localhost:3000',
+            url: 'http://proxy.demo.aisbreaker.org/',
+            forward2ServiceProps: {
+                serviceId: 'chat:openai.com/gpt',
+            },
+        } as api.AIsServiceProps
+        auth = {
+            secret: process.env.OPENAI_API_KEY || process.env.AISPROXY_API_KEY || "",
+        }
+        break   
+
     default:
         throw new Error(`Unknown serviceId: ${serviceId}`)
 }
-let aiService: api.AIsService = api.AIsBreaker.getInstance().createAIsService(apiProps)
-if (enableLoggingfilter) {
-    aiService = new services.LoggingFilterStatelessAPI({
-        serviceId: 'LoggingFilter',
-        forward2Service: aiService,
-        logLevel: 'debug',
-    });
-}
+const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+
 
 // use the function with "async/await"
 async function actionWithAsync() {
-    console.log("");
-    console.log("================================= actionWithAsync() started");
+    console.log("")
+    console.log("================================= actionWithAsync() started")
 
-    console.log("----- Request 1 - without streaming");
-    const response1 = await aiService.sendMessage({
-        inputs: [{
+    console.log("----- Request - without streaming")
+    const response1 = await aisService.process({
+        inputs: [ {
             text: {
                 role: 'user',
                 content: prompt1,
             },
-        }],
-    });
-    console.log("-- Response 1:");
-    console.log(JSON.stringify(response1, undefined, 2));
+        } ],
+    })
+    console.log("-- Response 1:")
+    console.log(JSON.stringify(response1, undefined, 2))
 
-    console.log("----- Request 2 - with streaming");
-    //const streamProgress: StreamProgressFunction = (responseEvent: ResponseEvent) => {  console.log("streamProgress: ", JSON.stringify(responseEvent, undefined, 2)) }
-    const response2 = await aiService.sendMessage({
-        inputs: [{
+    console.log("----- Request 2 - with streaming")
+    const streamProgress: api.StreamProgressFunction =
+        (responseEvent: api.ResponseEvent) => {
+            console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
+        }
+    const response2 = await aisService.process({
+        inputs: [ {
             text: {
                 role: 'user',
                 content: prompt2,
             },
-        }],
+        } ],
         conversationState: response1.conversationState,
-        //streamProgressFunction: streamProgress,
-    });
-    console.log("-- Response 2:");
-    console.log(JSON.stringify(response2, undefined, 2));
+        streamProgressFunction: streamProgress,
+    })
+    console.log("-- Response 2:")
+    console.log(JSON.stringify(response2, undefined, 2))
 }
-actionWithAsync();
+actionWithAsync()

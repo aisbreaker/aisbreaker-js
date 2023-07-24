@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-js",
-  "version": "0.0.35",
+  "version": "0.0.40",
   "description": "This is the git monorepo for all AIsBreaker core packages/modules. It's only to combine all npm packages/modules, it's not published as separate npm package/module",
   "type": "module",
   "author": "aisbreaker",
@@ -10,7 +10,9 @@
     "packages/aisbreaker-api-js",
     "packages/aisbreaker-core-nodejs",
     "packages/aisbreaker-chat-cli",
-    "packages/aisbreaker-core-browserjs",
+    "packages/aisbreaker-core-browserjs"
+  ],
+  "//ignoredWorkspaces": [
     "packages/aisbreaker-chat-webapp"
   ],
   "devDependencies": {},

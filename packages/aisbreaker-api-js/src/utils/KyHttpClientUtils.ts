@@ -19,7 +19,7 @@ export * as ky from 'ky-universal'
 //
 
 import { EventSourceMessage, getLines, getMessages } from '@waylaidwanderer/fetch-event-source/parse'
-import { DownloadProgress } from 'ky'
+import { DownloadProgress, HTTPError } from 'ky'
 
 /** Mapping onMessage() event handler to onChunk() */
 function onChunk4onMessage(onMessage: (message: EventSourceMessage) => void):
@@ -46,6 +46,18 @@ function onChunk4onMessage(onMessage: (message: EventSourceMessage) => void):
     return onChunk
 }
 
+/*
+function getLinesDebug(onLine: (line: Uint8Array, fieldLength: number) => void): (arr: Uint8Array) => void {
+    
+    const funcDebug = function (arr: Uint8Array): void {
+        console.log("\nfuncDebug START\n\n\n\n*********funcDebug START: arr=", arr)
+        getLines(onLine)(arr)
+        console.log("\nfuncDebug END\n\n\n\n*********funcDebug END: arr=", arr)
+    }
+    return funcDebug
+}
+*/
+
 /**
  * Mapping onMessage() event handler to onDownloadProgress().
  * Useful for ky.post() / onDownloadProgress
@@ -58,4 +70,39 @@ export function kyOnDownloadProgress4onMessage(onMessage: (message: EventSourceM
         onChunk(chunk)
     }
     return onDownloadProgress
+}
+
+
+/**
+ * Default hook for ky.*()
+ * 
+ * Reduce logging spam by deleting some ky error details in the case of an HTTPError
+ */
+export function kyHooks(debug?: boolean) { 
+    return {
+        beforeError: kyHooksBeforeError(debug),
+    }
+}
+
+export function kyHooksBeforeError(debug?: boolean) {
+    return [
+        async (error: HTTPError) => {
+            if (!debug) {
+                console.log("kyHooksBeforeError(): Delete some ky error details in HTTPError for less logging spam");
+                const originalResponse = error.response;
+                (error as any).request =  "Deleted in kyHooksBeforeError()";
+                (error as any).response = "Deleted in kyHooksBeforeError()";
+                (error as any).options =  "Deleted in kyHooksBeforeError()";
+                if (originalResponse.json) {
+                    try {
+                        error.response = await originalResponse.json();
+                        error.response.hint = "Details deleted in kyHooksBeforeError()"
+                    } catch (err) {
+                        error.response = err
+                    }
+                }
+            }
+            return error;
+        }
+    ]
 }

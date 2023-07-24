@@ -2,37 +2,71 @@
 
 import { api, services } from 'aisbreaker-api-js'
 
-import { services as coreServices } from './index.js' /* 'aisbreaker-core-nodejs' */
+// import without 'from' for side-effect/to register the contained services:
+import './index.js' /* 'aisbreaker-core-nodejs' */
+import { RequestedMediaImage } from 'aisbreaker-api-js/build/api/index.js'
 
 
 //
 // simple test to see if the API is working:  generate an image
 //
 
+const tool = "startImage"
+console.log(`================================= ${tool} started`)
+
 // define prompt(s)
 const prompt = "Give me a cute teddy bear sitting in the forest."
 
-// select and initialize API
-const serviceId: 'TrivialAssistant' | 'OpenAIImage' | 'StabilityAIText2Image' | string = 'TrivialAssistant'
-let apiProps: api.AIsProps
+// select API
+const serviceId: string = 'text-to-image:openai.com'
+
+// initialize API
+let serviceProps: api.AIsServiceProps
+let auth: api.Auth | undefined = undefined
 switch (serviceId) {
-    case 'TrivialAssistant':
-        apiProps = new services.TrivialAssistant({extraMsg: 'start-trivial'})
+    case 'text-to-image:dummy':
+        serviceProps = {
+            serviceId: 'chat:dummy',
+            greeting: 'Hi Dude',
+        } as api.AIsServiceProps
         break
-    case 'OpenAIImage':
-        apiProps = new coreServices.OpenAIImage({
-            //openaiApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        })
+
+    case 'text-to-image:openai.com':
+        serviceProps = {
+            serviceId: 'text-to-image:openai.com',
+            debug: true,
+        } as api.AIsServiceProps
+        auth = {
+            secret: process.env.OPENAI_API_KEY || "",
+        }
         break
-    case 'StabilityAIText2Image':
-        apiProps = new coreServices.StabilityAIText2Image({
-            //stabilityApiKey: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        })
+
+    case 'text-to-image:openai.com-mirror':
+        serviceProps = {
+            serviceId: 'aisbreaker:mirror',
+            forward2ServiceProps: {
+                serviceId: 'text-to-image:openai.com',
+            },
+        } as api.AIsServiceProps
+        auth = {
+            secret: process.env.OPENAI_API_KEY || "",
+        }
         break
+
+    case 'text-to-image:stability.ai':
+        serviceProps = {
+            serviceId: 'text-to-image:stability.ai',
+            debug: true,
+        } as api.AIsServiceProps
+        auth = {
+            secret: process.env.STABILITY_API_KEY || "",
+        }
+        break
+    
     default:
-        throw new Error(`Unknown serviceId: ${serviceId}`)
+        throw new Error(`${tool}: Unknown serviceId: ${serviceId}`)
 }
-const aiService: api.AIsService = api.AIsBreaker.getInstance().createAIsService(apiProps)
+const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
 
 // helper
 function veryLongStringReplacer(key: any, value: any) {
@@ -52,27 +86,25 @@ async function actionWithAsync() {
     console.log("")
     console.log("================================= started")
 
-    let requestMedia = {}
-    if (serviceId === 'StabilityAIText2Image') {
-        requestMedia = {
-            image: {
-                width: 512,
-                height: 512,
-            },
+    let requestedImage: RequestedMediaImage | undefined
+    if (serviceId.includes('stability.ai')) {
+        requestedImage = {
+            width: 512,
+            height: 512,
         }
     }
 
     console.log("----- Request")
-    const response1 = await aiService.sendMessage({
+    const response1 = await aisService.process({
         inputs: [ {
             text: {
                 role: 'user',
                 content: prompt,
             },
         } ],
-        requestMedia: requestMedia,
-        requestOptions: {
-            numberOfAlternativeResponses: 2,
+        requested: {
+            image: requestedImage,
+            samples: 2,
         }
     })
     console.log("-- Response:")

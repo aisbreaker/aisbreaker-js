@@ -1,14 +1,9 @@
-import { api, utils } from 'aisbreaker-api-js'
+import { api, base, utils } from 'aisbreaker-api-js'
 import ky from 'ky-universal'
 import crypto from 'crypto'
 import fs from 'fs'
 
 
-
-const engine: api.Engine = {
-    serviceId: 'StabilityAIText2Image',
-    engineId: 'stable-diffusion-v1-5',
-}
 
 //
 // general API implementation for stability.ai API
@@ -17,46 +12,40 @@ const engine: api.Engine = {
 // Authentication/getting STABILITY_API_KEY: https://platform.stability.ai/docs/getting-started/authentication
 //
 
-export interface StabilityAIText2ImageParams {
-    apiKey?: string
-    apiKeyId?: string
-    debug?: boolean
-}
-export interface StabilityAIText2ImageProps extends StabilityAIText2ImageParams, api.AIsProps {
-}
-export class StabilityAIText2Image implements StabilityAIText2ImageProps {
-    serviceId: string = 'StabilityAIText2Image'
-    apiKeyId: string = 'StabilityAI'
-    apiKey?: string
+const textToImageBaseServiceId = 'text-to-image:stability.ai'
 
-    constructor(props: StabilityAIText2ImageParams) {
-        this.apiKey = props.apiKey
-    }
-}
+const DEFAULT_IMAGE_MODEL = 'stable-diffusion-v1-5'
+const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
-export class StabilityAIText2ImageFactroy implements api.AIsAPIFactory<StabilityAIText2ImageProps,StabilityAIText2ImageService> {
-    serviceId: string = 'StabilityAIText2Image'
 
-    constructor() {
-    }
-
-    createAIsAPI(props: StabilityAIText2ImageProps): StabilityAIText2ImageService {
-        return new StabilityAIText2ImageService(props)
-    }
-}
-
-export class StabilityAIText2ImageService implements api.AIsService {
-    serviceId: string = 'StabilityAIText2Image'
-
+export class StabilityAiImageService extends base.BaseAIsService {
     stabilityApiKey: string
-    props: StabilityAIText2ImageProps
+    model: string
+    url: string
 
-    constructor(props: StabilityAIText2ImageProps) {
-        this.props = props
-        this.stabilityApiKey = props?.apiKey || process.env.STABILITY_API_KEY || ""
+    constructor(props: api.AIsServiceProps, auth?: api.Auth) {
+        super(props, auth)
+
+        // check props
+        if (!auth?.secret) {
+            throw new Error(`StabilityAiTextToImageService: missing auth.secret`)
+        }
+
+        // backend
+        this.stabilityApiKey = auth.secret
+        this.model = this.getModelFromServiceId(props.serviceId) || DEFAULT_IMAGE_MODEL
+        this.url = props.url || `https://api.stability.ai/v1/generation/${this.model}/text-to-image`
+
     }
 
-    async sendMessage(request: api.Request): Promise<api.ResponseFinal> {
+    getEngine(model: string): api.Engine {
+        const engine: api.Engine = {
+            serviceId: `${textToImageBaseServiceId}/${model}`,
+        }
+        return engine
+    }
+
+    async process(request: api.Request): Promise<api.ResponseFinal> {
         // prepare collection/aggregation of partial responses
         const responseCollector = new utils.ResponseCollector(request)
 
@@ -69,32 +58,33 @@ export class StabilityAIText2ImageService implements api.AIsService {
         const prompts = inputMessages2StabilityPrompts(allMessages)
 
         // call Stablility API and wait for the response
-        const url = `https://api.stability.ai/v1/generation/${engine.engineId}/text-to-image`
         const body = {
             text_prompts: prompts,
-            samples: request.requestOptions?.numberOfAlternativeResponses || 1,
-            width: imageDimension(request.requestMedia?.image?.width || 256),
-            height: imageDimension(request.requestMedia?.image?.height || 256),
+            samples: request.requested?.samples || 1,
+            width: imageDimension(request.requested?.image?.width || 256),
+            height: imageDimension(request.requested?.image?.height || 256),
         }
         console.log("Rest request body: " + JSON.stringify(body))
         const responseJson = await ky.post(
-            url,
+            this.url,
             {
                 headers: {
                     'Content-Type': 'application/json', // optional because set automatically
                     'Authorization': `Bearer ${this.stabilityApiKey}`,
                 },
                 json: body,
-            }
+                timeout: TIMEOUT_MILLIS,
+                hooks: utils.kyHooks(false),
+    }
         ).json()
-        if (this.props?.debug) {
+        if ((this as any).props?.debug) {
             console.debug(JSON.stringify(responseJson))
         }
 
         // convert the result
         let resultOutputs = StabilityAIText2ImageResponse2Outputs(responseJson as StabilityAIText2ImageResponse)
         let resultUsage: api.Usage = {
-            engine: engine,
+            engine: this.getEngine(this.model),
             totalMilliseconds: responseCollector.getMillisSinceStart(),
         }
         let resultInternResponse: any = responseJson
@@ -212,3 +202,15 @@ type StabilityAIText2ImageResponse = {
     }[]
 }
 
+
+export class StabilityAiImageFactory implements api.AIsAPIFactory<api.AIsServiceProps, StabilityAiImageService> {
+    createAIsService(props: api.AIsServiceProps, auth?: api.Auth): StabilityAiImageService {
+        return new StabilityAiImageService(props, auth)
+    }
+}
+
+
+//
+// register this service/connector
+//
+api.AIsBreaker.getInstance().registerFactory({serviceId: textToImageBaseServiceId, factory: new StabilityAiImageFactory()})

@@ -1,34 +1,51 @@
-import { Request, ResponseFinal } from "./models"
-
-
+import { Auth, Request, ResponseFinal } from "./models/index.js"
 
 
 /**
  * Every service API must implement this interface.
  */
 export interface AIsService { 
-    serviceId: string
+    /** set in constructor */
+    serviceProps: AIsServiceProps
+    /** only some services have `auth` and it's set in constructor *
+    auth?: Auth
+    */
 
-    sendMessage(request: Request): Promise<ResponseFinal>
+    /**
+     * Let the service do its work.
+     * 
+     * Alternative names: infer, derive, task, reply, respond, process, ...
+     */
+    process(request: Request): Promise<ResponseFinal>
 }
 
 /**
- * Every AIsService can be parameterized with a service-specific implementation of this props.
+ * Every AIsService can be parameterized with these 
+ * or (in very rare cases) with a service-specific extention of these properties.
  */
-export interface AIsProps {
+export interface AIsServiceProps {
+    /**
+     * Unique identified of the AIsBreaker service,
+     * see: https://aisbreaker.org/docs/serviceId
+     */
     serviceId: string
 
-    /** If the service needs an API key/access key than an apiKey and/or apiKeyId must be set */
-    apiKey?: string
-    apiKeyId?: string
+    /**
+     * URL of the AI service (optional).
+     */
+    url?: string
+
+    /**
+     * Service implementation specific opts.
+     * Try to avoid using them because they are NOT portable!!!
+     */
+    internServiceOptions?: any
 }
 
 /**
  * Factory for creating a service API.
  */
-export interface AIsAPIFactory<PROPS_T extends AIsProps, SERVICE_T extends AIsService> {
-    serviceId: string
-    createAIsAPI(props: PROPS_T): SERVICE_T
+/* maybe over engineered with PROPS_T: */
+export interface AIsAPIFactory<PROPS_T extends AIsServiceProps, SERVICE_T extends AIsService> {
+    createAIsService(props: PROPS_T, auth?: Auth): SERVICE_T
 }
-
-

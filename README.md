@@ -24,9 +24,9 @@ Steps:
     npm install
 
     # set environment: access key for OpenAI
-    export OPENAI_API_KEY="XYZ..."
+    export OPENAI_API_KEY="sk-..."
     # or from a script
-    . ../../setenv.sh
+    . ../setenv.sh
 
     # run the simple test chat
     ./start_chat.sh
@@ -46,9 +46,9 @@ Test the package installation (TODO: REVIEW AND ADAPT):
     cd tmp/
 
     # set environment: access key for OpenAI
-    export OPENAI_API_KEY="XYZ..."
+    export OPENAI_API_KEY="sk-..."
     # or from a script
-    . ../../setenv.sh
+    . ../setenv.sh
 
     # start from npm repo
     npx aisbreaker-core-nodejs

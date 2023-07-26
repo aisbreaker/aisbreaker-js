@@ -1,7 +1,7 @@
 import { AIsBreaker, Auth, Output, Request, ResponseEvent, ResponseFinal, StreamProgressFunction, Usage } from '../../api/index.js'
 import { AIsAPIFactory } from '../../api/AIsService.js'
 import { BaseAIsFilter, FilterProps } from '../../base/BaseAIsFilter.js'
-import assert from 'assert'
+import { assert } from '../../utils/index.js'
 
 
 //
@@ -63,7 +63,7 @@ export class MirrorFilter extends BaseAIsFilter<FilterProps> {
                 }
 
                 // add remaining properties
-                assert(mirroredOutput.text)
+                assert(mirroredOutput.text !== undefined)
                 if (text.isDelta) {
                     mirroredOutput.text.isDelta = text.isDelta
                 }

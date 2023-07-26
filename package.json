@@ -10,10 +10,10 @@
     "packages/aisbreaker-api-js",
     "packages/aisbreaker-core-nodejs",
     "packages/aisbreaker-chat-cli",
-    "packages/aisbreaker-core-browserjs"
+    "packages/aisbreaker-core-browserjs",
+    "packages/aisbreaker-chat-webapp"
   ],
   "//ignoredWorkspaces": [
-    "packages/aisbreaker-chat-webapp"
   ],
   "devDependencies": {},
   "dependencies": {}

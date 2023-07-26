@@ -15,9 +15,9 @@ export interface UserState {
 export function defaultSetting(): UserState {
   return {
     userInfo: {
-      avatar: 'https://raw.githubusercontent.com/aisbreaker/aisbreaker-js/main/packages/aisbreaker-chat-webapp/src/assets/logo.svg',
+      avatar: 'https://raw.githubusercontent.com/aisbreaker/aisbreaker-js/main/packages/aisbreaker-chat-webapp/src/assets/logo.png',
       name: 'AIsBreaker Chat',
-      description: 'WebApp code on <a href="https://github.com/aisbreaker/aisbreaker-js/packages/aisbreaker-chat-webapp/" class="text-blue-500" target="_blank">GitHub</a>',
+      description: 'WebApp code on <a href="hhttps://github.com/aisbreaker/aisbreaker-js/tree/main/packages/aisbreaker-chat-webapp/" class="text-blue-500" target="_blank">GitHub</a>',
     },
   }
 }

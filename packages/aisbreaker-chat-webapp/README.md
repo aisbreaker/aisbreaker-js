@@ -12,7 +12,7 @@ Based on these technologies
 - [aisbreaker-core-browserjs](https://aisbreaker.org): lib to connect to AIsBreaker services
 
 Inspired by
-- [Chanzhaoyu/chatgpt-web client code (version 2.11.0)](https://github.com/Chanzhaoyu/chatgpt-web/tree/b651ef83734d179518c70c71e6b8691fc2eb6a0d]
+- [Chanzhaoyu/chatgpt-web client code (version 2.11.0)](https://github.com/Chanzhaoyu/chatgpt-web/tree/b651ef83734d179518c70c71e6b8691fc2eb6a0d)
 
 
 TODOs

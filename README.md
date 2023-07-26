@@ -36,9 +36,14 @@ Steps:
 
 Steps:
 
-    # TODO
+    # publish all npms (example with version 0.0.1)
+    ./publish-all-packages.sh 0.0.1
 
-
+    # git add, commit and push updated package.json files
+    git add -A package*json packages/*/package.json
+    git commit -m "New version '0.0.1' of npm packages published"
+    git push
+    
 
 Test the package installation (TODO: REVIEW AND ADAPT):
     # new dir

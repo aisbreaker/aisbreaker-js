@@ -511,10 +511,10 @@ function handleStop() {
   }
 }
 
+// date formatting
 function dateToLocaleStringOriginal(date: Date) {
     return date.toLocaleString()
 }
-
 function dateToLocaleStringIso(date: Date) {
   var tzo = -date.getTimezoneOffset(),
       dif = tzo >= 0 ? '+' : '-',
@@ -533,7 +533,6 @@ function dateToLocaleStringIso(date: Date) {
       dif + pad(Math.floor(Math.abs(tzo) / 60)) +
       ':' + pad(Math.abs(tzo) % 60);
 }
-
 function dateToLocaleString(date: Date) {
     //return dateToLocaleStringOriginal(date)
     return dateToLocaleStringIso(date)

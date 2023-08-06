@@ -10,33 +10,32 @@ import {
     ResponseFinal,
     Auth,
 } from '../../api/index.js'
-import { AIsProxyNetworkRequest } from './AIsProxyNetworkRequest.js'
+import { AIsNetworkRequest } from './AIsNetworkRequest.js'
 
 
 //
-// AIsProxyClient: Service (client) to access a remote AIsBreaker (proxy) server.
+// AIsNetworkClient: Service (client) to access a remote AIsBreaker (proxy) server.
 //
 
-const proxyServiceId = 'aisbreaker:proxy'
+const networkServiceId = 'aisbreaker:network'
 
-const DEFAULT_AISPROXY_URL = 'http://localhost:3000' // https://aisproxy.demo.aisbreaker.org
-//const AISPROXY_API_PATH = '/api/v1alpha1/process'
-const AISPROXY_API_PATH = '/api/v1/task'
+const DEFAULT_AISSERVER_URL = 'http://localhost:3000' // https://aisproxy.demo.aisbreaker.org
+const AISSERVER_API_PATH = '/api/v1/process'
 
 
-export interface AIsProxyClientProps extends AIsServiceProps {
-    /** access this AIs proxy server */
+export interface AIsNetworkClientProps extends AIsServiceProps {
+    /** access this AIs server */
     url: string
 
     /** the actual service; this filter will forward to this service */
     forward2ServiceProps: AIsServiceProps
 }
 
-export class AIsProxyClientService implements AIsService {
-    serviceProps: AIsProxyClientProps
+export class AIsNetworkClientService implements AIsService {
+    serviceProps: AIsNetworkClientProps
     auth?: Auth
 
-    constructor(props: AIsProxyClientProps, auth?: Auth) {
+    constructor(props: AIsNetworkClientProps, auth?: Auth) {
         this.serviceProps = props
         this.auth = auth
     }
@@ -46,11 +45,11 @@ export class AIsProxyClientService implements AIsService {
         console.log(`AIsProxyClientService.process() forward to ${forward2ServiceProps.serviceId} START`)
         
         // remote access - no streaming of partial responses right now (TODO: implement streaming)
-        const aisProxyRequest: AIsProxyNetworkRequest = {
+        const aisNetworkRequest: AIsNetworkRequest = {
             service: forward2ServiceProps,
             request,
         }
-        const url = `${this.serviceProps.url || DEFAULT_AISPROXY_URL}${AISPROXY_API_PATH}`
+        const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
         const responseJson = await ky.post(
             url,
             {
@@ -58,7 +57,7 @@ export class AIsProxyClientService implements AIsService {
                     'Content-Type': 'application/json', // optional because set automatically
                     'Authorization': `Bearer ${this.auth || 'NoAuthProvided'}`,
                 },
-                json: aisProxyRequest,
+                json: aisNetworkRequest,
                 /*
                 dispatcher: new Agent({
                     bodyTimeout: 0,
@@ -75,9 +74,9 @@ export class AIsProxyClientService implements AIsService {
     }
 }
 
-export class AIsProxyClientFactory implements AIsAPIFactory<AIsProxyClientProps, AIsProxyClientService> {
-    createAIsService(props: AIsProxyClientProps): AIsProxyClientService {
-        return new AIsProxyClientService(props)
+export class AIsNetworkClientFactory implements AIsAPIFactory<AIsNetworkClientProps, AIsNetworkClientService> {
+    createAIsService(props: AIsNetworkClientProps): AIsNetworkClientService {
+        return new AIsNetworkClientService(props)
     }
 }
 
@@ -85,4 +84,4 @@ export class AIsProxyClientFactory implements AIsAPIFactory<AIsProxyClientProps,
 //
 // register this service/connector
 //
-AIsBreaker.getInstance().registerFactory({serviceId: proxyServiceId, factory: new AIsProxyClientFactory()})
+AIsBreaker.getInstance().registerFactory({serviceId: networkServiceId, factory: new AIsNetworkClientFactory()})

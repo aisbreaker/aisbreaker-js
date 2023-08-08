@@ -2,6 +2,8 @@
 import { Quotas } from '../rest-api/index.js'
 import { RatesLimiter } from './RatesLimiter.js'
 
+const DEBUG = false
+
 /**
  * Implementation of rate limiters for Quotas.
  * 
@@ -24,13 +26,14 @@ export class QuotasLimiter {
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
-   * @returns true if the request is allowed, false otherwise
+   * @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestAllowed(clientIPv4: string, requestWeight: number = 1, requestTime: Date = new Date()): boolean {
+  isRequestDenied(clientIPv4: string, requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     // check first
-    if (!this.isRequestAllowedCheckOnly(clientIPv4, requestWeight, requestTime)) {
-      // request not allowed - nothing was counted
-      return false
+    let errorMsg = this.isRequestDeniedCheckOnly(clientIPv4, requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied - nothing was counted
+      return logResult(errorMsg)
     }
 
     //
@@ -38,8 +41,10 @@ export class QuotasLimiter {
     //
 
     // global check
-    if (!this.globalRatesLimiter.isRequestAllowed(requestWeight, requestTime)) {
-      return false
+    errorMsg = this.globalRatesLimiter.isRequestDenied(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return logResult("global(2) " + errorMsg)
     }
 
     // client specific check: get client specific rate limiter
@@ -50,7 +55,14 @@ export class QuotasLimiter {
       this.perClientRatesLimiters.set(clientIPv4, clientRatesLimiter)
     }
     // check for this client
-    return clientRatesLimiter.isRequestAllowed(requestWeight, requestTime)
+    errorMsg = clientRatesLimiter.isRequestDenied(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return logResult("client " + errorMsg)
+    } else {
+      // request allowd
+      return logResult(undefined)
+    }
   }
 
   /**
@@ -60,24 +72,35 @@ export class QuotasLimiter {
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
-   * @returns true if the request is allowed, false otherwise
+   * @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestAllowedCheckOnly(clientIPv4: string, requestWeight: number = 1, requestTime: Date = new Date()): boolean {
+  isRequestDeniedCheckOnly(clientIPv4: string, requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     // cleanup (sometimes)
     this.cleanupPerClientRatesLimitersSometimes(requestTime)
 
     // global check
-    if (!this.globalRatesLimiter.isRequestAllowedCheckOnly(requestWeight, requestTime)) {
-      return false
+    let errorMsg: undefined | string
+    errorMsg = this.globalRatesLimiter.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return "global " + errorMsg
     }
 
     // client specific check: get client specific rate limiter
     let clientRatesLimiter = this.perClientRatesLimiters.get(clientIPv4)
     if (!clientRatesLimiter) {
-      return true
+      // request allowd
+      return undefined
     }
     // check for this client
-    return clientRatesLimiter.isRequestAllowedCheckOnly(requestWeight, requestTime)
+    errorMsg = clientRatesLimiter.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return "client " + errorMsg
+    } else {
+      // request allowd
+      return undefined
+    }
   }
 
   /**
@@ -102,4 +125,11 @@ export class QuotasLimiter {
   }
 
 
+}
+
+function logResult(result: undefined | string): undefined | string {
+  if (DEBUG) {
+    console.log(result)
+  }
+  return result
 }

@@ -45,13 +45,14 @@ export class SingleRateLimiter {
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
-   * @returns true if the request is allowed, false otherwise
+   * @returns undefined if the request is allowed, otherwise an error message 
    */
-  isRequestAllowed(requestWeight: number = 1, requestTime: Date = new Date()): boolean {
+  isRequestDenied(requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     // check first
-    if (!this.isRequestAllowedCheckOnly(requestWeight, requestTime)) {
-      // request not allowed - nothing was counted
-      return false
+    const errorMsg = this.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied - nothing was counted
+      return errorMsg
     }
 
     // limit is not reached: count request
@@ -63,11 +64,11 @@ export class SingleRateLimiter {
     const requestsInCurrentTimeSlot = this.requestsPerTimeslot.get(requestTimeslot) || 0
     this.requestsPerTimeslot.set(requestTimeslot, requestsInCurrentTimeSlot+requestWeight)
 
-    // request is allowed
+    // request allowed
     if (debug) {
       this.logStatus("At end:")
     }
-    return true;
+    return undefined;
   }
 
 
@@ -77,9 +78,9 @@ export class SingleRateLimiter {
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
-   * @returns true if the request is allowed, false otherwise
+   * @returns @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestAllowedCheckOnly(requestWeight: number = 1, requestTime: Date = new Date()): boolean {
+  isRequestDeniedCheckOnly(requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     if (debug) {
       this.logStatus("Before deleteAllOutdatedTimeslots:")
     }
@@ -93,11 +94,11 @@ export class SingleRateLimiter {
     // check if the limit is already reached
     const sumRequestsOfAllTimeslots = Array.from(this.requestsPerTimeslot.values()).reduce((a, b) => a + b, 0)
     if (sumRequestsOfAllTimeslots + requestWeight > this.maxRequestsPerInterval) {
-      // limit reached: request us denied
-      return false
+      // limit reached: request denied
+      return "limit exceeded"
     } else {
-      // limit is not reached: request is allowed
-      return true
+      // limit is not reached: request allowed
+      return undefined
     }
   }
 

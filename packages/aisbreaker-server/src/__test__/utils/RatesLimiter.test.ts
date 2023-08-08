@@ -16,49 +16,49 @@ describe('testing RatesLimiter', () => {
   const nowPlus5hours = new Date(now.getTime() + 5*60*60*1000)
   const nowPlus5days = new Date(now.getTime() + 5*24*60*60*1000)
 
-  test('Request 1 = true  after  5s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5s)).toBe(true)
+  test('Request 1 allowed after  5s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5s)).toBeFalsy()
   })
-  test('Request 2 = true  after  5s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5s)).toBe(true)
+  test('Request 2 allowed after  5s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5s)).toBeFalsy()
   })
-  test('Request 3 = false after  5s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5s)).toBe(true)
+  test('Request 3 denied  after  5s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5s)).toBeFalsy()
   })
-  test('Request 4 = false after  5s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5s)).toBe(false)
-  })
-
-  test('Request 5 = true  after  5mins', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5mins)).toBe(true)
-  })
-  test('Request 6 = true  after  5mins', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5mins)).toBe(true)
-  })
-  test('Request 7 = true  after  5mins', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5mins)).toBe(false)
+  test('Request 4 denied  after  5s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5s)).toBeDefined()
   })
 
-  test('Request 5 = true  after  5hours', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5hours)).toBe(true)
+  test('Request 5 allowed  after  5mins', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5mins)).toBeFalsy()
   })
-  test('Request 6 = true  after  5hours', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5hours)).toBe(true)
+  test('Request 6 allowed  after  5mins', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5mins)).toBeFalsy()
   })
-  test('Request 7 = true  after  5hours', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5hours)).toBe(false)
+  test('Request 7 denied   after  5mins', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5mins)).toBeDefined()
   })
 
-  test('Request 8 = true  after  5days', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5days)).toBe(true)
+  test('Request 8 allowed  after  5hours', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5hours)).toBeFalsy()
   })
-  test('Request 9 = true  after  5days', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5days)).toBe(true)
+  test('Request 9 allowed  after  5hours', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5hours)).toBeFalsy()
   })
-  test('Request 10= true  after  5days', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5days)).toBe(true)
+  test('Request 10 denied  after  5hours', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5hours)).toBeDefined()
   })
-  test('Request 11= true  after  5days', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5days)).toBe(false)
+
+  test('Request 11 allowed  after  5days', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5days)).toBeFalsy()
+  })
+  test('Request 12 allowed  after  5days', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5days)).toBeFalsy()
+  })
+  test('Request 13 allowed  after  5days', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5days)).toBeFalsy()
+  })
+  test('Request 14 allowed  after  5days', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5days)).toBeDefined()
   })
 })

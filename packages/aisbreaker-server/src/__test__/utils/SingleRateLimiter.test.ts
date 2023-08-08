@@ -15,19 +15,19 @@ describe('testing SingleRateLimiter', () => {
   const nowPlus15s = new Date(now.getTime() + 15*1000)
   const nowPlus70s = new Date(now.getTime() + 70*1000)
 
-  test('1/2 request = true  after  5s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus5s)).toBe(true);
+  test('1/2 request allowed after  5s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus5s)).toBeFalsy()
   });
-  test('2/2 request = true  after 15s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus15s)).toBe(true);
+  test('2/2 request allowed after 15s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus15s)).toBeFalsy()
   });
-  test('3/2 request = false after 15s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus15s)).toBe(false);
+  test('3/2 request denied  after 15s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus15s)).toBeDefined()
   });
-  test('4/2 request = true  after 70s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus70s)).toBe(true);
+  test('4/2 request allowed after 70s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus70s)).toBeFalsy()
   });
-  test('5/2 request = false after 70s', () => {
-    expect(limiter.isRequestAllowed(1, nowPlus70s)).toBe(false);
+  test('5/2 request denied  after 70s', () => {
+    expect(limiter.isRequestDenied(1, nowPlus70s)).toBeDefined()
   });
 });

@@ -27,19 +27,21 @@ export class RatesLimiter {
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
-   * @returns true if the request is allowed, false otherwise
+   * @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestAllowed(requestWeight: number = 1, requestTime: Date = new Date()): boolean {
+  isRequestDenied(requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     // check first
-    if (!this.isRequestAllowedCheckOnly(requestWeight, requestTime)) {
-      // request not allowed - nothing was counted
-      return false
+    const errorMsg = this.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied - nothing was counted
+      return errorMsg
     }
 
     // limit is not reached: count request
-    return this.requestsPerMinuteRateLimiter.isRequestAllowed(requestWeight, requestTime) &&
-           this.requestsPerHourRateLimiter.isRequestAllowed(requestWeight, requestTime) &&
-           this.requestsPerDayRateLimiter.isRequestAllowed(requestWeight, requestTime)
+    const e1 = this.requestsPerMinuteRateLimiter.isRequestDenied(requestWeight, requestTime)
+    const e2 = this.requestsPerHourRateLimiter.isRequestDenied(requestWeight, requestTime)
+    const e3 = this.requestsPerDayRateLimiter.isRequestDenied(requestWeight, requestTime)
+    return e1 || e2 || e3
   }
 
   /**
@@ -48,12 +50,28 @@ export class RatesLimiter {
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
-   * @returns true if the request is allowed, false otherwise
+   * @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestAllowedCheckOnly(requestWeight: number = 1, requestTime: Date = new Date()): boolean {
-    return this.requestsPerMinuteRateLimiter.isRequestAllowedCheckOnly(requestWeight, requestTime) &&
-           this.requestsPerHourRateLimiter.isRequestAllowedCheckOnly(requestWeight, requestTime) &&
-           this.requestsPerDayRateLimiter.isRequestAllowedCheckOnly(requestWeight, requestTime)
+  isRequestDeniedCheckOnly(requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
+    let errorMsg: undefined | string
+    errorMsg = this.requestsPerMinuteRateLimiter.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return "requests per minute "+errorMsg
+    }
+    errorMsg = this.requestsPerHourRateLimiter.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return "requests per hour "+errorMsg
+    }
+    errorMsg = this.requestsPerDayRateLimiter.isRequestDeniedCheckOnly(requestWeight, requestTime)
+    if (errorMsg) {
+      // request denied
+      return "requests per day "+errorMsg
+    }
+
+    // request allowed
+    return undefined
   }
 
   /** Check for empty - needed for cleanup */

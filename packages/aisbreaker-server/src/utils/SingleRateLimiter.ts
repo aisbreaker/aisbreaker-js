@@ -3,7 +3,9 @@ const NUM_OF_TIMESLOTS_PER_INTERVAL = 100
 const debug = false
 
 /**
- * Implemantation of a rate limiter for a single rate.
+ * Implementation of a rate limiter for a single rate.
+ * 
+ * In-memory implementation.
  * 
  * Based on the sliding window counter rate limiter algorithm:
  * https://blog.logrocket.com/rate-limiting-node-js/#using-custom-implementation-redis-moment
@@ -97,6 +99,15 @@ export class SingleRateLimiter {
       // limit is not reached: request is allowed
       return true
     }
+  }
+
+  /** Check for empty - needed for cleanup */
+  isEmpty(requestTime: Date): boolean {
+    // cleanup first
+    this.deleteAllOutdatedTimeslots(requestTime)
+
+    // empty?
+    return this.requestsPerTimeslot.size == 0
   }
 
 

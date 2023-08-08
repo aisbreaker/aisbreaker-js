@@ -2,12 +2,17 @@
 import { RequestLimits } from '../rest-api/index.js'
 import { SingleRateLimiter } from './SingleRateLimiter.js'
 
+/**
+ * Implementation of rate limiters for RequestLimits.
+ * 
+ * In-memory implementation.
+ */
 export class RatesLimiter {
     requestsPerMinuteRateLimiter: SingleRateLimiter
     requestsPerHourRateLimiter: SingleRateLimiter
     requestsPerDayRateLimiter: SingleRateLimiter
 
-    constructor(public requestLimits: RequestLimits) {       
+    constructor(public requestLimits: RequestLimits) {
         this.requestsPerMinuteRateLimiter =
             new SingleRateLimiter(requestLimits.requestsPerMinute, 60)
         this.requestsPerHourRateLimiter =
@@ -51,5 +56,10 @@ export class RatesLimiter {
            this.requestsPerDayRateLimiter.isRequestAllowedCheckOnly(requestWeight, requestTime)
   }
 
+  /** Check for empty - needed for cleanup */
+  isEmpty(requestTime: Date): boolean {
+    return this.requestsPerMinuteRateLimiter.isEmpty(requestTime) &&
+           this.requestsPerHourRateLimiter.isEmpty(requestTime) &&
+           this.requestsPerDayRateLimiter.isEmpty(requestTime)
+  }
 }
-

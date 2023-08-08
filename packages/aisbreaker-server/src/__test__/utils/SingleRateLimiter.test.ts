@@ -1,12 +1,8 @@
 
 
-import { SingleRateLimiter } from '../../utils/SingleRateLimiter'; /* NOT .js */
+import { SingleRateLimiter } from '../../utils/SingleRateLimiter.js'; /* NOT .js */
 //import { SingleRateLimiter } from '../../../build/utils/SingleRateLimiter.js';
 
-
-test('trivial test 1+1=2', () => {
-  expect(1+1).toBe(2);
-});
 
 describe('testing SingleRateLimiter', () => {
   const maxRequestsPerInterval = 2

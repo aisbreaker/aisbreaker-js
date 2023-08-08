@@ -12,7 +12,8 @@
     "start:dev": "nodemon",
     "// test info-1": "https://jestjs.io/docs/ecmascript-modules",
     "// test info-2": "https://kulshekhar.github.io/ts-jest/docs/guides/esm-support/",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest"
+    "test-without-build": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "npm run build && npm run test-without-build"
   },
   "keywords": [],
   "author": "aisbreaker",

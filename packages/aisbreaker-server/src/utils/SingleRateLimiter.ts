@@ -1,7 +1,13 @@
 
 const NUM_OF_TIMESLOTS_PER_INTERVAL = 100
-const debug = true
+const debug = false
 
+/**
+ * Implemantation of a rate limiter for a single rate.
+ * 
+ * Based on the sliding window counter rate limiter algorithm:
+ * https://blog.logrocket.com/rate-limiting-node-js/#using-custom-implementation-redis-moment
+ */
 export class SingleRateLimiter {
   millisPerTimeslot: number
 
@@ -40,22 +46,12 @@ export class SingleRateLimiter {
    * @returns true if the request is allowed, false otherwise
    */
   isRequestAllowed(requestWeight: number = 1, requestTime: Date = new Date()): boolean {
-    if (debug) {
-      this.logStatus("Before deleteAllOutdatedTimeslots:")
-    }
-
-    // cleanup first to get correct result
-    this.deleteAllOutdatedTimeslots(requestTime)
-    if (debug) {
-      this.logStatus("After deleteAllOutdatedTimeslots:")
-    }
-
-    // check if the limit is already rached
-    const sumRequestsOfAllTimeslots = Array.from(this.requestsPerTimeslot.values()).reduce((a, b) => a + b, 0)
-    if (sumRequestsOfAllTimeslots + requestWeight > this.maxRequestsPerInterval) {
-      // limit reached: request us denied
+    // check first
+    if (!this.isRequestAllowedCheckOnly(requestWeight, requestTime)) {
+      // request not allowed - nothing was counted
       return false
     }
+
     // limit is not reached: count request
 
     // get request time slot
@@ -71,6 +67,38 @@ export class SingleRateLimiter {
     }
     return true;
   }
+
+
+  /**
+   * Check whether a request is allowed or not. Do not count this request.
+   * 
+   * @param requestWeight    usually 1, but can be higher for requests that are more expensive
+   * @param requestTime      the time of the request, default is now 
+   *                         (having ths a parameter simplifies testing)
+   * @returns true if the request is allowed, false otherwise
+   */
+  isRequestAllowedCheckOnly(requestWeight: number = 1, requestTime: Date = new Date()): boolean {
+    if (debug) {
+      this.logStatus("Before deleteAllOutdatedTimeslots:")
+    }
+
+    // cleanup first to get correct result
+    this.deleteAllOutdatedTimeslots(requestTime)
+    if (debug) {
+      this.logStatus("After deleteAllOutdatedTimeslots:")
+    }
+
+    // check if the limit is already reached
+    const sumRequestsOfAllTimeslots = Array.from(this.requestsPerTimeslot.values()).reduce((a, b) => a + b, 0)
+    if (sumRequestsOfAllTimeslots + requestWeight > this.maxRequestsPerInterval) {
+      // limit reached: request us denied
+      return false
+    } else {
+      // limit is not reached: request is allowed
+      return true
+    }
+  }
+
 
   protected logStatus(msg: string = "") {
     //console.log(`${msg} requestsPerTimeslot: ${JSON.stringify(this.requestsPerTimeslot)}`)

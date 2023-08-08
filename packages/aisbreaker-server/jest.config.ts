@@ -3,7 +3,11 @@ import type { JestConfigWithTsJest as Config } from 'ts-jest'
 
 const config: Config = {
     "roots": [
-        "<rootDir>/src"
+        //"<rootDir>/src"
+        //
+        // .ts-compiling with ESM support not working correctly,
+        // therefore build .ts files before running jest
+        "<rootDir>/build"
     ],
     "testMatch": [
         "**/__tests__/**/*.+(ts|tsx|js)",

@@ -103,7 +103,7 @@
   "exclude": [
     "build",
     "jest.config.ts",
-    "**/__test__/*",
+    //"**/__test__/*",
     "openapi-spec",
   ]
 }

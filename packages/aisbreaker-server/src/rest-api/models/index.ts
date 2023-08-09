@@ -2,4 +2,5 @@
 // re-export all relevant classes/interfaces
 //
 
-export * from './Quotas.js'
+export * from './RequestAuthAndQuotas.js'
+export * from './RequestQuotas.js'

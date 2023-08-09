@@ -1,5 +1,5 @@
 
-import { Quotas } from '../rest-api/index.js'
+import { RequestQuotas } from '../rest-api/index.js'
 import { RatesLimiter } from './RatesLimiter.js'
 
 const DEBUG = false
@@ -9,28 +9,28 @@ const DEBUG = false
  * 
  * In-memory implementation.
  */
-export class QuotasLimiter {
+export class RequestQuotasLimiter {
   globalRatesLimiter: RatesLimiter
 
-  /** key: clientIPv4 string, value: RatesLimiter */
+  /** key: clientId string, value: RatesLimiter */
   perClientRatesLimiters = new Map<string, RatesLimiter>()
 
-  constructor(public quotas: Quotas) {
+  constructor(public quotas: RequestQuotas) {
     this.globalRatesLimiter = new RatesLimiter(quotas.globalRequestLimits)
   }
 
   /**
    * Check whether a request is allowed or not. If it is allowed, the request will be counted.
    * 
-   * @param clientIPv4       the client's IPv4 address
+   * @param clientId         usually the client's IPv4 address
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
    * @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestDenied(clientIPv4: string, requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
+  isRequestDenied(clientId: string, requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     // check first
-    let errorMsg = this.isRequestDeniedCheckOnly(clientIPv4, requestWeight, requestTime)
+    let errorMsg = this.isRequestDeniedCheckOnly(clientId, requestWeight, requestTime)
     if (errorMsg) {
       // request denied - nothing was counted
       return logResult(errorMsg)
@@ -48,11 +48,11 @@ export class QuotasLimiter {
     }
 
     // client specific check: get client specific rate limiter
-    let clientRatesLimiter = this.perClientRatesLimiters.get(clientIPv4)
+    let clientRatesLimiter = this.perClientRatesLimiters.get(clientId)
     if (!clientRatesLimiter) {
       // create new client specific rate limiter
       clientRatesLimiter = new RatesLimiter(this.quotas.perClientRequestLimits)
-      this.perClientRatesLimiters.set(clientIPv4, clientRatesLimiter)
+      this.perClientRatesLimiters.set(clientId, clientRatesLimiter)
     }
     // check for this client
     errorMsg = clientRatesLimiter.isRequestDenied(requestWeight, requestTime)
@@ -68,13 +68,13 @@ export class QuotasLimiter {
   /**
    * Check whether a request is allowed or not. Do not count this request.
    * 
-   * @param clientIPv4       the client's IPv4 address
+   * @param clientId         usually the client's IPv4 address
    * @param requestWeight    usually 1, but can be higher for requests that are more expensive
    * @param requestTime      the time of the request, default is now 
    *                         (having ths a parameter simplifies testing)
    * @returns undefined if the request is allowed, otherwise an error message
    */
-  isRequestDeniedCheckOnly(clientIPv4: string, requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
+  isRequestDeniedCheckOnly(clientId: string, requestWeight: number = 1, requestTime: Date = new Date()): undefined | string {
     // cleanup (sometimes)
     this.cleanupPerClientRatesLimitersSometimes(requestTime)
 
@@ -87,7 +87,7 @@ export class QuotasLimiter {
     }
 
     // client specific check: get client specific rate limiter
-    let clientRatesLimiter = this.perClientRatesLimiters.get(clientIPv4)
+    let clientRatesLimiter = this.perClientRatesLimiters.get(clientId)
     if (!clientRatesLimiter) {
       // request allowd
       return undefined

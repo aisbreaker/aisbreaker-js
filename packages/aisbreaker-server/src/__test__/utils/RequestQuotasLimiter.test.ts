@@ -1,9 +1,9 @@
-import { QuotasLimiter } from '../../utils/QuotasLimiter.js'
-import { Quotas } from '../../rest-api/index.js'
+import { RequestQuotasLimiter } from '../../utils/RequestQuotasLimiter.js'
+import { RequestQuotas } from '../../rest-api/index.js'
 
 
-describe('testing QuotasLimiter', () => {
-  const quotas: Quotas = {
+describe('testing RequestQuotasLimiter', () => {
+  const quotas: RequestQuotas = {
     globalRequestLimits: {
       requestsPerMinute: 2,
       requestsPerHour: 4,
@@ -15,7 +15,7 @@ describe('testing QuotasLimiter', () => {
       requestsPerDay: 5,
     }
   }
-  const limiter = new QuotasLimiter(quotas)
+  const limiter = new RequestQuotasLimiter(quotas)
 
   const ip1 = "1.1.1.1"
   const ip2 = "2.2.2.2"

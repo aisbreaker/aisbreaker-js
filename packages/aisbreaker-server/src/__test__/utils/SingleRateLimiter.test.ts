@@ -1,7 +1,6 @@
 
 
-import { SingleRateLimiter } from '../../utils/SingleRateLimiter.js'; /* NOT .js */
-//import { SingleRateLimiter } from '../../../build/utils/SingleRateLimiter.js';
+import { SingleRateLimiter } from '../../utils/SingleRateLimiter.js'
 
 
 describe('testing SingleRateLimiter', () => {

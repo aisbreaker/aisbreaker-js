@@ -3,3 +3,4 @@
 //
 
 export * from './StringServerUtils.js'
+export * from './AisbreakerAccessKeyEncryptionUtils.js'

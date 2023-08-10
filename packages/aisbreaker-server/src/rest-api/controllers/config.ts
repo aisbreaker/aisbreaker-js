@@ -55,7 +55,6 @@ export async function getDefaultRequestAuthAndQuotas(): Promise<RequestAuthAndQu
 }
 async function getDefaultRequestAuthAndQuotasInitial(): Promise<RequestAuthAndQuotas> {
   return {
-    validUntil: undefined,
     requestQuotas: {
       globalRequestLimits: {
         requestsPerMinute: 100,

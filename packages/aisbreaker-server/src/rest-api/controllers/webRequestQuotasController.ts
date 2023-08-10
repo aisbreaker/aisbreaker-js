@@ -5,9 +5,12 @@ import { RequestQuotasLimiter } from '../../utils/RequestQuotasLimiter.js'
 
 import * as config from './config.js'
 import { api, utils } from 'aisbreaker-api-js'
-import { getObjectCryptoId } from '../../utils/index.js'
+import { ACCESS_TOKEN_PREFIX, getObjectCryptoId } from '../../utils/index.js'
 
 import NodeCache from 'node-cache'
+
+import { decryptAisbreakerAccessToken } from '../../utils/index.js'
+
 
 
 //
@@ -24,6 +27,7 @@ export interface CheckRequestQuotasResult {
  * Check RequestAuthAndQuotas request quotas (quotas per Auth)
  * 
  * @param clientIp        usually the client's IPv4 address
+ * @param serverHostname  hostname of the web server
  * @param requestSecret   authentication (bearer header)
  * @param requestTime     the time of the request, default is now 
  *                        (having ths a parameter simplifies testing)
@@ -31,6 +35,7 @@ export interface CheckRequestQuotasResult {
  */
 export async function checkRequest(
   clientIp: string,
+  serverHostname: string,
   requestSecret: string | undefined,
   requestTime: Date = new Date()
 ): Promise<CheckRequestQuotasResult> {
@@ -42,7 +47,7 @@ export async function checkRequest(
     }
 
     // check auth-based request quotas
-    const requestAuthAndQuotas = await extractRequestAuthAndQuotas(requestSecret)
+    const requestAuthAndQuotas = await extractRequestAuthAndQuotas(serverHostname, requestSecret)
     const denyErrorMsg2 = isRequestDeniedByRequestAuthAndQuotas(requestAuthAndQuotas, clientIp, requestTime)
     if (denyErrorMsg2) {
       return {errorMsg: denyErrorMsg2}
@@ -102,13 +107,16 @@ async function getApiRequestQuotasLimiter(): Promise<RequestQuotasLimiter> {
 /**
  * Extract RequestAuthAndQuotas from access token, or take default.
  * 
- * @param requestSecret    HTTP Auth header value (bearer token)
+ * @param serverHostname  hostname of the web server
+ * @param requestSecret   authentication (bearer header)
  * @returns a valid RequestAuthAndQuotas object
  */
-async function extractRequestAuthAndQuotas(requestSecret: string | undefined): Promise<RequestAuthAndQuotas> {
+async function extractRequestAuthAndQuotas(
+  serverHostname: string,
+  requestSecret: string | undefined): Promise<RequestAuthAndQuotas> {
   // get valid RequestAuthAndQuotas
   let r: RequestAuthAndQuotas
-  let opt = tryToExtractRequestAuthAndQuotasFromAccessToken(requestSecret)
+  let opt = await tryToExtractRequestAuthAndQuotasFromAccessToken(serverHostname, requestSecret)
   if (opt) {
     // auth contains RequestAuthAndQuotas
     r = opt
@@ -188,6 +196,7 @@ export function getAuthForServiceId(
 
   // get service-specific Auth
   let secret: string | undefined
+  /* OLD/with map requestAuthAndQuotas.serviceAuthSecrets:
   if (requestAuthAndQuotas.serviceAuthSecrets) {
     const serviceAuthSecrets = requestAuthAndQuotas.serviceAuthSecrets
     if (serviceId in serviceAuthSecrets) {
@@ -195,9 +204,25 @@ export function getAuthForServiceId(
       secret = serviceSecret
     }
   }
+  */
+
+  // check all serviceSecrets (from requestAuthAndQuotas)
+  if (requestAuthAndQuotas.serviceSecrets) {
+    const serviceSecrets = requestAuthAndQuotas.serviceSecrets
+    if (serviceSecrets) {
+      for (let serviceSecret of serviceSecrets) {
+        if (serviceSecret.serviceId.startsWith(serviceId)) {
+          // found a match
+          secret = serviceSecret.authSecret
+          break;
+        }
+      }
+    }
+  }
 
   // fallback to requestSecret?
-  if (!secret) {
+  if (!secret && isRequestSecretFrom3rdParty(requestSecret)) {
+    // no other secret found, and requestSecret is from 3rd party
     secret = requestSecret
   }
 
@@ -211,18 +236,45 @@ export function getAuthForServiceId(
   }
 }
 
+function isRequestSecretFrom3rdParty(requestSecret: string | undefined): boolean {
+  // trivial check
+  if (!requestSecret) {
+    return false
+  }
+  // check
+  if (requestSecret.startsWith(ACCESS_TOKEN_PREFIX)) {
+    // no 3rd party access token
+    return false
+  } else {
+    // 3rd party access token
+    return true
+  }
+}
 
 //
 // decode/decrypt Auth secret
 //
 
-function tryToExtractRequestAuthAndQuotasFromAccessToken(secret: string | undefined): RequestAuthAndQuotas | undefined {
-  // try to parse string directly
-  if (!secret) {
+/**
+ * Extract RequestAuthAndQuotas from access token.
+ * 
+ * @param serverHostname  hostname of the web server
+ * @param requestSecret   authentication (bearer header)
+ * @returns a valid RequestAuthAndQuotas object, or undefined if it cannot be extracted
+ */
+async function tryToExtractRequestAuthAndQuotasFromAccessToken(
+  serverHostname: string,
+  requestSecret: string | undefined
+  ): Promise<RequestAuthAndQuotas | undefined> {
+  // trivial check
+  if (!requestSecret) {
     return undefined
   }
+
+  /*
+  // try to parse directly
   try {
-    const obj = JSON.parse(secret)
+    const obj = JSON.parse(requestSecret)
     if (isRequestAuthAndQuotas(obj)) {
       return obj
     }
@@ -232,7 +284,7 @@ function tryToExtractRequestAuthAndQuotasFromAccessToken(secret: string | undefi
 
   // try to decode base64 and parse
   try {
-    const objString = utils.base64ToString(secret)
+    const objString = utils.base64ToString(requestSecret)
     const obj = JSON.parse(objString)
     if (isRequestAuthAndQuotas(obj)) {
       return obj
@@ -240,12 +292,19 @@ function tryToExtractRequestAuthAndQuotasFromAccessToken(secret: string | undefi
   } catch (err) {
     // ignore
   }
+  */
 
-  // try to decrypt and parse
-  // TODO: TO IMPLEMENT
+  // try to decrypt and parse the secret / aisbreaker access key
+  try {
+    const accessToken = requestSecret
+    const requestAuthAndQuotas = await decryptAisbreakerAccessToken(serverHostname, accessToken)
+    if (isRequestAuthAndQuotas(requestAuthAndQuotas)) {
+      return requestAuthAndQuotas
+    }
+  } catch (err) {
+    // ignore
+  }
 
   // cound not extract anything
   return undefined
 }
-
-

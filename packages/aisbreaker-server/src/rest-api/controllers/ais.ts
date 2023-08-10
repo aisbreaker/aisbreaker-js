@@ -14,10 +14,11 @@ export async function process(req: express.Request, res: express.Response): Prom
 
     // check and use authentication (bearer header)
     const requestSecret = extractHttpAuthHeaderSecret(req)
+    console.log("****** requestSecret", requestSecret)
 
     // check quotas
     const clientIp = getClientIP(req)
-    const quotasResult = await checkRequest(clientIp, requestSecret)
+    const quotasResult = await checkRequest(clientIp, req.hostname, requestSecret)
     if (quotasResult.errorMsg) {
       writeJsonResponse(res, 429, {error: {type: 'too_many_requests', message: quotasResult.errorMsg}})
       return
@@ -102,4 +103,5 @@ function extractHttpAuthHeaderSecret(req: express.Request): string | undefined {
   if (!accessTokenSecret) {
     throw new Error(`Access token missing in request`)
   }
+  return accessTokenSecret
 }

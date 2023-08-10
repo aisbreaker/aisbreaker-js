@@ -3,16 +3,23 @@ import { RequestQuotas, isRequestQuotas } from "./RequestQuotas.js"
 /**
  * authentication + request quotas,
  * usually extracted from client-provided auth
+ * 
+ * Expiration is not set here - this is handled by the JWT payload property 'exp'.
  */
 export interface RequestAuthAndQuotas {
-  validUntil?: Date
   requestQuotas?: RequestQuotas
-  //serviceAuthSecrets?: Map</*serviceIdPrefix:*/string, /*serviceAuthSecret:*/string>
-  serviceAuthSecrets?: ServiceIdPrefix2ServiceAuthSecret
+  //serviceAuthSecrets?: ServiceIdPrefix2ServiceAuthSecret
+  serviceSecrets?: ServiceIdAuthSecret[]
 }
 
+/*
 export type ServiceIdPrefix2ServiceAuthSecret = {
-    [serviceIdPrefix: string]: /*serviceAuthSecret*/string
+    [serviceIdPrefix: string]: / *serviceAuthSecret* /string
+}
+*/
+export interface ServiceIdAuthSecret {
+  serviceId: string
+  authSecret: string
 }
 
 

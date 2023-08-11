@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-js",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "This is the git monorepo for all AIsBreaker core packages/modules. It's only to combine all npm packages/modules, it's not published as separate npm package/module",
   "type": "module",
   "author": "aisbreaker",

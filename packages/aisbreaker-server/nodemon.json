@@ -1,0 +1,7 @@
+{
+  "watch": ["src", "types"],
+  "ext": ".ts,.js",
+  "ignore": [],
+  "exec": "ts-node --esm ./src/index.ts"
+}
+

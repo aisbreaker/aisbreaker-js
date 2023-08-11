@@ -2,7 +2,8 @@
 // re-export all relevant classes/interfaces
 //
 
-export * from './AIsProxy.js'
+export * from './AIsNetworkClient.js'
+export * from './AIsNetworkRequest.js'
 /*
 export * from './openaichat.js'
 export * from './openaiimage.js'

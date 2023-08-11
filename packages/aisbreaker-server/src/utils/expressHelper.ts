@@ -11,9 +11,21 @@ import logger from '../utils/logger.js'
  * @param payload     the JSON response
  * @param headers 
  */
-export function writeJsonResponse(res: express.Response, statusCode: number, payload: any, headers?: OutgoingHttpHeaders | undefined): void {
-  let data: any = undefined
+export function writeJsonResponse(
+  res: express.Response,
+  statusCode: number,
+  payload: any,
+  skipWriteHeaders: boolean = false,
+  headers?: OutgoingHttpHeaders | undefined
+  ): void {
 
+  // send headers if not skipped
+  if (!skipWriteHeaders) {
+    writeJsonResponseHeaders(res, statusCode, headers)
+  }
+
+  // prepare and send data
+  let data: any = undefined
   if (typeof payload === 'object') {
     // normal case
     data = JSON.stringify(payload, null, 2)
@@ -34,10 +46,14 @@ export function writeJsonResponse(res: express.Response, statusCode: number, pay
     logger.warn(`writeJsonResponse() with unknown type of payload=${typeof payload}`)
     data = payload
   }
-  res.writeHead(statusCode, {...headers, 'Content-Type': 'application/json'})
+
+  // send data
   res.end(data)
 }
 
+export function writeJsonResponseHeaders(res: express.Response, statusCode: number, headers?: OutgoingHttpHeaders | undefined): void {
+  res.writeHead(statusCode, {...headers, 'Content-Type': 'application/json'})
+}
 
 /**
  * Support of async handler functions in NodeJS/Express.

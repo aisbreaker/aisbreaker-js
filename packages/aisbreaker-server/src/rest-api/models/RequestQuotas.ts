@@ -1,10 +1,11 @@
 
 
 export interface RequestQuotas {
-  /** limits for all requests to the service */
-  globalRequestLimits: RequestLimits
   /** limits per client (IP) to the service */
   perClientRequestLimits: RequestLimits
+
+  /** limits for all requests to the service */
+  globalRequestLimits: RequestLimits
 }
 
 export interface RequestLimits {

@@ -3,13 +3,10 @@ import bodyParser from 'body-parser'
 import cors from 'cors'
 import morgan from 'morgan'
 
-import { ping, version as getVersion } from './rest-api/controllers/greeting.js'
-import { process as processService } from './rest-api/controllers/ais.js'
+import { apiPing, apiVersion } from './rest-api/controllers/apiGreetings.js'
+import { apiProcess } from './rest-api/controllers/apiProcess.js'
+import { oauthToken } from './rest-api/controllers/oauthToken.js'
 
-/*
-import jwt from 'express-jwt'
-import jwksRsa from 'jwks-rsa'
-*/
 
 //
 // basic settings
@@ -18,8 +15,8 @@ const app = express()
 const port = 3000
 const version = process.env.npm_package_version || 'unknown version'
 
-const basePath = "/api/v1"
-const basePath2 = "/api/v1alpha1"
+const basePathApiV1 = "/api/v1"
+const basePathApiV1alpha1 = "/api/v1alpha1"
 const alternativesBasePath = "/alternative-api"
 
 //
@@ -36,69 +33,70 @@ async function startServer() {
     // enable logging (https://github.com/expressjs/morgan)
     app.use(morgan('combined'))
   
-    /*
-    const checkJwt = jwt({
-    secret: jwksRsa.expressJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: 'https://your-auth0-domain.auth0.com/.well-known/jwks.json'
-    }),
+    /* Currently, this kind of JWT authentication is NOT USED HERE:
+      import jwt from 'express-jwt'
+      import jwksRsa from 'jwks-rsa'
 
-    audience: 'your-audience',
-    issuer: 'https://your-auth0-domain.auth0.com/',
-    algorithms: ['RS256']
-    })
+      const checkJwt = jwt({
+      secret: jwksRsa.expressJwtSecret({
+          cache: true,
+          rateLimit: true,
+          jwksRequestsPerMinute: 5,
+          jwksUri: 'https://your-auth0-domain.auth0.com/.well-known/jwks.json'
+      }),
+
+      audience: 'your-audience',
+      issuer: 'https://your-auth0-domain.auth0.com/',
+      algorithms: ['RS256']
+      })
     */
 
     //
     // define routes (expressjs)
     //
 
-    // deliver some static content (root webapp)
+    // deliver some (almost) static content (root webapp)
     app.get('/', cors(), (req, res) => {
-        res.send('Hello from AIsBreaker Server ... Details on AIsBreaker.org ...')
+        getInfoString().then(resultStr => {
+          res.send(""+resultStr);
+      })
     })
-
+    /*
     app.get('/info', cors(), (req, res) => {
         getInfoString().then(resultStr => {
             res.send(""+resultStr);
         })
     })
-
-
-    /*
-    // the home page and more - with required authentication
-    app.use(basePath+"/", [ensureAuthenticated, express.static(baseDir+"/webapps/root")]);
-    app.get(basePath+"/hello", ensureAuthenticated, function (req, res) {
-      console.log("req.sessionID=", req.sessionID);
-      res.send("Hello Chris! ("+addFunc(1, 2)+", "+(new Date())+")");
-    });
     */
 
-    // API
-    app.get(basePath + "/ping", cors(), (req, res) => {
-        ping(req, res)
-    })
-    app.get(basePath + '/version', cors(), (req, res) => {
-        getVersion(req, res, version)
-    })
-    app.post(basePath + '/process', cors(), /*checkJwt,*/(req, res) => {
-      processService(req, res)
-    })
 
-    // API (different version)
-    app.get(basePath2 + "/ping", cors(), (req, res) => {
-        ping(req, res)
-    })
-    app.get(basePath2 + '/version', cors(), (req, res) => {
-        getVersion(req, res, version)
-    })
-    app.post(basePath2 + '/process', cors(), /*checkJwt,*/(req, res) => {
-      processService(req, res)
-    })
+    /* Currently, this kind of authentication is NOT USED HERE:
+      // the home page and more - with required authentication
+      app.use(basePath+"/", [ensureAuthenticated, express.static(baseDir+"/webapps/root")]);
+      app.get(basePath+"/hello", ensureAuthenticated, function (req, res) {
+        console.log("req.sessionID=", req.sessionID);
+        res.send("Hello Chris! ("+addFunc(1, 2)+", "+(new Date())+")");
+      });
+    */
+
+    // API (all versions)
+    const allApiBasesPaths = [ basePathApiV1, basePathApiV1alpha1 ]
+    for (const apiBasePath of allApiBasesPaths) {
+      app.get(apiBasePath + "/ping", cors(), (req, res) => {
+          apiPing(req, res)
+      })
+      app.get(apiBasePath + '/version', cors(), (req, res) => {
+          apiVersion(req, res, version)
+      })
+      app.post(apiBasePath + '/oauth/token', cors(), (req, res) => {
+        oauthToken(req, res)
+      })
+      app.post(apiBasePath + '/process', cors(), (req, res) => {
+        apiProcess(req, res)
+      })
+    }
   
-    // TODO: alternative APIs 
+    // TODO: Add alternative APIs 
     // Example: /alternative[-api]/[api.]openai.com/v1/chat/completions
     /*
     app.post(alternativesBasePath + '/process', cors(), (req, res) => {
@@ -130,7 +128,8 @@ export async function getInfoString(): Promise<string>{
       <body>
 
         Links:<br>
-        <a href="/api/v1/version" target="_blank">Version</a><br>
+        <a href="${basePathApiV1}/version" target="_blank">Version</a><br>
+        <a href="https://aisbreaker.org/" target="_blank">AIsBreaker.org Website</a><br>
 
         <br><br>
 

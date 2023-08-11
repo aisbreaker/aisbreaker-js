@@ -4,15 +4,15 @@ import { RequestQuotas } from '../../rest-api/index.js'
 
 describe('testing RequestQuotasLimiter', () => {
   const quotas: RequestQuotas = {
-    globalRequestLimits: {
-      requestsPerMinute: 2,
-      requestsPerHour: 4,
-      requestsPerDay: 6,
-    },
     perClientRequestLimits: {
       requestsPerMinute: 1,
       requestsPerHour: 3,
       requestsPerDay: 5,
+    },
+    globalRequestLimits: {
+      requestsPerMinute: 2,
+      requestsPerHour: 4,
+      requestsPerDay: 6,
     }
   }
   const limiter = new RequestQuotasLimiter(quotas)

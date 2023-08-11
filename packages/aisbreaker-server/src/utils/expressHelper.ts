@@ -38,6 +38,7 @@ export function writeJsonResponse(res: express.Response, statusCode: number, pay
   res.end(data)
 }
 
+
 /**
  * Support of async handler functions in NodeJS/Express.
  * It wraps such async handler to make sync version out of it.
@@ -58,4 +59,59 @@ export function asyncHandler(req: express.Request, res: express.Response, fn: ()
     logger.error(`asyncHandler() - error: ${err}`, err)
     writeJsonResponse(res, 500, {error: {type: 'internal_server_error', message: `Internal Server Error (asyncHandler): ${err}`}})
   })
+}
+
+
+/**
+ * @param req
+ * @returns the IPv4 or IPv6 address of the client.
+ */
+export function getClientIP(req: express.Request): string {
+  const IP_FROM_REQUEST_HEADER_NAME: string | undefined = 'x-forwarded-for'
+
+  let clientIp: string | undefined  
+  // get client IP from request header - because of Gateway (if configured)
+  if (IP_FROM_REQUEST_HEADER_NAME) {
+    const clientIpFromHeader = req.headers[IP_FROM_REQUEST_HEADER_NAME] 
+    if (clientIpFromHeader) {
+      if (typeof clientIpFromHeader === 'string') {
+        clientIp = clientIpFromHeader
+      } else {
+        clientIp = clientIpFromHeader[0]
+      }
+    }
+  }
+
+  // get client IP from request (as fallback)
+  if (!clientIp) {
+    clientIp = req.socket.remoteAddress || 'unknown-client-ip'
+  }
+
+  return clientIp
+}
+
+
+/**
+ * Extract bearer token from request header
+ * 
+ * @param req 
+ * @returns the token if available, otherwise undefined
+ */
+export function extractHttpAuthHeaderSecret(req: express.Request): string | undefined {
+  // extract access token
+  const authHeader = req.headers.authorization
+  logger.debug("authHeader: "+authHeader) 
+  if (!authHeader) {
+    // throw new Error(`Authorization header missing in request`)
+    return undefined
+  }
+  const bearer = authHeader.split(' ')
+  if (bearer.length !== 2) {
+    throw new Error(`Authorization header invalid in request`)
+  }
+  const accessTokenSecret = bearer[1]
+  if (!accessTokenSecret) {
+    throw new Error(`Access token missing in request`)
+  }
+  return accessTokenSecret
 }

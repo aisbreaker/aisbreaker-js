@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js"
 import { RequestQuotas, isRequestQuotas } from "./RequestQuotas.js"
 
 /**
@@ -29,6 +30,7 @@ export interface ServiceIdAuthSecret {
 //
 export function isRequestAuthAndQuotas(obj: any): obj is RequestAuthAndQuotas {
   if (!obj) {
+    logger.debug(`isRequestAuthAndQuotas() - invalid obj=undefined`)
     return false
   }
   /* TODO
@@ -37,11 +39,14 @@ export function isRequestAuthAndQuotas(obj: any): obj is RequestAuthAndQuotas {
   }
   */
   if (obj.requestQuotas && !isRequestQuotas(obj.requestQuotas)) {
+    logger.debug(`isRequestAuthAndQuotas() - invalid requestQuotas: ${JSON.stringify(obj.requestQuotas)}`)
     return false
   }
   if (obj.serviceAuthSecrets && !isServiceIdPrefix2ServiceAuthSecretsObj(obj.serviceAuthSecrets)) {
+    logger.debug(`isRequestAuthAndQuotas() - invalid serviceAuthSecrets: ${JSON.stringify(obj.serviceAuthSecrets)}`)
     return false
   }
+  logger.debug(`isRequestAuthAndQuotas() - valid obj`)
   return true
 }
 
@@ -54,10 +59,12 @@ function isServiceIdPrefix2ServiceAuthSecretsObj(obj: any): boolean {
   for (const key in obj) {
     // check if key is a string
     if (typeof key !== 'string') {
+      logger.debug(`isServiceIdPrefix2ServiceAuthSecretsObj() - invalid key: ${key}`)
       return false
     }
     // check if value is a string
     if (typeof obj[key] !== 'string') {
+      logger.debug(`isServiceIdPrefix2ServiceAuthSecretsObj() - invalid key/value: '${key}'/'${obj[key]}'`)
       return false
     }
   }

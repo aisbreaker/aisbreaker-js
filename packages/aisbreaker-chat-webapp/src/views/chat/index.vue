@@ -211,7 +211,7 @@ async function onConversation() {
             },
         } ],
         conversationState: lastConversationState,
-        //streamProgressFunction: streamProgressFunc,
+        streamProgressFunction: streamProgressFunc,
         //abortSignal: controller.signal, // TODO
     })
     console.log(`onConversation() responseFinal: ${JSON.stringify(responseFinal/*, undefined, 2*/)}`)

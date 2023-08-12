@@ -45,11 +45,11 @@ export class AIsNetworkClientService implements AIsService {
 
     async process(request: Request): Promise<ResponseFinal> {
       const forward2ServiceProps = this.serviceProps.forward2ServiceProps
+      const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
       try {
-        console.log(`AIsProxyClientService.process() forward to ${forward2ServiceProps.serviceId} START`)
+        console.log(`AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId} START`)
         
         // remote access - no streaming of partial responses right now (TODO: implement streaming)
-        const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
         const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
         if (isStreamingRequested) {
           (request as any).stream = true
@@ -67,7 +67,7 @@ export class AIsNetworkClientService implements AIsService {
             {
                 headers: {
                     'Content-Type': 'application/json', // optional because set automatically
-                    'Authorization': `Bearer ${this.auth || 'NoAuthProvided'}`,
+                    'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
                 },
                 json: aisNetworkRequest,
                 /*
@@ -89,7 +89,7 @@ export class AIsNetworkClientService implements AIsService {
             {
                 headers: {
                     'Content-Type': 'application/json', // optional because set automatically
-                    'Authorization': `Bearer ${this.auth || 'NoAuthProvided'}`,
+                    'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
                 },
                 json: aisNetworkRequest,
                 onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
@@ -131,15 +131,28 @@ export class AIsNetworkClientService implements AIsService {
         if (!responseFinal) {
           throw new Error(`no final response`)
         }
-        console.log(`AIsProxyClientService.process() forward to ${forward2ServiceProps.serviceId} END`)
+        console.log(`AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId} END`)
         return responseFinal
 
       } catch (error) {
         let errorMsg: string
-        if ((error as any).name === 'AbortError') {
-          errorMsg = `AIsProxyClientService.process() forward to ${forward2ServiceProps.serviceId}: fetch aborted`
+        let errorContainedMsg = ""+error
+        if ((error as any).response?.json) {
+          const json = await (error as any).response.json()
+          if (json) {
+            if (json.error) {
+              errorContainedMsg += ` (${json.error.type}/${json.error.message})`
+            } else {
+              errorContainedMsg += ` (${JSON.stringify(json)})`
+            }
+          }
+        }
+        if ((error as any).name === 'NetworkError') {
+          errorMsg = `AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId}: fetch '${url}' failed: ${errorContainedMsg}`
+        } else if ((error as any).name === 'AbortError') {
+          errorMsg = `AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId}: fetch '${url}' aborted`
         } else {
-          errorMsg = `AIsProxyClientService.process() forward to ${forward2ServiceProps.serviceId} with error: ${error}`
+          errorMsg = `AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId} with '${url}' error: ${errorContainedMsg}`
         }
         console.error(errorMsg)
         throw new Error(errorMsg)
@@ -173,8 +186,8 @@ function getOnDownloadProgressFunction(
 }
 
 export class AIsNetworkClientFactory implements AIsAPIFactory<AIsNetworkClientProps, AIsNetworkClientService> {
-    createAIsService(props: AIsNetworkClientProps): AIsNetworkClientService {
-        return new AIsNetworkClientService(props)
+    createAIsService(props: AIsNetworkClientProps, auth?: Auth): AIsNetworkClientService {
+        return new AIsNetworkClientService(props, auth)
     }
 }
 

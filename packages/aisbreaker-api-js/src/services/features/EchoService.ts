@@ -3,6 +3,7 @@ import {
     AIsBreaker,
     AIsServiceProps,
     AIsAPIFactory,
+    Auth,
     Output,
     Request,
     ResponseFinal,
@@ -19,8 +20,8 @@ const echoServiceId = 'chat:echo'
 
 export class EchoService extends BaseAIsService {
 
-    constructor(serviceProps: AIsServiceProps) {
-        super(serviceProps)
+    constructor(serviceProps: AIsServiceProps, auth?: Auth) {
+        super(serviceProps, auth)
     }
 
     async process(request: Request): Promise<ResponseFinal> {
@@ -67,8 +68,8 @@ export class EchoService extends BaseAIsService {
 }
 
 export class EchoFactory implements AIsAPIFactory<AIsServiceProps, EchoService> {
-    createAIsService(props: AIsServiceProps): EchoService {
-        return new EchoService(props)
+    createAIsService(props: AIsServiceProps, auth?: Auth): EchoService {
+        return new EchoService(props, auth)
     }
 }
 

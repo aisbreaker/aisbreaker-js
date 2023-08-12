@@ -25,35 +25,25 @@ export function writeJsonResponse(
   }
 
   // prepare and send data
-  let data: any = undefined
-  if (typeof payload === 'object') {
-    // normal case
-    data = JSON.stringify(payload, null, 2)
-
-  } else if (typeof payload === "boolean") {
-    //data =`{ "result": ${payload} }`
-    data = `${payload}`
-  } else if (typeof payload === "number" || typeof payload === "bigint") {
-    //data =`{ "result": ${payload} }`
-    data =`${payload}`
-  } else if (typeof payload === "string") {
-    //data =`{ "result": ${JSON.stringify(payload)} }`
-    data =`${JSON.stringify(payload)}`
-    //data =`${payload}`
-
-  } else {
-    // unknonw case
-    logger.warn(`writeJsonResponse() with unknown type of payload=${typeof payload}`)
-    data = payload
-  }
-
-  // send data
+  let data: any = stringify(payload, null, 2)
   res.end(data)
 }
+
 
 export function writeJsonResponseHeaders(res: express.Response, statusCode: number, headers?: OutgoingHttpHeaders | undefined): void {
   res.writeHead(statusCode, {...headers, 'Content-Type': 'application/json'})
 }
+
+export function writeJsonServerSideEventProgressResponse(res: express.Response, payload: any) {
+  res.write(`event: progress\n`)
+  res.write(`data: ${stringify(payload)}\n\n`)
+}
+
+export function writeJsonServerSideEventFinalResponse(res: express.Response, payload: any) {
+  res.write(`event: final\n`)
+  res.end(`data: ${stringify(payload)}\n\n`)
+}
+
 
 /**
  * Support of async handler functions in NodeJS/Express.
@@ -130,4 +120,33 @@ export function extractHttpAuthHeaderSecret(req: express.Request): string | unde
     throw new Error(`Access token missing in request`)
   }
   return accessTokenSecret
+}
+
+
+//
+// JSON formatter for HTTP responses
+//
+function stringify(value: any, replacer?: (number | string)[] | null, space?: string | number): string {
+  let data: any = undefined
+  if (typeof value === 'object') {
+    // normal case
+    data = JSON.stringify(value, replacer, space)
+
+  } else if (typeof value === "boolean") {
+    //data =`{ "result": ${value} }`
+    data = `${value}`
+  } else if (typeof value === "number" || typeof value === "bigint") {
+    //data =`{ "result": ${value} }`
+    data =`${value}`
+  } else if (typeof value === "string") {
+    //data =`{ "result": ${JSON.stringify(value)} }`
+    data =`${JSON.stringify(value)}`
+    //data =`${paylvalueoad}`
+
+  } else {
+    // unknonw case
+    logger.warn(`stringify() with unknown type of value=${typeof value}`)
+    data = stringify
+  }
+  return data
 }

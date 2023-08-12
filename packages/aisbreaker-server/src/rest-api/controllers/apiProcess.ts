@@ -1,5 +1,5 @@
 import * as express from 'express'
-import {extractHttpAuthHeaderSecret, getClientIP, writeJsonResponse, writeJsonResponseHeaders} from '../../utils/expressHelper.js'
+import {extractHttpAuthHeaderSecret, getClientIP, writeJsonResponse, writeJsonResponseHeaders, writeJsonServerSideEventFinalResponse, writeJsonServerSideEventProgressResponse} from '../../utils/expressHelper.js'
 //import { ProxyServiceAPI } from '../services/aisService.js'
 import logger from '../../utils/logger.js'
 import { api as api0, services as services0 } from 'aisbreaker-api-js'
@@ -43,7 +43,14 @@ export async function apiProcess(req: express.Request, res: express.Response): P
     const auth = getAuthForServiceId(requestAuthAndQuotas, requestSecret, serviceId)
 
     // get/create requested service
-    const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+    let aisService: api.AIsService
+    try {
+      aisService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+    } catch (err) {
+      logger.warn(`apiProcess() - error: ${err}`, err)
+      writeJsonResponse(res, 400, {error: {type: 'server_error', message: `Could get requested service (apiProcess): ${err}`}})
+      return
+    }
 
     // special handling for streaming
     const isStreamingRequested = (request as any).stream ? true : false
@@ -59,20 +66,24 @@ export async function apiProcess(req: express.Request, res: express.Response): P
     const response = await aisService.process(request)
 
     // send (final) HTTP response
-    const skipWriteHeaders = isStreamingRequested
-    writeJsonResponse(res, 200, response, skipWriteHeaders)
+    if (isStreamingRequested) {
+      // send final event
+      writeJsonServerSideEventFinalResponse(res, response)
+    } else {
+      // send final response
+      const skipWriteHeaders = true
+      writeJsonResponse(res, 200, response, skipWriteHeaders)
+    }
 
   } catch (err) {
     logger.error(`apiProcess() - error: ${err}`, err)
-    writeJsonResponse(res, 500, {error: {type: 'server_error', message: `Server Error (sendMessageViaProxy): ${err}`}})
+    writeJsonResponse(res, 500, {error: {type: 'server_error', message: `Server Error (apiProcess): ${err}`}})
   }
 }
 
 function createStreamProgressFunction(req: express.Request, res: express.Response): api.StreamProgressFunction {
   return (responseEvent: api.ResponseEvent): void => {
     console.log(`streamProgressFunction() - responseEvent=${JSON.stringify(responseEvent)}`)
-
-    const data = `data: ${JSON.stringify(responseEvent)}\n\n`
-    res.write(data)
+    writeJsonServerSideEventProgressResponse(res, responseEvent)
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-chat-web",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "//version": "2.11.0",
   "type": "module",
   "private": false,
@@ -31,7 +31,7 @@
   "dependencies": {
     "@traptitech/markdown-it-katex": "^3.6.0",
     "@vueuse/core": "^9.13.0",
-    "aisbreaker-core-browserjs": "^0.0.40",
+    "aisbreaker-core-browserjs": "^0.0.41",
     "highlight.js": "^11.7.0",
     "html2canvas": "^1.4.1",
     "katex": "^0.16.4",

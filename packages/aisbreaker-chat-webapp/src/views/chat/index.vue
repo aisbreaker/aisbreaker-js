@@ -15,6 +15,7 @@ import { useBasicLayout } from '@/hooks/useBasicLayout.js'
 import { useChatStore, usePromptStore } from '@/store/index.js'
 import { fetchChatAPIProcess } from '@/api/index.js'
 import { t } from '@/locales/index.js'
+import { getAIsService } from '@/api/aisbreakerClient.js'
 import { api, services } from 'aisbreaker-core-browserjs'
 
 let controller = new AbortController()
@@ -35,7 +36,7 @@ const { usingContext, toggleUsingContext } = useUsingContext()
 const { uuid } = route.params as { uuid: string }
 
 const dataSources = computed(() => chatStore.getChatByUuid(+uuid))
-const conversationList = computed(() => dataSources.value.filter(item => (!item.inversion && !!item.conversationOptions)))
+const conversationList = computed(() => dataSources.value.filter((item: any) => (!item.inversion && !!item.conversationOptions)))
 
 const prompt = ref<string>('')
 const loading = ref<boolean>(false)
@@ -47,42 +48,12 @@ const promptStore = usePromptStore()
 // use storeToRefs to ensure that the associated part can be re-rendered after the store is modified
 const { promptList: promptTemplate } = storeToRefs<any>(promptStore)
 
-//
-// initialize AIsBreaker API
-//
-let serviceProps: api.AIsServiceProps
-let auth: api.Auth | undefined = undefined
-serviceProps = {
-    /*
-    serviceId: 'aisbreaker:mirror',
-    forward2ServiceProps: {
-        serviceId: 'chat:dummy',
-    },
-    */
-    serviceId: 'chat:dummy',
-} as api.AIsServiceProps
-/*
-serviceProps = {
-    serviceId: 'aisbreaker:proxy',
-    //url: 'http://localhost:3000',
-    url: 'http://proxy.demo.aisbreaker.org/',
-    forward2ServiceProps: {
-        serviceId: 'chat:openai.com/gpt',
-    },
-} as api.AIsServiceProps
-auth = {
-    secret: process.env.OPENAI_API_KEY || process.env.AISPROXY_API_KEY || "",
-}
-*/
-const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
 
-console.log(services)
-console.log(aisService)
 
 
 // For unknown reasons, when the page is refreshed,
 // the loading state(s) does not reset, so it needs to be reset manually.
-dataSources.value.forEach((item, index) => {
+dataSources.value.forEach((item: any, index: number) => {
   if (item.loading)
     updateChatSomeInStore(+uuid, index, { loading: false })
 })
@@ -192,11 +163,11 @@ async function onConversation() {
     }
     */
 
-    
+    const aisService = getAIsService()
 
     const streamProgressFunc: api.StreamProgressFunction =
       (responseEvent: api.ResponseEvent) => {
-        console.log("streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
+        console.log("onConversation() streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
 
         let dataText = responseEvent.outputs[0]?.text?.content || ''
         lastText += (dataText ?? '')
@@ -232,7 +203,7 @@ async function onConversation() {
         }
     }   
 
-    const response1 = await aisService.process({
+    const responseFinal = await aisService.process({
         inputs: [ {
             text: {
                 role: 'user',
@@ -240,10 +211,26 @@ async function onConversation() {
             },
         } ],
         conversationState: lastConversationState,
-        streamProgressFunction: streamProgressFunc,
+        //streamProgressFunction: streamProgressFunc,
         //abortSignal: controller.signal, // TODO
     })
-    console.log(`onConversation() response1: ${JSON.stringify(response1)}`)
+    console.log(`onConversation() responseFinal: ${JSON.stringify(responseFinal/*, undefined, 2*/)}`)
+    let dataText = responseFinal.outputs[0]?.text?.content || ''
+    lastText = (dataText ?? '')
+    updateChatInStore(
+      +uuid,
+      dataSources.value.length - 1,
+      {
+        dateTime: dateToLocaleString(new Date()),
+        text: lastText,
+        inversion: false,
+        error: false,
+        loading: false,
+        //conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+        requestOptions: { prompt: message, options: { /*...options*/ } },
+        //conversationState: responseEvent.conversationState,
+      },
+    )
 
     //await fetchChatAPIOnce()
   }

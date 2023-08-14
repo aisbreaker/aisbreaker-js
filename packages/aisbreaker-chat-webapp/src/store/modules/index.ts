@@ -1,3 +1,4 @@
+export * from './aisbreaker/index.js'
 export * from './app/index.js'
 export * from './chat/index.js'
 export * from './user/index.js'

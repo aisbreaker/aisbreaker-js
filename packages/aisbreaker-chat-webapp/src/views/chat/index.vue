@@ -163,8 +163,6 @@ async function onConversation() {
     }
     */
 
-    const aisService = getAIsService()
-
     const streamProgressFunc: api.StreamProgressFunction =
       (responseEvent: api.ResponseEvent) => {
         console.log("onConversation() streamProgress: ", JSON.stringify(responseEvent/*, undefined, 2*/)) 
@@ -203,6 +201,7 @@ async function onConversation() {
         }
     }   
 
+    const aisService = getAIsService()
     const responseFinal = await aisService.process({
         inputs: [ {
             text: {
@@ -598,7 +597,7 @@ onUnmounted(() => {
           <template v-if="!dataSources.length">
             <div class="flex items-center justify-center mt-4 text-center text-neutral-300">
               <SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl" />
-              <span>Aha~</span>
+              <span>aisbreaker.org~</span>
             </div>
           </template>
           <template v-else>

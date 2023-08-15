@@ -15,7 +15,7 @@ const DEFAULT_URL = 'https://api.openai.com/v1/images/generations'
 const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
 
-export class OpenaiImageService extends base.BaseAIsService {
+export class OpenaiImageService extends base.BaseAIsService<api.AIsServiceProps> {
     openaiApiKey: string
 
     constructor(props: api.AIsServiceProps, auth?: api.Auth) {

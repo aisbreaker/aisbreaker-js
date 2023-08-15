@@ -13,6 +13,8 @@ import {
 } from '../../api/index.js'
 import * as utils from '../../utils/index.js'
 import { AIsNetworkRequest } from './AIsNetworkRequest.js'
+import { AIsError } from '../../api/AIsError.js'
+import { BaseAIsService } from '../../base/BaseAIsService.js'
 
 
 //
@@ -34,20 +36,26 @@ export interface AIsNetworkClientProps extends AIsServiceProps {
     forward2ServiceProps: AIsServiceProps
 }
 
-export class AIsNetworkClientService implements AIsService {
-    serviceProps: AIsNetworkClientProps
-    auth?: Auth
+export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProps> {
 
-    constructor(props: AIsNetworkClientProps, auth?: Auth) {
-        this.serviceProps = props
-        this.auth = auth
-    }
+  /**
+   * Optionally, provide additional context information/description
+   * for logging and error messages.
+   */
+  getContextService(): string | undefined {
+    let contextService = super.getContextService() || 'AIsNetworkClient'
+    contextService += `->${this.serviceProps?.url}->${this.serviceProps?.forward2ServiceProps?.serviceId}`
+    return contextService
+  }
 
-    async process(request: Request): Promise<ResponseFinal> {
-      const forward2ServiceProps = this.serviceProps.forward2ServiceProps
+
+  async processUnprotected(request: Request, context: string): Promise<ResponseFinal> {
+
+      console.log(`${context} BEFORE START`)
+      const forward2ServiceProps = this.serviceProps?.forward2ServiceProps
       const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
       try {
-        console.log(`AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId} START`)
+        console.log(`${context} START`)
         
         // remote access - no streaming of partial responses right now (TODO: implement streaming)
         const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
@@ -61,7 +69,7 @@ export class AIsNetworkClientService implements AIsService {
 
         let responseFinal: ResponseFinal | undefined = undefined
         if (!isStreamingRequested) {
-          // no streaming
+          // no streaming (simple)
           const responseJson = await ky.post(
             url,
             {
@@ -82,7 +90,7 @@ export class AIsNetworkClientService implements AIsService {
           responseFinal = responseJson as ResponseFinal
 
         } else {
-          // streaming
+          // streaming (more complex)
           const streamProgressFunction = request.streamProgressFunction as StreamProgressFunction
           const l = await ky.post(
             url,
@@ -93,25 +101,29 @@ export class AIsNetworkClientService implements AIsService {
                 },
                 json: aisNetworkRequest,
                 onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
-                  if (DEBUG) {
-                      console.log('onMessage() called', message)
-                  }
-                  if (!message.data || message.event === 'ping') {
-                      return;
-                  }
-                  if (message.data === '[DONE]') {
-                      // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                      //abortController.abort();
-                      //resolve(undefined)
-                      //done = true;
-                      return;
-                  }
-                  if (message.event === 'final') {
-                    const dataObj = JSON.parse(message.data)
-                    responseFinal = dataObj
-                  } else {
-                    const dataObj = JSON.parse(message.data)
-                    streamProgressFunction(dataObj)
+                  try {
+                    if (DEBUG) {
+                        console.log('onMessage() called', message)
+                    }
+                    if (!message.data || message.event === 'ping') {
+                        return;
+                    }
+                    if (message.data === '[DONE]') {
+                        // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
+                        //abortController.abort();
+                        //resolve(undefined)
+                        //done = true;
+                        return;
+                    }
+                    if (message.event === 'final') {
+                      const dataObj = JSON.parse(message.data)
+                      responseFinal = dataObj
+                    } else {
+                      const dataObj = JSON.parse(message.data)
+                      streamProgressFunction(dataObj)
+                    }
+                  } catch (error) {
+                    console.error(`${context} onDownloadProgress() error:`, error)
                   }
                 }),
                 /*
@@ -131,59 +143,61 @@ export class AIsNetworkClientService implements AIsService {
         if (!responseFinal) {
           throw new Error(`no final response`)
         }
-        console.log(`AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId} END`)
+        console.log(`${context} END`)
         return responseFinal
 
       } catch (error) {
-        let errorMsg: string
-        let errorContainedMsg = ""+error
-        if ((error as any).response?.json) {
-          const json = await (error as any).response.json()
-          if (json) {
-            if (json.error) {
-              errorContainedMsg += ` (${json.error.type}/${json.error.message})`
-            } else {
-              errorContainedMsg += ` (${JSON.stringify(json)})`
-            }
-          }
+        console.error("AIsNetworkClientService error:", error)
+
+        // error (message) in response?
+        if ((error as any).response) {
+          await tryToThrowAIsErrorFromKyResponse((error as any).response)
         }
-        if ((error as any).name === 'NetworkError') {
-          errorMsg = `AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId}: fetch '${url}' failed: ${errorContainedMsg}`
-        } else if ((error as any).name === 'AbortError') {
-          errorMsg = `AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId}: fetch '${url}' aborted`
-        } else {
-          errorMsg = `AIsNetworkClientService.process() forward to ${forward2ServiceProps.serviceId} with '${url}' error: ${errorContainedMsg}`
-        }
-        console.error(errorMsg)
-        throw new Error(errorMsg)
+
+        // normal error: let it handle by the calling process() function
+        throw error
       }
     }
 }
 
-/** Create callback function for ky for streaming */
-function getOnDownloadProgressFunction(
-  streamProgressFunction: StreamProgressFunction 
-  ): (progress: any, chunk: Uint8Array) => void {
-  // streaming requested
-  const onDownloadProgress = utils.kyOnDownloadProgress4onMessage((message: any) => {
-    if (DEBUG) {
-        console.log('onMessage() called', message)
-    }
-    if (!message.data || message.event === 'ping') {
-        return;
-    }
-    if (message.data === '[DONE]') {
-        // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-        //abortController.abort();
-        //resolve(undefined)
-        //done = true;
-        return;
-    }
-    const dataObj = JSON.parse(message.data)
-    streamProgressFunction(dataObj)
-  })
-  return onDownloadProgress
+//
+// error helpers
+//
+
+/**
+ * Throws an AIsError if the response contains an error, otherwise it just returns 
+ * @param response T
+ */
+async function tryToThrowAIsErrorFromKyResponse(response: any) {
+  const errorMessage = await tryToExtractErrorMesageFromKyResponse(response)
+  if (errorMessage) {
+    throw new AIsError(errorMessage, utils.ERROR_503_Service_Unavailable)
+  }
 }
+
+async function tryToExtractErrorMesageFromKyResponse(response: any): Promise<string | undefined> {
+  if (response && response.json) {
+    try {
+      const json = await response.json()
+      if (json) {
+        if (json.error) {
+          return `${json.error.type}/${json.error.message})`
+        } else {
+          return JSON.stringify(json)
+        }
+      }
+    } catch (error) {
+      // exctract failed
+      return undefined
+    }
+  }
+  return undefined
+}
+
+
+//
+// factory
+//
 
 export class AIsNetworkClientFactory implements AIsAPIFactory<AIsNetworkClientProps, AIsNetworkClientService> {
     createAIsService(props: AIsNetworkClientProps, auth?: Auth): AIsNetworkClientService {

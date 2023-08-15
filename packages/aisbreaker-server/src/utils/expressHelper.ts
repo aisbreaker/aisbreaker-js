@@ -44,6 +44,11 @@ export function writeJsonServerSideEventFinalResponse(res: express.Response, pay
   res.end(`data: ${stringify(payload)}\n\n`)
 }
 
+export function writeJsonServerSideEventErrorResponse(res: express.Response, payload: any) {
+  res.write(`event: error\n`)
+  res.end(`data: ${stringify(payload)}\n\n`)
+}
+
 
 /**
  * Support of async handler functions in NodeJS/Express.

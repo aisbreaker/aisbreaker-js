@@ -18,14 +18,17 @@ import { BaseAIsService } from '../../base/index.js'
 
 const echoServiceId = 'chat:echo'
 
-export class EchoService extends BaseAIsService {
+export class EchoService extends BaseAIsService<AIsServiceProps> {
 
     constructor(serviceProps: AIsServiceProps, auth?: Auth) {
         super(serviceProps, auth)
     }
 
-    async process(request: Request): Promise<ResponseFinal> {
-        this.checkRequest(request)
+    /**
+     * Do the work of process()
+     * without the need to care about all error handling.
+     */
+    async processUnprotected(request: Request): Promise<ResponseFinal> {
 
         // update conversation (before trivial request-response) - OPTIONAL because state is not used
         const conversationState = this.getConversationState(request)

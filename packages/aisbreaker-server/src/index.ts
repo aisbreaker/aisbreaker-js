@@ -104,6 +104,16 @@ async function startServer() {
     })
     */
 
+
+    // avoid server crashes by handling uncaught exceptions and unhandled rejections
+    process.on('uncaughtException', (error, origin) => {
+      console.log('********** Uncaught exception: ', error, ' with origin: ', origin)
+    })
+    process.on('unhandledRejection', (reason, promise) => {
+      console.log('********** Unhandled rejection at: ', promise, ' with reason: ', reason);
+    })
+  
+
     //
     // start the web server now
     //

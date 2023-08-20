@@ -1,5 +1,5 @@
 import * as express from 'express'
-import {extractHttpAuthHeaderSecret, getClientIP, writeJsonResponse, writeJsonResponseHeaders, writeJsonServerSideEventErrorResponse, writeJsonServerSideEventFinalResponse, writeJsonServerSideEventProgressResponse} from '../../utils/expressHelper.js'
+import {extractHttpAuthHeaderSecret, getClientIP, writeEventStreamResponseHeaders, writeJsonResponse, writeJsonResponseHeaders, writeJsonServerSideEventErrorResponse, writeJsonServerSideEventFinalResponse, writeJsonServerSideEventProgressResponse} from '../../utils/expressHelper.js'
 //import { ProxyServiceAPI } from '../services/aisService.js'
 import logger from '../../utils/logger.js'
 import { api as api0, services as services0 } from 'aisbreaker-api-js'
@@ -92,7 +92,8 @@ async function apiProcessIntern(req: express.Request, res: express.Response): Pr
       request.streamProgressFunction = createStreamProgressFunction(req, res)
 
       // send HTTP response headers (before streaming)
-      writeJsonResponseHeaders(res, 200)
+      //writeJsonResponseHeaders(res, 200)
+      writeEventStreamResponseHeaders(res, 200)
 
       // call requested service
       const response = await aisService.process(request)

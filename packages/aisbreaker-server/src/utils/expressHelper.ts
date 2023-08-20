@@ -34,6 +34,10 @@ export function writeJsonResponseHeaders(res: express.Response, statusCode: numb
   res.writeHead(statusCode, {...headers, 'Content-Type': 'application/json'})
 }
 
+export function writeEventStreamResponseHeaders(res: express.Response, statusCode: number, headers?: OutgoingHttpHeaders | undefined): void {
+  res.writeHead(statusCode, {...headers, 'Content-Type': 'text/event-stream'})
+}
+
 export function writeJsonServerSideEventProgressResponse(res: express.Response, payload: any) {
   res.write(`event: progress\n`)
   res.write(`data: ${stringify(payload)}\n\n`)

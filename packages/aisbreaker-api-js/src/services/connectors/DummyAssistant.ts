@@ -24,7 +24,7 @@ export interface DummyAssistantServiceProps extends AIsServiceProps {
     greeting?: string
 }
 
-export class DummyAssistantService extends BaseAIsService {
+export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceProps> {
     greeting: string
 
     constructor(serviceProps: DummyAssistantServiceProps, auth?: Auth) {
@@ -32,9 +32,11 @@ export class DummyAssistantService extends BaseAIsService {
         this.greeting = serviceProps.greeting || 'Hello'
     }
 
-    async process(request: Request): Promise<ResponseFinal> {
-        this.checkRequest(request)
-
+    /**
+     * Do the work of process()
+     * without the need to care about all error handling.
+     */
+    async processUnprotected(request: Request, context: string): Promise<ResponseFinal> {
         // update conversation (before trivial request-response)
         const conversationState = this.getConversationState(request)
         conversationState.addInputs(request.inputs)

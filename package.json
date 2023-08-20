@@ -12,7 +12,8 @@
     "packages/aisbreaker-chat-cli",
     "packages/aisbreaker-server",
     "packages/aisbreaker-core-browserjs",
-    "packages/aisbreaker-chat-webapp"
+    "packages/aisbreaker-chat-webapp",
+    "test"
   ],
   "//ignoredWorkspaces": [
   ],

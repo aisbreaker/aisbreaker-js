@@ -9,7 +9,9 @@
     "// test info-2": "https://kulshekhar.github.io/ts-jest/docs/guides/esm-support/",
     "integration-tests-without-build": "NODE_OPTIONS=--experimental-vm-modules jest",
     "integration-tests": "npm run build && npm run integration-tests-without-build",
-    "integration-tests-without-build:single": "NODE_OPTIONS=--experimental-vm-modules jest integration/TestTheTest.test.js",
+    "integration-tests-without-build:single": "NODE_OPTIONS=--experimental-vm-modules jest integration/RemoteRemoteDummyChat.test.js",
+    "integration-tests-without-build:single02": "NODE_OPTIONS=--experimental-vm-modules jest integration/RemoteErrorPropagation.test.js",
+    "integration-tests-without-build:single03": "NODE_OPTIONS=--experimental-vm-modules jest integration/RemoteOpenaiComChat.test.js",
     "integration-tests:single": "npm run build && npm run integration-tests-without-build:single"
   },
   "keywords": [],

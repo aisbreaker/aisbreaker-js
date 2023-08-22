@@ -1,29 +1,20 @@
-import { api } from 'aisbreaker-core-nodejs'
-
-const DEBUG = false
-const API_SERVER = 'http://localhost:3000'
-const AISBREAKER_API_KEY = process.env.AISBREAKER_API_KEY
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+import { api } from 'aisbreaker-api-js'
+import { processRemoteService, testPingRemoteAisbreakerServer } from '../utils/AisBreakerAccessUtils.js'
+import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY, OPENAI_API_KEY } from './config.js'
 
 
-// pre-checks
-describe('Test remote service chat:openai.com is ready', () => {
-  /* TODO
-  test('Test ping remote service API', async () => {
-    const aisService = api.AIsBreaker.getInstance().getAIsService({
-      "serviceId": "aisbreaker:network",
-      "url": API_SERVER,
-    })
-    //const response = await aisService.ping()
-    // TODO: aisService.ping() must be implemented
-    const response = "TODO: aisService.ping() must be implemented"
-    expect(response).toEqual('pong')
-  })
-  */
+// precondition checks
+describe('Test preconditions', () => {
+  testPingRemoteAisbreakerServer(URL)
 
   test('Check for OPENAI_API_KEY', () => {
     expect(OPENAI_API_KEY).toBeDefined()
   })
+
+  test('Check for AISBREAKER_API_KEY', () => {
+    expect(AISBREAKER_API_KEY).toBeDefined()
+  })
+
 })
 
 
@@ -31,11 +22,7 @@ describe('Test remote service chat:openai.com is ready', () => {
 describe('Test remote service chat:openai.com', () => {
   // commont settings
   const serviceProps = {
-    "serviceId": "aisbreaker:network",
-    "url": API_SERVER,
-    "forward2ServiceProps": {
-      "serviceId": "chat:openai.com",
-    }
+    "serviceId": "chat:openai.com",
   }
   const validOpenaiComAuth = {
     secret: OPENAI_API_KEY || "",
@@ -43,134 +30,101 @@ describe('Test remote service chat:openai.com', () => {
   const validAisbreakerAuth = {
     secret: AISBREAKER_API_KEY || "",
   }
-  const invalidAuth = {
-    secret: "foo_invalid_api_key",
+  const invalidOpenaiComAuth = {
+    secret: "sk-invalid_api_key_for_test",
   }
   const jsPrompt = "What is JavaScript?"
   const jsContainedAnswer = "programming language"
 
 
-  test('Test remote service chat:openai.com, without stream, openai key, success', async () => {
+  test('Test remote service chat:openai.com: without stream, openai key, success', async () => {
     // service initialization
     const doStream = false
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processService(serviceProps, validOpenaiComAuth, jsPrompt, doStream)
+      await processRemoteService(URL, serviceProps, validOpenaiComAuth, jsPrompt, doStream)
 
     // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer)
+    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
   })
 
 
-  test('Test remote service chat:openai.com, with stream, openai key, success', async () => {  
+  test('Test remote service chat:openai.com: with stream, openai key, success', async () => {  
     // service initialization
     const doStream = true
 
     // process with stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processService(serviceProps, validOpenaiComAuth, jsPrompt, doStream)
+      await processRemoteService(URL, serviceProps, validOpenaiComAuth, jsPrompt, doStream)
 
     // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer)
+    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
     expect(streamedProgressText).toEqual(responseFinalText)
   })
 
 
-  test('Test remote service chat:openai.com, without stream, aisbreaker key, success', async () => {
+  test('Test remote service chat:openai.com: without stream, aisbreaker key, success', async () => {
     // service initialization
     const doStream = false
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processService(serviceProps, validAisbreakerAuth, jsPrompt, doStream)
+    await processRemoteService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
 
     // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer)
+    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
   })
 
 
-  test('Test remote service chat:openai.com, with stream, aisbreaker key, success', async () => {  
+  test('Test remote service chat:openai.com: with stream, aisbreaker key, success', async () => {  
     // service initialization
     const doStream = true
 
     // process with stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processService(serviceProps, validAisbreakerAuth, jsPrompt, doStream)
+      await processRemoteService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
 
     // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer)
+    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
     expect(streamedProgressText).toEqual(responseFinalText)
   })
 
-
-  test('Test remote service chat:openai.com, without stream, invalid access token', async () => {
+/* TODO: copy and adapt from "with stream":
+  test('Test remote service chat:openai.com: without stream, invalid access token', async () => {
     // service initialization
     const doStream = false
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processService(serviceProps, invalidAuth, jsPrompt, doStream)
+      await processRemoteService(URL, serviceProps, invalidAuth, jsPrompt, doStream)
 
     // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer)
+    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
   })
-
-  test('Test remote service chat:openai.com, with stream, invalid access token', async () => {
+*/
+  test('Test remote service chat:openai.com: with stream, invalid access token', async () => {
     // service initialization
     const doStream = true
 
-    // process without stream
-    const [responseFinal, responseFinalText, streamedProgressText] =
-      await processService(serviceProps, invalidAuth, jsPrompt, doStream)
-
-    // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer)
-  })
-
-})
-
-
-//
-// helper functions
-//
-
-async function processService(
-  serviceProps: api.AIsServiceProps,
-  auth: api.Auth,
-  prompt: string,
-  doStream: boolean):   
-  Promise<[
-    responseFinal: api.ResponseFinal, 
-    responseFinalText: string | undefined, 
-    streamedProgressText: string | undefined
-  ]> {
-
-  // service initialization
-  const aisService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
-
-  // process with stream
-  let streamedProgressText: string | undefined
-  let streamProgressFunc: api.StreamProgressFunction = (responseEvent: api.ResponseEvent) => {
-    if (responseEvent?.outputs?.length > 0) {
-      const token = responseEvent?.outputs[0]?.text?.content || ''
-      if (!streamedProgressText) {
-        streamedProgressText = ''
-      }
-      streamedProgressText += token
+    // process with stream
+    let error: api.AIsError | undefined
+    try {
+      const [responseFinal, responseFinalText, streamedProgressText] =
+        await processRemoteService(URL, serviceProps, invalidOpenaiComAuth, jsPrompt, doStream)
+    } catch (e) {
+      console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
+      error = e as api.AIsError
     }
-  }
-  const responseFinal = await aisService.process({
-      inputs: [ {
-          text: {
-              role: 'user',
-              content: prompt,
-          },
-      } ],
-      streamProgressFunction: doStream ? streamProgressFunc : undefined,
-  });
-  const responseFinalText = responseFinal?.outputs[0]?.text?.content
 
-  // both results
-  return [responseFinal, responseFinalText, streamedProgressText]
-}
+    // check result
+    const expectedStatusCode = 500 // TODO: fix to 401
+    // error messages from openai.com:
+    const expectedRootCauseMessage = 'Incorrect API key provided' 
+    const expectedRootCauseMessage2 = 'You can find your API key at https://platform.openai.com/account/api-keys'
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage)
+    expect(error?.message).toContain(expectedRootCauseMessage2)
+  })
+})

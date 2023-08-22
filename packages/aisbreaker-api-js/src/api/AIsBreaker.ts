@@ -1,5 +1,8 @@
+import { ERROR_404_Not_Found } from "../utils/index.js"
+import { AIsError } from "./AIsError.js"
 import { AIsAPIFactory, AIsServiceProps, AIsService } from "./AIsService.js"
 import { Auth } from "./models/index.js"
+import ky from 'ky-universal'
 
 /**
  * Class to create and manage service APIs.
@@ -42,7 +45,7 @@ export class AIsBreaker {
         // error handling and logging
         if (!factory) {
             console.log(`getFactory('${serviceId}') failed for: ${Array.from(this.serviceId2FactoryMapping.keys())}`)
-            throw new Error(`No factory registered for serviceId '${serviceId}'`)
+            throw new AIsError(`No factory registered for serviceId '${serviceId}'`, ERROR_404_Not_Found)
         }
         console.log(`getFactory('${serviceId}') succeeded`)
 
@@ -70,8 +73,62 @@ export class AIsBreaker {
         return aisAPIWithFilters
     }
 
-    static getAIsService(props: AIsServiceProps): AIsService {
-        return AIsBreaker.getInstance().getAIsService(props)
+    static getAIsService(props: AIsServiceProps, auth?: Auth): AIsService {
+        return AIsBreaker.getInstance().getAIsService(props, auth)
+    }
+
+
+    /**
+     * Get a service API for the given props (which include the serviceId)
+     * from a remote AIsBreaker server.
+     *
+     * Inclusive all default filters. They will be added here during creation.
+     *
+     * @param apiSaisbreakerServerURL   URL of the remote AIsBreaker server
+     * @param props                     of the requested service (incl. propos.serviceId)
+     * @param auth                      optional auth object
+     * @returns
+     */
+    getRemoteAIsService(aisbreakerServerURL: string, props: AIsServiceProps, auth?: Auth): AIsService {
+        // create props for remote access
+        const remoteProps = {
+            "serviceId": "aisbreaker:network",
+            "url": aisbreakerServerURL,
+            "forward2ServiceProps": props
+        }            
+
+        return this.getAIsService(remoteProps, auth)
+    }
+
+    static getRemoteAIsService(aisbreakerServerURL: string, props: AIsServiceProps, auth?: Auth): AIsService {
+        return AIsBreaker.getInstance().getRemoteAIsService(aisbreakerServerURL, props, auth)
+    }
+
+
+    async pingRemoteAIsService(aisbreakerServerURL: string): Promise<boolean> {
+        try {
+            const url = `${aisbreakerServerURL}/api/v1/ping`
+            const resp = await ky.get(url).json()
+            const message = (resp as any)?.message
+            if (message && message.includes('pong')) {
+                // success
+                return true
+            }
+        } catch (error) {
+            // error
+            /*
+            if (DEBUG) {
+                console.log(`pingRemoteAIsService('${aisbreakerServerURL}') failed: ${error}`)
+            }
+            */
+            return false
+        }
+
+        return false
+    }
+
+    static async pingRemoteAIsService(aisbreakerServerURL: string): Promise<boolean> {
+        return await AIsBreaker.getInstance().pingRemoteAIsService(aisbreakerServerURL)
     }
 
 

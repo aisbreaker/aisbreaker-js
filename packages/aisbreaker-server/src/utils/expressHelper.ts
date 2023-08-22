@@ -1,6 +1,8 @@
 import * as express from 'express'
 import {OutgoingHttpHeaders} from 'http'
 import logger from '../utils/logger.js'
+import { AssertionError } from 'assert'
+import { api, utils } from 'aisbreaker-api-js'
 
 
 /**
@@ -29,6 +31,33 @@ export function writeJsonResponse(
   res.end(data)
 }
 
+/**
+ * Helper to write JSON response
+ * 
+ * @param res
+ * @param statusCode  response code, e.g. 200
+ * @param payload     the JSON response
+ * @param headers 
+ */
+export function writeJsonResponseAIsError(
+  res: express.Response,
+  aisError: api.AIsErrorData,
+  skipWriteHeaders: boolean = false,
+  headers?: OutgoingHttpHeaders | undefined
+  ): void {
+
+  // send headers if not skipped
+  if (!skipWriteHeaders) {
+    writeJsonResponseHeaders(res, aisError.statusCode || utils.ERROR_500_Internal_Server_Error, headers)
+  }
+
+  // prepare and send data
+  const errorObj = api.AIsError.fromAIsErrorData(aisError).getErrorObject()
+  let data: any = stringify(errorObj, null, 2)
+  console.log(`writeJsonResponseAIsError() - data=${data}`)
+  res.end(data)
+}
+
 
 export function writeJsonResponseHeaders(res: express.Response, statusCode: number, headers?: OutgoingHttpHeaders | undefined): void {
   res.writeHead(statusCode, {...headers, 'Content-Type': 'application/json'})
@@ -51,6 +80,11 @@ export function writeJsonServerSideEventFinalResponse(res: express.Response, pay
 export function writeJsonServerSideEventErrorResponse(res: express.Response, payload: any) {
   res.write(`event: error\n`)
   res.end(`data: ${stringify(payload)}\n\n`)
+}
+
+export function writeJsonServerSideEventAIsErrorResponse(res: express.Response, aisError: api.AIsErrorData) {
+  const errorObj = api.AIsError.fromAIsErrorData(aisError).getErrorObject()
+  writeJsonServerSideEventErrorResponse(res, errorObj)
 }
 
 
@@ -136,7 +170,7 @@ export function extractHttpAuthHeaderSecret(req: express.Request): string | unde
 // JSON formatter for HTTP responses
 //
 function stringify(value: any, replacer?: (number | string)[] | null, space?: string | number): string {
-  let data: any = undefined
+  let data: string
   if (typeof value === 'object') {
     // normal case
     data = JSON.stringify(value, replacer, space)
@@ -155,7 +189,7 @@ function stringify(value: any, replacer?: (number | string)[] | null, space?: st
   } else {
     // unknonw case
     logger.warn(`stringify() with unknown type of value=${typeof value}`)
-    data = stringify
+    data = `{stringify() with unknown type of value=${typeof value}}`
   }
   return data
 }

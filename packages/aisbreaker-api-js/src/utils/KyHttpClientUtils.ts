@@ -21,6 +21,7 @@ export * as ky from 'ky-universal'
 import { EventSourceMessage, getLines, getMessages } from '@waylaidwanderer/fetch-event-source/parse'
 import { DownloadProgress, HTTPError } from 'ky'
 
+
 /** Mapping onMessage() event handler to onChunk() */
 function onChunk4onMessage(onMessage: (message: EventSourceMessage) => void):
     (arr: Uint8Array) => void {

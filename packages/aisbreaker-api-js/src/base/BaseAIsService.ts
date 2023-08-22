@@ -1,5 +1,5 @@
 import { HTTPError } from "ky"
-import { AIsError } from "../api/AIsError.js"
+import { AIsError, isAIsErrorData } from "../api/AIsError.js"
 import { AIsServiceProps, AIsAPIFactory, AIsService, Auth, Request, ResponseFinal } from "../api/index.js"
 import { DefaultConversationState, ERROR_400_Bad_Request, ERROR_499_Client_Closed_Request, ERROR_500_Internal_Server_Error, ERROR_501_Not_Implemented, ERROR_502_Bad_Gateway } from "../utils/index.js"
 
@@ -38,7 +38,7 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
    */
   async processUnprotected(request: Request, context: string): Promise<ResponseFinal> {
     const className = this.constructor.name
-    throw new AIsError(`${className}: Either process() or processUnprotected() must be implemented/overridden!`, ERROR_501_Not_Implemented)
+    throw new AIsError(`${className}/${context}: Either process() or processUnprotected() must be implemented/overridden!`, ERROR_501_Not_Implemented)
   }
 
   /**
@@ -111,7 +111,8 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
 }
 
 /**
- * In the case of an error, try to catch it and convert it to an AIsError.
+ * In the case of an error, try to catch it
+ * and propagate it as or convert it to an AIsError.
  */
 export async function protectProcessFunction(
   processFunction: ()=>Promise<ResponseFinal>,
@@ -128,8 +129,16 @@ export async function protectProcessFunction(
 
     if (error instanceof AIsError) {
       // re-throw the error unchanged
+      error.message = `${context}: ${error.message}`
       console.error(`${context} - AIsError:`, error)
       throw error
+    }
+    if (isAIsErrorData(error)) {
+      // re-throw as error
+      error.message = `${context}: ${error.message}`
+      const e = AIsError.fromAIsErrorData(error)
+      console.error(`${context} - AIsError(Data):`, e)
+      throw e
     }
 
     if ((error as any).name === 'NetworkError') {

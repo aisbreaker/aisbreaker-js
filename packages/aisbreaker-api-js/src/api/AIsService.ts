@@ -43,7 +43,7 @@ export interface AIsServiceProps {
 }
 export function isAIsServiceProps(obj: any): obj is AIsServiceProps {
   const o = <AIsServiceProps>obj
-  return o.serviceId !== undefined
+  return o?.serviceId !== undefined
 }
 
 /**

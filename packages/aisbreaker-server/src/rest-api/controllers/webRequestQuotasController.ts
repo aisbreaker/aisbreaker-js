@@ -57,6 +57,9 @@ export async function checkRequest(
     return {requestAuthAndQuotas: requestAuthAndQuotas}
   } catch (err) {
     logger.error(`process() - error: ${err}`, err)
+    if (err instanceof api.AIsError) {
+      throw err
+    }
     const errorMsg = `Server Error (isRequestDeniedByRequestAuthAndQuotas0): ${err}`
     return {errorMsg: errorMsg}
   }
@@ -121,7 +124,16 @@ async function extractRequestAuthAndQuotas(
     // auth contains RequestAuthAndQuotas
     r = opt
   } else {
-    // auth does not contain RequestAuthAndQuotas: use default
+    // is this an aisbreaker access token?
+    if (requestSecret && requestSecret.startsWith(ACCESS_TOKEN_PREFIX)) {
+      // yes: it's an aisbreaker access token, but invalid
+      const msg = `extractRequestAuthAndQuotas(): Invalid aisbreaker access token: '${requestSecret.substring(0, 10)}...' (len=${requestSecret.length})`
+      console.log(msg)
+      throw new api.AIsError(msg, utils.ERROR_401_Unauthorized)
+    }
+  
+    // auth does not contain RequestAuthAndQuotas: use defaults
+    console.log("extractRequestAuthAndQuotas(): use defaults")
     r = await config.getDefaultRequestAuthAndQuotas()
   }
   return r
@@ -219,11 +231,20 @@ export function getAuthForServiceId(
       }
     }
   }
-
-  // fallback to requestSecret?
-  if (!secret && isRequestSecretFrom3rdParty(requestSecret)) {
-    // no other secret found, and requestSecret is from 3rd party
+  if (!isRequestSecretFrom3rdParty(requestSecret) && secret === '{{secret}}') {
+    // special aisbreaker authSecret '{{secret}}': pass through the aisbreaker secret
     secret = requestSecret
+  }
+
+  // fallback to (3rd party) requestSecret?
+  if (!secret) {
+    if (isRequestSecretFrom3rdParty(requestSecret)) {
+      // no other secret found, and requestSecret is from 3rd party
+      secret = requestSecret
+    } else {
+      // no other secret found, and requestSecret is not from 3rd party
+      // => do not use requestSecret
+    }
   }
 
   // result

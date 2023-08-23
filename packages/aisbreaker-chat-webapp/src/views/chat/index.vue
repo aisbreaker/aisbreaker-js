@@ -211,7 +211,7 @@ async function onConversation() {
         } ],
         conversationState: lastConversationState,
         streamProgressFunction: streamProgressFunc,
-        //abortSignal: controller.signal, // TODO
+        abortSignal: controller.signal,
     })
     console.log(`onConversation() responseFinal: ${JSON.stringify(responseFinal/*, undefined, 2*/)}`)
     let dataText = responseFinal.outputs[0]?.text?.content || ''

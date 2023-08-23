@@ -1,5 +1,5 @@
 import * as express from 'express'
-import {extractHttpAuthHeaderSecret, getClientIP, writeEventStreamResponseHeaders, writeJsonResponse, writeJsonResponseAIsError, writeJsonResponseHeaders, writeJsonServerSideEventAIsErrorResponse, writeJsonServerSideEventErrorResponse, writeJsonServerSideEventFinalResponse, writeJsonServerSideEventProgressResponse} from '../../utils/expressHelper.js'
+import {extractHttpAuthHeaderSecret, getClientIP, writeEventStreamResponseHeaders, writeJsonResponse, writeJsonResponseAIsErrorAndEnd, writeJsonResponseHeaders, writeJsonServerSideEventAIsErrorResponseAndEnd, writeJsonServerSideEventErrorResponseAndEnd, writeJsonServerSideEventFinalResponseAndEnd, writeJsonServerSideEventProgressResponse} from '../../utils/expressHelper.js'
 //import { ProxyServiceAPI } from '../services/aisService.js'
 import logger from '../../utils/logger.js'
 import { api, api as api0, services as services0, utils } from 'aisbreaker-api-js'
@@ -27,9 +27,17 @@ export async function apiProcess(req: express.Request, res: express.Response): P
 async function apiProcessIntern(req: express.Request, res: express.Response): Promise<void> {
   let request: api0.Request
   let aisService: api.AIsService
-  try {
-    logger.debug(`apiProcess() - started`)
 
+  logger.debug(`apiProcess() - started`)
+  
+  // abort handling
+  const abortController = new AbortController()
+  res.on('close', (data: any) => {
+    logger.warn(`apiProcess() - response close:`, data)
+    abortController.abort()
+  })
+
+  try {
     // check and use authentication (bearer header)
     const requestSecret = extractHttpAuthHeaderSecret(req)
     if (DEBUG) {
@@ -41,14 +49,12 @@ async function apiProcessIntern(req: express.Request, res: express.Response): Pr
     const quotasResult = await checkRequest(clientIp, req.hostname, requestSecret)
     if (quotasResult.errorMsg) {
       const e = new api.AIsError(quotasResult.errorMsg, utils.ERROR_429_Too_Many_Requests)
-      writeJsonResponseAIsError(res, e)
-      return
+      return writeJsonResponseAIsErrorAndEnd(res, e)     
     }
     const requestAuthAndQuotas = quotasResult.requestAuthAndQuotas
     if (!requestAuthAndQuotas) {
       const e = new api.AIsError(`Server Error (process): invalid CheckRequestQuotasResult`, utils.ERROR_400_Bad_Request)
-      writeJsonResponseAIsError(res, e)
-      return
+      return writeJsonResponseAIsErrorAndEnd(res, e)
     }
 
     // get aisNetworkRequest
@@ -68,22 +74,20 @@ async function apiProcessIntern(req: express.Request, res: express.Response): Pr
     } catch (err) {
       logger.warn(`apiProcess() - error: ${err}`, err)
       if (err instanceof api.AIsError) {
-        writeJsonResponseAIsError(res, err)
+        return writeJsonResponseAIsErrorAndEnd(res, err)
       } else {
         const e = new api.AIsError(`Could get requested service (apiProcess): ${err}`, utils.ERROR_400_Bad_Request)
-        writeJsonResponseAIsError(res, e)
+        return writeJsonResponseAIsErrorAndEnd(res, e)
       }
-      return
     }
   } catch (err) {
     logger.error(`apiProcess() - error: ${err}`, err)
     if (err instanceof api.AIsError) {
-      writeJsonResponseAIsError(res, err)
+      return writeJsonResponseAIsErrorAndEnd(res, err)
     } else {
       const e = new api.AIsError(`Server Error (apiProcess): ${err}`, utils.ERROR_500_Internal_Server_Error)
-      writeJsonResponseAIsError(res, e)
+      return writeJsonResponseAIsErrorAndEnd(res, e)
     }
-    return
   }
 
   // special handling for streaming
@@ -92,17 +96,19 @@ async function apiProcessIntern(req: express.Request, res: express.Response): Pr
     // simple/non-streaming request
     try {
       // call requested service
+      request.abortSignal = abortController.signal
       const response = await aisService.process(request)
       writeJsonResponse(res, 200, response)
   
     } catch (err) {
       logger.error(`apiProcess() - error for non-streaming: ${err}`, err)
+      abortController.abort()
       if (err instanceof api.AIsError || api.isAIsErrorData(err)) {
         err.message = `Server Error (apiProcess non-streaming): ${err.message}`
-        writeJsonResponseAIsError(res, err)
+        return writeJsonResponseAIsErrorAndEnd(res, err)
       } else {
         const e = new api.AIsError(`Server Error (apiProcess non-streaming*): ${err}`, utils.ERROR_503_Service_Unavailable)
-        writeJsonResponseAIsError(res, e)
+        return writeJsonResponseAIsErrorAndEnd(res, e)
       }
     }
 
@@ -113,42 +119,46 @@ async function apiProcessIntern(req: express.Request, res: express.Response): Pr
 
     try {
       // prepare event handler
-      request.streamProgressFunction = createStreamProgressFunction(req, res)
+      request.streamProgressFunction = createStreamProgressFunction(req, res, abortController)
 
       // send HTTP response headers (before streaming)
       //writeJsonResponseHeaders(res, 200)
       writeEventStreamResponseHeaders(res, 200)
 
       // call requested service
+      request.abortSignal = abortController.signal
       const response = await aisService.process(request)
 
       // send final event
-      writeJsonServerSideEventFinalResponse(res, response)
+      return writeJsonServerSideEventFinalResponseAndEnd(res, response)
 
     } catch (err) {
       logger.error(`apiProcess() - error for streaming: ${err}`, err)
+      abortController.abort()
       if (err instanceof api.AIsError || api.isAIsErrorData(err)) {
         err.message = `Server Error (apiProcess streaming): ${err.message}`
-        writeJsonServerSideEventAIsErrorResponse(res, err)
+        return writeJsonServerSideEventAIsErrorResponseAndEnd(res, err)
       } else {
         const e = new api.AIsError(`Server Error (apiProcess streaming*): ${err}`, utils.ERROR_500_Internal_Server_Error)
-        writeJsonServerSideEventErrorResponse(res, e)
+        return writeJsonServerSideEventErrorResponseAndEnd(res, e)
       }
-      /*
-      writeJsonServerSideEventErrorResponse(res, {error: {type: 'server_error', status: 500, message: `Server Error (apiProcess): ${err}`}})
-      */
     }
   }
 }
 
-function createStreamProgressFunction(req: express.Request, res: express.Response): api.StreamProgressFunction {
+function createStreamProgressFunction(
+  req: express.Request,
+  res: express.Response,
+  abortController: AbortController
+): api.StreamProgressFunction {
   return (responseEvent: api.ResponseEvent): void => {
     try {
       console.log(`streamProgressFunction() - responseEvent=${JSON.stringify(responseEvent)}`)
       writeJsonServerSideEventProgressResponse(res, responseEvent)
     } catch (err) {
       logger.error(`createStreamProgressFunction() - error for streaming progress: ${err}`, err)
-      writeJsonServerSideEventErrorResponse(res, {error: {type: 'server_error', status: 500, message: `Server Error (apiProcess): ${err}`}})
+      abortController.abort()
+      writeJsonServerSideEventErrorResponseAndEnd(res, {error: {type: 'server_error', status: 500, message: `Server Error (apiProcess): ${err}`}})
     }
   }
 }

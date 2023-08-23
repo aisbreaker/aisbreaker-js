@@ -17,6 +17,8 @@ describe('Test preconditions', () => {
 
 })
 
+const OPENAI_LONG_ANSWER_TIMEOUT_MILLIS = 10000
+
 
 // tests
 describe('Test remote service chat:openai.com', () => {
@@ -47,7 +49,7 @@ describe('Test remote service chat:openai.com', () => {
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
   test('Test remote service chat:openai.com: with stream, openai key, success', async () => {  
@@ -61,7 +63,7 @@ describe('Test remote service chat:openai.com', () => {
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
     expect(streamedProgressText).toEqual(responseFinalText)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
   test('Test remote service chat:openai.com: without stream, aisbreaker key, success', async () => {
@@ -74,7 +76,7 @@ describe('Test remote service chat:openai.com', () => {
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
   test('Test remote service chat:openai.com: with stream, aisbreaker key, success', async () => {  
@@ -88,7 +90,7 @@ describe('Test remote service chat:openai.com', () => {
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
     expect(streamedProgressText).toEqual(responseFinalText)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 /* TODO: copy and adapt from "with stream":
   test('Test remote service chat:openai.com: without stream, invalid access token', async () => {

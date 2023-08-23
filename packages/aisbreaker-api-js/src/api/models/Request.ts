@@ -31,9 +31,15 @@ export interface Request {
     clientUser?: string
 
     /**
-     * If set to true, partial message deltas will be sent, like in ChatGPT.  Tokens will be sent as data-only server-sent events as they become available, with the stream terminated by a data: [DONE]
+     * If set to true, partial message deltas will be sent, like in ChatGPT.
+     * Tokens will be sent as events as they become available.
      */
     streamProgressFunction?: StreamProgressFunction
+
+    /**
+     * If set, the request will be aborted when the signal is aborted.
+     */
+    abortSignal?: AbortSignal
 }
 
 /**

@@ -39,7 +39,7 @@ export function writeJsonResponse(
  * @param payload     the JSON response
  * @param headers 
  */
-export function writeJsonResponseAIsError(
+export function writeJsonResponseAIsErrorAndEnd(
   res: express.Response,
   aisError: api.AIsErrorData,
   skipWriteHeaders: boolean = false,
@@ -72,19 +72,19 @@ export function writeJsonServerSideEventProgressResponse(res: express.Response, 
   res.write(`data: ${stringify(payload)}\n\n`)
 }
 
-export function writeJsonServerSideEventFinalResponse(res: express.Response, payload: any) {
+export function writeJsonServerSideEventFinalResponseAndEnd(res: express.Response, payload: any) {
   res.write(`event: final\n`)
   res.end(`data: ${stringify(payload)}\n\n`)
 }
 
-export function writeJsonServerSideEventErrorResponse(res: express.Response, payload: any) {
+export function writeJsonServerSideEventErrorResponseAndEnd(res: express.Response, payload: any) {
   res.write(`event: error\n`)
   res.end(`data: ${stringify(payload)}\n\n`)
 }
 
-export function writeJsonServerSideEventAIsErrorResponse(res: express.Response, aisError: api.AIsErrorData) {
+export function writeJsonServerSideEventAIsErrorResponseAndEnd(res: express.Response, aisError: api.AIsErrorData) {
   const errorObj = api.AIsError.fromAIsErrorData(aisError).getErrorObject()
-  writeJsonServerSideEventErrorResponse(res, errorObj)
+  writeJsonServerSideEventErrorResponseAndEnd(res, errorObj)
 }
 
 

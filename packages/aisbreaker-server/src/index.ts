@@ -107,20 +107,28 @@ async function startServer() {
 
     // avoid server crashes by handling uncaught exceptions and unhandled rejections
     process.on('uncaughtException', (error, origin) => {
-      console.log('********** Uncaught exception: ', error, ' with origin: ', origin)
+      console.error('********** Uncaught exception: ', error, ' with origin: ', origin)
     })
     process.on('unhandledRejection', (reason, promise) => {
-      console.log('********** Unhandled rejection at: ', promise, ' with reason: ', reason);
+      console.error('********** Unhandled rejection at: ', promise, ' with reason: ', reason);
     })
   
-
+    
     //
     // start the web server now
     //
-    app.listen(port, () => {
+    const server = app.listen(port, () => {
         console.log(`Server running at http://localhost:${port}`);
     })
+    console.log(`Version: ${version}`)
 
+    // handle SIGTERM event, e.g. from Docker
+    process.on('SIGTERM', () => {
+      console.error('SIGTERM signal received: closing HTTP server')
+      server.close(() => {
+        console.log('HTTP server closed')
+      })
+    })
 }
 startServer()
 

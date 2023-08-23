@@ -85,7 +85,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
                     headersTimeout: 0,
                 }),
                 */
-                signal: new AbortController().signal,
+                signal: request.abortSignal,
             }
           ).json()
           responseFinal = responseJson as ResponseFinal
@@ -145,7 +145,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
                     headersTimeout: 0,
                 }),
                 */
-                signal: new AbortController().signal,
+                signal: request.abortSignal,
             }
           ).text() 
           // ky.post() responseTextIgnored is ignored,

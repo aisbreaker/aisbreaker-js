@@ -1,5 +1,5 @@
 import { HTTPError } from "ky"
-import { ERROR_502_Bad_Gateway, getStatusText } from '../utils/index.js'
+import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, getStatusText } from '../utils/index.js'
 
 //
 // definition of an own Error class
@@ -13,12 +13,17 @@ import { ERROR_502_Bad_Gateway, getStatusText } from '../utils/index.js'
  */
 export interface AIsErrorData {
   message: string
-  statusCode?: number
+  statusCode: number
   statusText?: string
 }
 export function isAIsErrorData(obj: any): obj is AIsErrorData {
   const o = <AIsError>obj
-  return o?.message !== undefined
+  return (
+    o?.message !== undefined &&
+    typeof(o?.message) === 'string' &&
+    o?.statusCode !== undefined &&
+    typeof(o?.statusCode) === 'number'
+  )
 }
 
 /**
@@ -26,10 +31,10 @@ export function isAIsErrorData(obj: any): obj is AIsErrorData {
  * via the (network) AIsBreaker API to the actual client.
  */
 export class AIsError extends Error implements AIsErrorData {
-  statusCode?: number
+  statusCode: number
   statusText?: string
 
-  constructor(message: string, statusCode?: number, statusText?: string) {
+  constructor(message: string, statusCode: number, statusText?: string) {
     // clean up status
     if (!statusText && statusCode) {
       statusText = getStatusText(statusCode)
@@ -55,7 +60,7 @@ export class AIsError extends Error implements AIsErrorData {
     Object.setPrototypeOf(this, AIsError.prototype);
   }
 
-  getObject(): {message: string, statusCode?: number, statusText?: string} {
+  getObject(): {message: string, statusCode: number, statusText?: string} {
     return {
       message: this.message,
       statusCode: this.statusCode,
@@ -63,7 +68,7 @@ export class AIsError extends Error implements AIsErrorData {
     }
   }
 
-  getErrorObject(): {error: {message: string, statusCode?: number, statusText?: string}} {
+  getErrorObject(): {error: {message: string, statusCode: number, statusText?: string}} {
     return {
       error: this.getObject(),
     }
@@ -102,7 +107,7 @@ export class AIsError extends Error implements AIsErrorData {
 
     } else {
       // doen't have a request nor a response, so it doesn't look like an HTTPError
-      return AIsError.fromError(httpError)
+      return AIsError.fromError(httpError, ERROR_500_Internal_Server_Error)
     }
   }
 
@@ -113,9 +118,9 @@ export class AIsError extends Error implements AIsErrorData {
    * @param context optional context information/description/message prefix for error message
    * @returns AIsError
    */
-  static fromError(error: Error, context?: string): AIsError {
+  static fromError(error: Error, statusCode: number, context?: string): AIsError {
     const messagePrefix = context ? `${context}: ` : ''
-    return new AIsError(messagePrefix+error.message)
+    return new AIsError(messagePrefix+error.message, statusCode)
   }
 
   static fromAIsErrorData(data: AIsErrorData): AIsError {

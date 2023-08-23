@@ -80,6 +80,9 @@ export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceP
                 }
                 request.streamProgressFunction(responseEvent)
                 await delay(200)
+                if (request.abortSignal?.aborted) {
+                    break
+                }
             }
         }
 

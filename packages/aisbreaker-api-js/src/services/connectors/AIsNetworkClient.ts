@@ -28,11 +28,11 @@ const AISSERVER_API_PATH = '/api/v1/process'
 const DEBUG = true
 
 export interface AIsNetworkClientProps extends AIsServiceProps {
-    /** access this AIs server */
-    url: string
+  /** access this AIs server */
+  url: string
 
-    /** the actual service; this filter will forward to this service */
-    forward2ServiceProps: AIsServiceProps
+  /** the actual service; this filter will forward to this service */
+  forward2ServiceProps: AIsServiceProps
 }
 
 
@@ -71,6 +71,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     }
   }
 
+  /** process non-streaming */
   async processNonStreamingRequest(
     url: string,
     request: Request,
@@ -101,6 +102,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     return responseJson as ResponseFinal
   }
 
+  /** process streaming */
   async processStreamingRequest(
     url: string,
     request: Request,
@@ -137,7 +139,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
                   //abortController.abort();
                   //resolve(undefined)
                   //done = true;
-                  return;
+                  return
               }
               if (message.event === 'error') {
                 let dataObj = JSON.parse(message.data)
@@ -149,11 +151,14 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
                 if (errorFinal) {
                   throw errorFinal
                 }
+                return
               }
               if (message.event === 'final') {
+                // final data received
                 const dataObj = JSON.parse(message.data)
                 responseFinal = dataObj
               } else {
+                // normal data received
                 const dataObj = JSON.parse(message.data)
                 streamProgressFunction(dataObj)
               }

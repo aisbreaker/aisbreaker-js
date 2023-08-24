@@ -5,7 +5,7 @@ import {
 } from '../api/models/index.js'
 import * as StringUtils from './StringUtils.js'
 
-export interface ConverstationState {
+export interface ConversationState {
     messages: Message[]
 }
 
@@ -15,11 +15,11 @@ export interface ConverstationState {
  * The messages are stored in memory and can be imported from/exported to
  * a JSON string or a base64-encoded JSON string of a ConversationState object.
  */
-export class DefaultConversationState implements ConverstationState {
+export class DefaultConversationState implements ConversationState {
     messages: Message[]
 
     /** Construct from a base64 string which contains a ConversationState */
-    constructor(converstationState: ConverstationState) {
+    constructor(converstationState: ConversationState) {
         this.messages = converstationState.messages
     }
 
@@ -67,7 +67,7 @@ export class DefaultConversationState implements ConverstationState {
 
     /** Export to JSON string of a ConversationState object */
     toJSON(): string {
-        const obj: ConverstationState = {
+        const obj: ConversationState = {
             messages: this.messages,
         }
         return JSON.stringify(obj)

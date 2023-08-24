@@ -48,7 +48,7 @@ export const statusTextes: {[id: number]: string}  = {
 	416: 'Requested Range Not Satisfiable',
 	417: 'Expectation Failed',
 	418: 'I\'m a teapot (RFC 2324)',
-	420: 'Enhance Your Calm (Twitter)',
+	420: 'Enhance Your Calm', // 'Enhance Your Calm (Twitter)'
 	422: 'Unprocessable Entity (WebDAV)',
 	423: 'Locked (WebDAV)',
 	424: 'Failed Dependency (WebDAV)',
@@ -57,11 +57,11 @@ export const statusTextes: {[id: number]: string}  = {
 	428: 'Precondition Required',
 	429: 'Too Many Requests',
 	431: 'Request Header Fields Too Large',
-	444: 'No Response (Nginx)',
+	444: 'No Response', // 'No Response (Nginx)'
 	449: 'Retry With (Microsoft)',
 	450: 'Blocked by Windows Parental Controls (Microsoft)',
 	451: 'Unavailable For Legal Reasons',
-	499: 'Client Closed Request (Nginx)',
+	499: 'Client Closed Request', // 'Client Closed Request (Nginx)'
 
 	500: 'Internal Server Error',
 	501: 'Not Implemented',
@@ -72,7 +72,7 @@ export const statusTextes: {[id: number]: string}  = {
 	506: 'Variant Also Negotiates (Experimental)',
 	507: 'Insufficient Storage (WebDAV)',
 	508: 'Loop Detected (WebDAV)',
-	509: 'Bandwidth Limit Exceeded (Apache)',
+	509: 'Bandwidth Limit Exceeded', // 'Bandwidth Limit Exceeded (Apache)'
 	510: 'Not Extended',
 	511: 'Network Authentication Required',
 	598: 'Network read timeout error',

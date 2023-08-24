@@ -56,7 +56,7 @@ export async function checkRequest(
     // access allowed
     return {requestAuthAndQuotas: requestAuthAndQuotas}
   } catch (err) {
-    logger.error(`process() - error: ${err}`, err)
+    logger.warn(`process() - error: ${err}`, err)
     if (err instanceof api.AIsError) {
       throw err
     }
@@ -93,7 +93,7 @@ export async function isRequestDeniedByApiRequestQuotas(
     return undefined
 
   } catch (err) {
-    logger.error(`process() - error: ${err}`, err)
+    logger.warn(`process() - error: ${err}`, err)
     return `Server Error (isRequestDeniedByApiRequestQuotas): ${err}`
   }
 }

@@ -1,21 +1,19 @@
-import ky, { KyResponse } from 'ky-universal'
+import ky from 'ky-universal'
 
 import {
     AIsBreaker,
     AIsServiceProps,
     AIsAPIFactory,
-    AIsService,
     Auth,
     Request,
     ResponseFinal,
     StreamProgressFunction,
-    ERROR_500_Internal_Server_Error
 } from '../../api/index.js'
 import * as utils from '../../utils/index.js'
 import { AIsNetworkRequest } from './AIsNetworkRequest.js'
 import { AIsError, isAIsErrorData } from '../../api/AIsError.js'
 import { BaseAIsService } from '../../base/BaseAIsService.js'
-import { Response } from 'node-fetch'
+import { logger } from '../../utils/logger.js'
 
 
 //
@@ -37,25 +35,8 @@ export interface AIsNetworkClientProps extends AIsServiceProps {
     forward2ServiceProps: AIsServiceProps
 }
 
-interface ReponseOrErrorFinal {
-  responseFinal?: ResponseFinal
-  errorFinal?: AIsError
-}
-
 
 export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProps> {
-
-  /**
-   * Optionally, provide additional context information/description
-   * for logging and error messages.
-   */
-  getContextService(request?: Request): string | undefined {
-    let contextService = super.getContextService() || 'AIsNetworkClient'
-    contextService += `->${this.serviceProps?.url}->${this.serviceProps?.forward2ServiceProps?.serviceId}`
-    return contextService
-  }
-
-
   /**
    * Do the work of process()
    * without the need to care about all error handling.
@@ -67,10 +48,10 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
    *          In the case of an error it returns an AIsError OR throws an AIError or general Error.
    */
   async processUnprotected(request: Request, context: string): Promise<ResponseFinal | AIsError | undefined> {
-    console.log(`${context} BEFORE INNER START`)
+    logger.debug(`${context} BEFORE INNER START`)
     const forward2ServiceProps = this.serviceProps?.forward2ServiceProps
     const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
-    console.log(`${context} INNER START`)
+    logger.debug(`${context} INNER START`)
     
     // remote access
     const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
@@ -83,21 +64,10 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     }
     if (!isStreamingRequested) {
       // no streaming (simple)
-      console.log("********************* before processNonStreamingRequest")
-      const responseOrErrorFinal = this.processNonStreamingRequest(url, request, aisNetworkRequest, context)
-      console.log("********************* mid processNonStreamingRequest")
-      const x = await responseOrErrorFinal
-      console.log("********************* after processNonStreamingRequest")
-      return x
+      return this.processNonStreamingRequest(url, request, aisNetworkRequest, context)
     } else {
       // streaming (more complex)
-      //return await this.processStreamingRequest(url, request, aisNetworkRequest, context)
-      console.log("********************* before processStreamingRequest")
-      const responseOrErrorFinal = this.processStreamingRequest(url, request, aisNetworkRequest, context)
-      console.log("********************* mid processStreamingRequest")
-      const x = await responseOrErrorFinal
-      console.log("********************* after processStreamingRequest")
-      return x
+      return await this.processStreamingRequest(url, request, aisNetworkRequest, context)
     }
   }
 
@@ -107,32 +77,6 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     aisNetworkRequest: AIsNetworkRequest,
     context: string
   ): Promise<ResponseFinal | AIsError> {
-    /*
-    console.log("********************* no await utils.delay(100) *********************")
-    //await utils.delay(100)
-    const responseJson0 = await (ky.post(
-      url,
-      {
-          headers: {
-              'Content-Type': 'application/json', // optional because set automatically
-              'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
-          },
-          json: aisNetworkRequest,
-          hooks: utils.kyHooksToReduceLogging(),
-          throwHttpErrors: false,
-          / *
-          dispatcher: new Agent({
-              bodyTimeout: 0,
-              headersTimeout: 0,
-          }),
-          * /
-          signal: request.abortSignal,
-      }
-    ).catch((x:KyResponse)=>x))//.json()
-    //await utils.delay(100)
-    const responseJson = await (responseJson0.json().catch((x)=>x))
-    //await utils.delay(100)
-    */
     const responseJsonPromise =  ky.post(
       url,
       {
@@ -167,7 +111,6 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     let errorFinal: AIsError | undefined
 
     const streamProgressFunction = request.streamProgressFunction as StreamProgressFunction
-    utils.delay(100)
 
     // ky.post() responseTextIgnored is ignored,
     // but we need to wait for the Promise of .text() to finish
@@ -184,7 +127,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
           onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
             try {
               if (DEBUG) {
-                  console.log('onMessage() called', message)
+                  logger.debug('onMessage() called', message)
               }
               if (!message.data || message.event === 'ping') {
                   return;
@@ -201,9 +144,8 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
                 if (dataObj.error) {
                   dataObj = dataObj.error
                 }
-                console.log("STREAMED ERROR: ", dataObj)
                 errorFinal = AIsError.fromAIsErrorData(dataObj)
-                console.log("STREAMED ERROR errorFinal: ", errorFinal)
+                logger.warn("STREAMED ERROR errorFinal: ", errorFinal)
                 if (errorFinal) {
                   throw errorFinal
                 }
@@ -216,7 +158,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
                 streamProgressFunction(dataObj)
               }
             } catch (error) {
-              console.warn(`${context} onDownloadProgress() error:`, error)
+              logger.warn(`${context} onDownloadProgress() error:`, error)
             }
           }),
           /*
@@ -228,7 +170,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
           signal: request.abortSignal,
       }
     ).text() 
-    //console.log("final text", responseTextIgnored)
+    //logger.debug("final text", responseTextIgnored)
 
     if (errorFinal) {
       return errorFinal
@@ -236,13 +178,22 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
       return responseFinal
     }
   }
+
+  /**
+   * Optionally, provide additional context information/description
+   * for logging and error messages.
+   */
+  getContextService(request?: Request): string | undefined {
+    let contextService = super.getContextService() || 'AIsNetworkClient'
+    contextService += `->${this.serviceProps?.url}->${this.serviceProps?.forward2ServiceProps?.serviceId}`
+    return contextService
+  }
 }
 
 
 //
 // factory
 //
-
 export class AIsNetworkClientFactory implements AIsAPIFactory<AIsNetworkClientProps, AIsNetworkClientService> {
     createAIsService(props: AIsNetworkClientProps, auth?: Auth): AIsNetworkClientService {
         return new AIsNetworkClientService(props, auth)

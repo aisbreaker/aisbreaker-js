@@ -22,44 +22,36 @@ import { EventSourceMessage, getLines, getMessages } from '@waylaidwanderer/fetc
 import { DownloadProgress, HTTPError } from 'ky'
 import { AIsError, isAIsErrorData } from '../api/AIsError.js'
 import { ERROR_500_Internal_Server_Error, ERROR_503_Service_Unavailable } from '../extern/HttpStatusCodes.js'
+import { logger } from './logger.js'
 
+
+const TRACE = false
 
 /** Mapping onMessage() event handler to onChunk() */
-function onChunk4onMessage(onMessage: (message: EventSourceMessage) => void):
-    (arr: Uint8Array) => void {
+function onChunk4onMessage(
+  onMessage: (message: EventSourceMessage) => void
+):(arr: Uint8Array) => void {
 
-    let onChunk: (arr: Uint8Array) => void = getLines(getMessages(
-        onMessage,    
-        id => {
-            /*
-         if (id) {
-             // store the id and send it back on the next retry:
-             headers[LastEventId] = id;
-         } else {
-             // don't send the last-event-id header anymore:
-             delete headers[LastEventId];
-         }
-         */
-        }, retry => {
-            /*
-            retryInterval = retry;
-            */
-        }
-    ))
-    return onChunk
-}
-
-/*
-function getLinesDebug(onLine: (line: Uint8Array, fieldLength: number) => void): (arr: Uint8Array) => void {
-    
-    const funcDebug = function (arr: Uint8Array): void {
-        console.log("\nfuncDebug START\n\n\n\n*********funcDebug START: arr=", arr)
-        getLines(onLine)(arr)
-        console.log("\nfuncDebug END\n\n\n\n*********funcDebug END: arr=", arr)
+  let onChunk: (arr: Uint8Array) => void = getLines(getMessages(
+    onMessage,    
+    id => {
+      /*
+      if (id) {
+          // store the id and send it back on the next retry:
+          headers[LastEventId] = id;
+      } else {
+          // don't send the last-event-id header anymore:
+          delete headers[LastEventId];
+      }
+      */
+    }, retry => {
+      /*
+      retryInterval = retry;
+      */
     }
-    return funcDebug
+  ))
+  return onChunk
 }
-*/
 
 /**
  * Mapping onMessage() event handler to onDownloadProgress().
@@ -71,23 +63,27 @@ export function kyOnDownloadProgress4onMessage(
 
   let onDownloadProgress = function (progress: DownloadProgress, chunk: Uint8Array): void {
     try {
-      console.log("kyOnDownloadProgress4onMessage", progress)
+      logger.debug("kyOnDownloadProgress4onMessage", progress)
       let onChunk = onChunk4onMessage(onMessageDebug(onMessage))
       onChunk(chunk)
     } catch (err) {
-      console.error("kyOnDownloadProgress4onMessage", err)
+      logger.warn("kyOnDownloadProgress4onMessage", err)
     }
   }
   return onDownloadProgress
 }
 
 function onMessageDebug(onMessage: (message: EventSourceMessage) => void): (message: EventSourceMessage) => void {
-    const funcDebug = function (message: EventSourceMessage): void {
-        console.log("\nfuncDebug START\n\n\n\n*********funcDebug START: message=", message)
-        onMessage(message)
-        console.log("\nfuncDebug END\n\n\n\n*********funcDebug END: message=", message)
+  const funcDebug = function (message: EventSourceMessage): void {
+    if (TRACE) {
+      logger.silly("onMessageDebug() START: message=", message)
     }
-    return funcDebug
+    onMessage(message)
+    if (TRACE) {
+      logger.silly("onMessageDebug() END: message=", message)
+    }
+  }
+  return funcDebug
 }
 
 /**
@@ -96,32 +92,32 @@ function onMessageDebug(onMessage: (message: EventSourceMessage) => void): (mess
  * Reduce logging spam by deleting some ky error details in the case of an HTTPError
  */
 export function kyHooksToReduceLogging(debug?: boolean) { 
-    return {
-        beforeError: kyHooksBeforeErrorToReduceLogging(debug),
-    }
+  return {
+    beforeError: kyHooksBeforeErrorToReduceLogging(debug),
+  }
 }
 
 export function kyHooksBeforeErrorToReduceLogging(debug?: boolean) {
-    return [
-        async (error: HTTPError) => {
-            if (!debug) {
-                console.log("kyHooksBeforeError(): Delete some ky error details in HTTPError for less logging spam");
-                const originalResponse = error.response;
-                (error as any).request =  "Deleted in kyHooksBeforeError()";
-                (error as any).response = "Deleted in kyHooksBeforeError()";
-                (error as any).options =  "Deleted in kyHooksBeforeError()";
-                if (originalResponse.json) {
-                    try {
-                        error.response = await originalResponse.json();
-                        error.response.hint = "Details deleted in kyHooksBeforeError()"
-                    } catch (err) {
-                        error.response = err
-                    }
-                }
-            }
-            return error;
+  return [
+    async (error: HTTPError) => {
+      if (!debug) {
+        logger.debug("kyHooksBeforeError(): Delete some ky error details in HTTPError for less logging spam");
+        const originalResponse = error.response;
+        (error as any).request =  "Deleted in kyHooksBeforeError()";
+        (error as any).response = "Deleted in kyHooksBeforeError()";
+        (error as any).options =  "Deleted in kyHooksBeforeError()";
+        if (originalResponse.json) {
+          try {
+            error.response = await originalResponse.json();
+            error.response.hint = "Details deleted in kyHooksBeforeError()"
+          } catch (err) {
+            error.response = err
+          }
         }
-    ]
+      }
+      return error;
+    }
+  ]
 }
 
 
@@ -141,7 +137,7 @@ export async function tryToCreateAIsErrorFromKyResponse(response: any): Promise<
     error = await tryToExtractErrorFromKyResponse(response)
   } catch (error) {
     const message = "tryToCreateAIsErrorFromKyResponse() error: "+error
-    console.error(message, error)
+    logger.warn(message, error)
     error = new AIsError(message, ERROR_500_Internal_Server_Error)
   }
   if (error) {
@@ -157,7 +153,7 @@ async function tryToExtractErrorFromKyResponse(response: any): Promise<AIsError 
   if (response && response.json) {
     try {
       const json = await response.json()
-      //console.log("tryToExtractErrorFromKyResponse: ", json)
+      //logger.debug("tryToExtractErrorFromKyResponse: ", json)
       if (json) {
         const error = json.error
         if (error) {

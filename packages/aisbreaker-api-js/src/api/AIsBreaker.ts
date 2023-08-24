@@ -3,6 +3,7 @@ import { AIsError } from "./AIsError.js"
 import { AIsAPIFactory, AIsServiceProps, AIsService } from "./AIsService.js"
 import { Auth } from "./models/index.js"
 import ky from 'ky-universal'
+import { logger } from '../utils/logger.js'
 
 /**
  * Class to create and manage service APIs.
@@ -29,7 +30,7 @@ export class AIsBreaker {
      * Register a service API factory with its serviceId.
      */
     registerFactory(param: {serviceId: string, factory: AIsAPIFactory<AIsServiceProps, AIsService>}) {
-        console.log(`Registering factory for serviceId '${param.serviceId}'`)
+        logger.info(`Registering factory for serviceId '${param.serviceId}'`)
         this.serviceId2FactoryMapping.set(param.serviceId, param.factory)
     }
 
@@ -44,10 +45,10 @@ export class AIsBreaker {
 
         // error handling and logging
         if (!factory) {
-            console.log(`getFactory('${serviceId}') failed for: ${Array.from(this.serviceId2FactoryMapping.keys())}`)
+            logger.debug(`getFactory('${serviceId}') failed for: ${Array.from(this.serviceId2FactoryMapping.keys())}`)
             throw new AIsError(`No factory registered for serviceId '${serviceId}'`, ERROR_404_Not_Found)
         }
-        console.log(`getFactory('${serviceId}') succeeded`)
+        logger.debug(`getFactory('${serviceId}') succeeded`)
 
         return factory
     }
@@ -118,7 +119,7 @@ export class AIsBreaker {
             // error
             /*
             if (DEBUG) {
-                console.log(`pingRemoteAIsService('${aisbreakerServerURL}') failed: ${error}`)
+                logger.debug(`pingRemoteAIsService('${aisbreakerServerURL}') failed: ${error}`)
             }
             */
             return false

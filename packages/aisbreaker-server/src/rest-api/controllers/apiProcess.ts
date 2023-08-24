@@ -40,7 +40,7 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
     // check and use authentication (bearer header)
     const requestSecret = extractHttpAuthHeaderSecret(req)
     if (DEBUG) {
-      console.log(`apiProcess() - requestSecret='${requestSecret}'`)
+      logger.debug(`apiProcess() - requestSecret='${requestSecret}'`)
     }
 
     // check quotas
@@ -171,7 +171,7 @@ function createStreamProgressFunction(
 ): api.StreamProgressFunction {
   return (responseEvent: api.ResponseEvent): void => {
     try {
-      console.log(`streamProgressFunction() - responseEvent=${JSON.stringify(responseEvent)}`)
+      logger.debug(`createStreamProgressFunction() - responseEvent=${JSON.stringify(responseEvent)}`)
       writeJsonServerSideEventProgressResponse(res, responseEvent)
     } catch (err) {
       logger.warn(`createStreamProgressFunction() - error for streaming progress: ${err}`, err)

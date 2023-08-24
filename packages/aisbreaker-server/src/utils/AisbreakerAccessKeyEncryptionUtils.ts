@@ -1,7 +1,7 @@
 import { RequestAuthAndQuotas, isRequestAuthAndQuotas } from '../rest-api/index.js'
 import { decryptJson, encryptJson, stringTo265BitHash } from './JsonWebEncryptionUtils.js'
 import { v4 as uuidv4 } from 'uuid'
-
+import logger from './logger.js'
 
 //
 // Utils for using JSON Web Encryption (JWE) with JSON Web Tokens (JWT)
@@ -59,9 +59,9 @@ function getEncryptionKey(): Uint8Array {
   let keyphrase = AUTH_ENCRYPTION_KEYPHRASE
   if (!keyphrase || keyphrase.length < 10) {
     keyphrase = uuidv4()
-    console.warn(`ATTENTION: AUTH_ENCRYPTION_KEYPHRASE is not set or too short - use a random key for each restart. For this test session we use '${keyphrase}'. DO NOT USE THIS IN PRODUCTION!`)
+    logger.warn(`ATTENTION: AUTH_ENCRYPTION_KEYPHRASE is not set or too short - use a random key for each restart. For this test session we use '${keyphrase}'. DO NOT USE THIS IN PRODUCTION!`)
   } else {
-    console.log(`AUTH_ENCRYPTION_KEYPHRASE='${keyphrase.substring(0, 3)}...' (len=${keyphrase.length}) is used.`)
+    logger.info(`AUTH_ENCRYPTION_KEYPHRASE='${keyphrase.substring(0, 3)}...' (len=${keyphrase.length}) is used.`)
   }
 
   // calculate sha256 hash

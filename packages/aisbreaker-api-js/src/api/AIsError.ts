@@ -1,5 +1,6 @@
 import { HTTPError } from "ky"
 import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, getStatusText } from '../extern/index.js'
+import { logger } from '../utils/logger.js'
 
 //
 // definition of an own Error class
@@ -85,7 +86,7 @@ export class AIsError extends Error implements AIsErrorData {
   static fromHTTPError(httpError: HTTPError, context?: string): AIsError {
     const messagePrefix = context ? `${context}: ` : ''
 
-    console.log(`fromHTTPError:`, httpError)
+    logger.debug(`fromHTTPError:`, httpError)
 
     if (httpError.response) {
       // it has a response, so it looks like an HTTP error

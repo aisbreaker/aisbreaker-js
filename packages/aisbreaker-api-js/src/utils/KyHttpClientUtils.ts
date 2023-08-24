@@ -62,16 +62,30 @@ function getLinesDebug(onLine: (line: Uint8Array, fieldLength: number) => void):
  * Mapping onMessage() event handler to onDownloadProgress().
  * Useful for ky.post() / onDownloadProgress
  */
-export function kyOnDownloadProgress4onMessage(onMessage: (message: EventSourceMessage) => void):
-    (progress: DownloadProgress, chunk: Uint8Array) => void {
+export function kyOnDownloadProgress4onMessage(
+  onMessage: (message: EventSourceMessage) => void
+): (progress: DownloadProgress, chunk: Uint8Array) => void {
 
-    let onDownloadProgress = function (progress: DownloadProgress, chunk: Uint8Array): void {
-        let onChunk = onChunk4onMessage(onMessage)
-        onChunk(chunk)
+  let onDownloadProgress = function (progress: DownloadProgress, chunk: Uint8Array): void {
+    try {
+      console.log("kyOnDownloadProgress4onMessage", progress)
+      let onChunk = onChunk4onMessage(onMessageDebug(onMessage))
+      onChunk(chunk)
+    } catch (err) {
+      console.error("kyOnDownloadProgress4onMessage", err)
     }
-    return onDownloadProgress
+  }
+  return onDownloadProgress
 }
 
+function onMessageDebug(onMessage: (message: EventSourceMessage) => void): (message: EventSourceMessage) => void {
+    const funcDebug = function (message: EventSourceMessage): void {
+        console.log("\nfuncDebug START\n\n\n\n*********funcDebug START: message=", message)
+        onMessage(message)
+        console.log("\nfuncDebug END\n\n\n\n*********funcDebug END: message=", message)
+    }
+    return funcDebug
+}
 
 /**
  * Default hook for ky.*()

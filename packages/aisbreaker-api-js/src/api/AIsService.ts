@@ -41,6 +41,10 @@ export interface AIsServiceProps {
      */
     internServiceOptions?: any
 }
+export function isAIsServiceProps(obj: any): obj is AIsServiceProps {
+  const o = <AIsServiceProps>obj
+  return o.serviceId !== undefined
+}
 
 /**
  * Factory for creating a service API.

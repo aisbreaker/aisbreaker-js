@@ -1,5 +1,5 @@
 import { api, base, utils } from 'aisbreaker-api-js'
-import ky, { HTTPError, TimeoutError } from 'ky-universal'
+import ky, { HTTPError, KyResponse, TimeoutError } from 'ky-universal'
 import * as tiktoken from 'tiktoken'
 
 
@@ -16,7 +16,7 @@ const DEFAULT_CHATGPT_MODEL = 'gpt-3.5-turbo'
 const DEFAULT_URL = 'https://api.openai.com/v1/chat/completions'
 const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
-export class OpenaiChatService extends base.BaseAIsService {
+export class OpenaiChatService extends base.BaseAIsService<api.AIsServiceProps> {
     protected openaiChatClient: OpenaiChatClient
 
     constructor(props: api.AIsServiceProps, auth?: api.Auth) {
@@ -40,7 +40,8 @@ export class OpenaiChatService extends base.BaseAIsService {
         return engine
     }
 
-    async process(request: api.Request): Promise<api.ResponseFinal> {
+    async processUnprotected(request: api.Request): Promise<api.ResponseFinal> {
+      try {
         // prepare collection/aggregation of partial responses
         const responseCollector = new utils.ResponseCollector(request)
 
@@ -141,6 +142,10 @@ export class OpenaiChatService extends base.BaseAIsService {
             internResponse: resultInternResponse,
         }
         return response
+      } catch (error) {
+        console.error('OpenaiChatService.process() error', error)
+        throw error
+      }
     }
 
 
@@ -427,7 +432,7 @@ ${botMessage.message}
             options.stream = true
         }
 
-        const { debug } = options;
+        const { debug } = options
         const modelOptions = {
             messages: messages,
             model: options.model,
@@ -462,8 +467,10 @@ ${botMessage.message}
                         json: modelOptions,
                         timeout: TIMEOUT_MILLIS,
                         hooks: utils.kyHooks(debug),
+                        throwHttpErrors: false,
                         onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
-                            if (debug) {
+                          try {
+                            if (debug || true) {
                                 console.log('onMessage() called', message)
                             }
                             if (!message.data || message.event === 'ping') {
@@ -478,10 +485,20 @@ ${botMessage.message}
                             }
                             const dataObj = JSON.parse(message.data)
                             streamProgressFunc(dataObj) // TODO: as OpenaiChatSSE
+                        } catch (error) {
+                            console.error('OpenaiChat.onDownloadProgress() error', error)
+                        }
                         }),
                     }
                 )
                 // done
+                const x: KyResponse = finalKyReponse
+                const resp = await x.json() as any
+                console.log('finalKyReponse', resp)
+                if (resp.error) {
+                    let error = reject("OpenaiChat Stream Error: "+JSON.stringify(resp.error))
+                    return
+                }
 
                 // avoids some rendering issues when using the CLI app
                 if (debug) {

@@ -4,7 +4,8 @@ const LOCAL_NAME = 'appSetting'
 
 export type Theme = 'light' | 'dark' | 'auto'
 
-export type Language = 'de-DE' | 'en-US' | 'zh-CN' | 'zh-TW' | 'ko-KR' | 'ru-RU'
+/** See also: src/locales/index.ts + src/hooks/useLanguage.ts */
+export type Language = 'de-DE' | 'en-US' | 'ko-KR' | 'ru-RU' | 'vi-VN'  | 'zh-CN' | 'zh-TW'
 
 export interface AppState {
   siderCollapsed: boolean

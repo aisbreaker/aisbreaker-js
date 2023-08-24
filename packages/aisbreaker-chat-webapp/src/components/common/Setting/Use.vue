@@ -7,7 +7,7 @@ import { useAppStore, useUserStore } from '@/store/index.js'
 import type { UserInfo } from '@/store/modules/user/helper.js'
 import { getCurrentDate } from '@/utils/functions/index.js'
 import { useBasicLayout } from '@/hooks/useBasicLayout.js'
-import { t } from '@/locales/index.js'
+import { languageOptions, t } from '@/locales/index.js'
 
 const appStore = useAppStore()
 const userStore = useUserStore()
@@ -51,15 +51,6 @@ const themeOptions: { label: string; key: Theme; icon: string }[] = [
     key: 'dark',
     icon: 'ri:moon-foggy-line',
   },
-]
-
-const languageOptions: { label: string; key: Language; value: Language }[] = [
-  { label: '简体中文', key: 'zh-CN', value: 'zh-CN' },
-  { label: '繁體中文', key: 'zh-TW', value: 'zh-TW' },
-  { label: 'English', key: 'en-US', value: 'en-US' },
-  { label: 'Deutsch', key: 'de-DE', value: 'de-DE' },
-  { label: '한국어', key: 'ko-KR', value: 'ko-KR' },
-  { label: 'Русский язык', key: 'ru-RU', value: 'ru-RU' },
 ]
 
 function updateUserInfo(options: Partial<UserInfo>) {
@@ -126,33 +117,36 @@ function handleImportButtonClick(): void {
 <template>
   <div class="p-4 space-y-5 min-h-[200px]">
     <div class="space-y-6">
+
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.avatarLink') }}</span>
-        <div class="flex-1">
-          <NInput v-model:value="avatar" placeholder="" />
+        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.language') }}</span>
+        <div class="flex flex-wrap items-center gap-4">
+          <NSelect
+            style="width: 140px"
+            :value="language"
+            :options="languageOptions"
+            @update-value="value => appStore.setLanguage(value)"
+          />
         </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
-          {{ $t('common.save') }}
-        </NButton>
       </div>
+
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.name') }}</span>
-        <div class="w-[200px]">
-          <NInput v-model:value="name" placeholder="" />
+        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.theme') }}</span>
+        <div class="flex flex-wrap items-center gap-4">
+          <template v-for="item of themeOptions" :key="item.key">
+            <NButton
+              size="small"
+              :type="item.key === theme ? 'primary' : undefined"
+              @click="appStore.setTheme(item.key)"
+            >
+              <template #icon>
+                <SvgIcon :icon="item.icon" />
+              </template>
+            </NButton>
+          </template>
         </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ name })">
-          {{ $t('common.save') }}
-        </NButton>
       </div>
-      <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.description') }}</span>
-        <div class="flex-1">
-          <NInput v-model:value="description" placeholder="" />
-        </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ description })">
-          {{ $t('common.save') }}
-        </NButton>
-      </div>
+
       <div
         class="flex items-center space-x-4"
         :class="isMobile && 'items-start'"
@@ -188,32 +182,35 @@ function handleImportButtonClick(): void {
           </NPopconfirm>
         </div>
       </div>
+
+
+      <!--
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.theme') }}</span>
-        <div class="flex flex-wrap items-center gap-4">
-          <template v-for="item of themeOptions" :key="item.key">
-            <NButton
-              size="small"
-              :type="item.key === theme ? 'primary' : undefined"
-              @click="appStore.setTheme(item.key)"
-            >
-              <template #icon>
-                <SvgIcon :icon="item.icon" />
-              </template>
-            </NButton>
-          </template>
+        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.avatarLink') }}</span>
+        <div class="flex-1">
+          <NInput v-model:value="avatar" placeholder="" />
         </div>
+        <NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
+          {{ $t('common.save') }}
+        </NButton>
       </div>
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.language') }}</span>
-        <div class="flex flex-wrap items-center gap-4">
-          <NSelect
-            style="width: 140px"
-            :value="language"
-            :options="languageOptions"
-            @update-value="value => appStore.setLanguage(value)"
-          />
+        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.name') }}</span>
+        <div class="w-[200px]">
+          <NInput v-model:value="name" placeholder="" />
         </div>
+        <NButton size="tiny" text type="primary" @click="updateUserInfo({ name })">
+          {{ $t('common.save') }}
+        </NButton>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.description') }}</span>
+        <div class="flex-1">
+          <NInput v-model:value="description" placeholder="" />
+        </div>
+        <NButton size="tiny" text type="primary" @click="updateUserInfo({ description })">
+          {{ $t('common.save') }}
+        </NButton>
       </div>
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.resetUserInfo') }}</span>
@@ -221,6 +218,7 @@ function handleImportButtonClick(): void {
           {{ $t('common.reset') }}
         </NButton>
       </div>
+      -->
     </div>
   </div>
 </template>

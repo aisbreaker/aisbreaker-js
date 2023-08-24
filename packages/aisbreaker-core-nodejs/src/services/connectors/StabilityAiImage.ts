@@ -18,7 +18,7 @@ const DEFAULT_IMAGE_MODEL = 'stable-diffusion-v1-5'
 const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
 
-export class StabilityAiImageService extends base.BaseAIsService {
+export class StabilityAiImageService extends base.BaseAIsService<api.AIsServiceProps> {
     stabilityApiKey: string
     model: string
     url: string

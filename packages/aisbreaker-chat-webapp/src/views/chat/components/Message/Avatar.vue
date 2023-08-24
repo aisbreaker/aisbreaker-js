@@ -4,6 +4,7 @@ import { NAvatar } from 'naive-ui'
 import { useUserStore } from '@/store/index.js'
 import { isString } from '@/utils/is/index.js'
 import defaultAvatar from '@/assets/avatar-neutral.png'
+//import defaultAvatar from '@/assets/avatar-techie.png'
 import defaultAIAvatar from '@/assets/robot.png'
 
 interface Props {
@@ -18,8 +19,11 @@ const avatar = computed(() => userStore.userInfo.avatar)
 
 <template>
   <template v-if="image">
+    <!--
     <NAvatar v-if="isString(avatar) && avatar.length > 0" :src="avatar" :fallback-src="defaultAvatar" />
     <NAvatar v-else round :src="defaultAvatar" />
+    -->
+    <NAvatar round :src="defaultAvatar" />
   </template>
   <span v-else class="text-[28px] dark:text-white">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" width="1em" height="1em">

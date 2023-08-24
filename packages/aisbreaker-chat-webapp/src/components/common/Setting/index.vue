@@ -1,10 +1,11 @@
 <script setup lang='ts'>
 import { computed, ref } from 'vue'
 import { NModal, NTabPane, NTabs } from 'naive-ui'
-import General from './General.vue'
+import Service from './Service.vue'
+import Config from './Config.vue'
+import Use from './Use.vue'
 import Advanced from './Advanced.vue'
 import About from './About.vue'
-import { useAuthStore } from '@/store/index.js'
 import { SvgIcon } from '@/components/common/index.js'
 
 interface Props {
@@ -19,11 +20,9 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<Emit>()
 
-const authStore = useAuthStore()
 
-const isChatGPTAPI = computed<boolean>(() => !!authStore.isChatGPTAPI)
-
-const active = ref('General')
+/** active tab = default tab */
+const active = ref('Service')
 
 const show = computed({
   get() {
@@ -39,15 +38,34 @@ const show = computed({
   <NModal v-model:show="show" :auto-focus="false" preset="card" style="width: 95%; max-width: 640px">
     <div>
       <NTabs v-model:value="active" type="line" animated>
-        <NTabPane name="General" tab="General">
+        <NTabPane name="Service" tab="Service">
           <template #tab>
-            <SvgIcon class="text-lg" icon="ri:file-user-line" />
-            <span class="ml-2">{{ $t('setting.general') }}</span>
+            <SvgIcon class="text-lg" icon="ri:list-settings-line" />
+            <span class="ml-2">{{ $t('setting.apiService') }}</span>
           </template>
           <div class="min-h-[100px]">
-            <General />
+            <Service />
           </div>
         </NTabPane>
+        <NTabPane name="Config" tab="Config">
+          <template #tab>
+            <SvgIcon class="text-lg" icon="ri:chat-settings-line" />
+            <span class="ml-2">{{ $t('setting.config') }}</span>
+          </template>
+          <div class="min-h-[100px]">
+            <Config />
+          </div>
+        </NTabPane>
+        <NTabPane name="Use" tab="Use">
+          <template #tab>
+            <SvgIcon class="text-lg" icon="ri:user-settings-line" iconNO="ri:file-user-line" />
+            <span class="ml-2">{{ $t('setting.use') }}</span>
+          </template>
+          <div class="min-h-[100px]">
+            <Use />
+          </div>
+        </NTabPane>
+        <!--
         <NTabPane v-if="isChatGPTAPI" name="Advanced" tab="Advanced">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:equalizer-line" />
@@ -57,10 +75,11 @@ const show = computed({
             <Advanced />
           </div>
         </NTabPane>
-        <NTabPane name="Config" tab="Config">
+        -->
+        <NTabPane name="About" tab="About">
           <template #tab>
-            <SvgIcon class="text-lg" icon="ri:list-settings-line" />
-            <span class="ml-2">{{ $t('setting.config') }}</span>
+            <SvgIcon class="text-lg" icon="ri:information-line" />
+            <span class="ml-2">{{ $t('setting.about') }}</span>
           </template>
           <About />
         </NTabPane>

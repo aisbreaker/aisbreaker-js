@@ -4,7 +4,7 @@ import { RequestAuthAndQuotas, RequestQuotas, isRequestAuthAndQuotas, isRequestQ
 import { RequestQuotasLimiter } from '../../utils/RequestQuotasLimiter.js'
 
 import * as config from './config.js'
-import { api, utils } from 'aisbreaker-api-js'
+import { api, extern, utils } from 'aisbreaker-api-js'
 import { ACCESS_TOKEN_PREFIX, getObjectCryptoId } from '../../utils/index.js'
 
 import NodeCache from 'node-cache'
@@ -129,7 +129,7 @@ async function extractRequestAuthAndQuotas(
       // yes: it's an aisbreaker access token, but invalid
       const msg = `extractRequestAuthAndQuotas(): Invalid aisbreaker access token: '${requestSecret.substring(0, 10)}...' (len=${requestSecret.length})`
       console.log(msg)
-      throw new api.AIsError(msg, utils.ERROR_401_Unauthorized)
+      throw new api.AIsError(msg, extern.ERROR_401_Unauthorized)
     }
   
     // auth does not contain RequestAuthAndQuotas: use defaults

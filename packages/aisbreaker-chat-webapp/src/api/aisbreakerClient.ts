@@ -1,10 +1,12 @@
-import { api, services } from 'aisbreaker-core-browserjs'
+import * as core from 'aisbreaker-core-browserjs'
+import { api, services } from 'aisbreaker-api-js'
 
 import { useAisbreakerStore } from '@/store/index.js'
 
 //
 // initialize AIsBreaker API
 //
+core.init()
 const aisbreakerStore = useAisbreakerStore()
 
 let serviceProps: api.AIsServiceProps
@@ -43,7 +45,6 @@ const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(se
 console.log(aisService)
 */
 
-console.log(services)
 
 export function getAIsService(): api.AIsService {
 	// get settings

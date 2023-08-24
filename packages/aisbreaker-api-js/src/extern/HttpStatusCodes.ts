@@ -7,6 +7,7 @@
 export const statusTextes: {[id: number]: string}  = {
     100: 'Continue',
     101: 'Switching Protocols',
+
 	200: 'OK',
 	201: 'Created',
 	202: 'Accepted',
@@ -17,6 +18,7 @@ export const statusTextes: {[id: number]: string}  = {
 	207: 'Multi-Status (WebDAV)',
 	208: 'Already Reported (WebDAV)',
 	226: 'IM Used',
+
 	300: 'Multiple Choices',
 	301: 'Moved Permanently',
 	302: 'Found',
@@ -26,7 +28,8 @@ export const statusTextes: {[id: number]: string}  = {
 	306: '(Unused)',
 	307: 'Temporary Redirect',
 	308: 'Permanent Redirect (experimental)',
- 	400: 'Bad Request',
+
+	400: 'Bad Request',
 	401: 'Unauthorized',
 	402: 'Payment Required',
 	403: 'Forbidden',
@@ -59,6 +62,7 @@ export const statusTextes: {[id: number]: string}  = {
 	450: 'Blocked by Windows Parental Controls (Microsoft)',
 	451: 'Unavailable For Legal Reasons',
 	499: 'Client Closed Request (Nginx)',
+
 	500: 'Internal Server Error',
 	501: 'Not Implemented',
 	502: 'Bad Gateway',

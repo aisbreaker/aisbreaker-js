@@ -10,8 +10,24 @@ export * from './utils/index.js'
 export * as services from './services/index.js'
 export * as utils from './utils/index.js'
 
-
 //
 // re-export all relevant classes/interfaces of aisbreaker-api-js
+// DON'T DO THIS, as long we cannot merge modules with the same name
 //
-export * from 'aisbreaker-api-js'
+//export * from 'aisbreaker-api-js'
+
+
+
+//
+// module initialization
+//
+import * as apiJs from 'aisbreaker-api-js'
+
+/**
+ * Function to enforce initialization of this module
+ * and all its dependencies
+ */
+export async function init(): Promise<void> {
+  await apiJs.init()
+  console.log('aisbreaker-core-nodejs: init()')
+}

@@ -74,7 +74,7 @@ export class StabilityAiImageService extends base.BaseAIsService<api.AIsServiceP
                 },
                 json: body,
                 timeout: TIMEOUT_MILLIS,
-                hooks: utils.kyHooks(false),
+                hooks: utils.kyHooksToReduceLogging(false),
     }
         ).json()
         if ((this as any).props?.debug) {

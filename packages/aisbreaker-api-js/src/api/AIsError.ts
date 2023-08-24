@@ -1,5 +1,5 @@
 import { HTTPError } from "ky"
-import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, getStatusText } from '../utils/index.js'
+import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, getStatusText } from '../extern/index.js'
 
 //
 // definition of an own Error class

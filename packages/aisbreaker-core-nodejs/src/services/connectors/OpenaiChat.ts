@@ -466,7 +466,7 @@ ${botMessage.message}
                         },
                         json: modelOptions,
                         timeout: TIMEOUT_MILLIS,
-                        hooks: utils.kyHooks(debug),
+                        hooks: utils.kyHooksToReduceLogging(debug),
                         throwHttpErrors: false,
                         onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
                           try {
@@ -529,7 +529,7 @@ ${botMessage.message}
                 },
                 json: modelOptions,
                 timeout: TIMEOUT_MILLIS,
-                hooks: utils.kyHooks(debug),
+                hooks: utils.kyHooksToReduceLogging(debug),
             }
         ).json()
 

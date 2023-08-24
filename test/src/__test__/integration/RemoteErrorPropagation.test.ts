@@ -25,8 +25,8 @@ describe('Test remote error propagation (with complex remote service chain)', ()
       "serviceId": "aisbreaker:mirror",
       "forward2ServiceProps": {
         "serviceId": "chat:dummy",
-      }
-    }
+      },
+    },
   }
   const invalidServiceId = 'chat:invalid'
   const invalidServiceProps = {
@@ -36,8 +36,8 @@ describe('Test remote error propagation (with complex remote service chain)', ()
       "serviceId": "aisbreaker:mirror",
       "forward2ServiceProps": {
         "serviceId": invalidServiceId,
-      }
-    }
+      },
+    },
   }
   const invalidServicePropsLongerChain = {
     "serviceId": "aisbreaker:network",
@@ -49,9 +49,32 @@ describe('Test remote error propagation (with complex remote service chain)', ()
         "serviceId": "aisbreaker:mirror",
         "forward2ServiceProps": {
           "serviceId": "chat:invalid",
-        }
-      }
-    }
+        },
+      },
+    },
+  }
+  const INVALID_URL = 'http://localhost-invalid:80'
+  const invalidServicePropsWithInvalidURL = {
+    "serviceId": "aisbreaker:network",
+    "url": INVALID_URL,
+    "forward2ServiceProps": {
+      "serviceId": "aisbreaker:network",
+      "url": URL,
+      "forward2ServiceProps": {
+        "serviceId": "aisbreaker:echo",
+      },
+    },
+  }
+  const invalidServicePropsWithChainWithInvalidURL = {
+    "serviceId": "aisbreaker:network",
+    "url": URL,
+    "forward2ServiceProps": {
+      "serviceId": "aisbreaker:network",
+      "url": INVALID_URL,
+      "forward2ServiceProps": {
+        "serviceId": "aisbreaker:echo",
+      },
+    },
   }
   const validAisbreakerAuth = {
     secret: AISBREAKER_API_KEY || "",
@@ -61,6 +84,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
   }
   const jsPrompt = "What is JavaScript?"
   const jsContainedAnswer = "tpircSavaJ"
+
 
 
   test('Test remote error propagation: without stream, invalid access token, but not needed (success expected)', async () => {
@@ -74,7 +98,6 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     // check result: succcess (access token not needed)
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
   })
-
   test('Test remote error propagation: with stream, invalid access token, but not needed (success expected)', async () => {
     // service initialization
     const doStream = true
@@ -139,7 +162,6 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error?.statusCode).toBe(expectedStatusCode)
     expect(error?.message).toContain(expectedRootCauseMessage)
   })
-
   test('Test longer complex invalid remote service chain: without stream (error expected)', async () => {
     // service initialization
     const doStream = false
@@ -214,8 +236,6 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error?.statusCode).toBe(expectedStatusCode)
     expect(error?.message).toContain(expectedRootCauseMessage)
   })
-
-
   test('Test longer complex invalid remote service chain: with stream (error expected)', async () => {
     // service initialization
     const doStream = true
@@ -238,4 +258,91 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error?.message).toContain(expectedRootCauseMessage)
   })
 
+
+  test('Test remote service chain with invalid URL/invalid hostname (simple): without stream (error expected)', async () => {
+    // service initialization
+    const doStream = false
+
+    // process without stream
+    let error: api.AIsError | undefined
+    try {
+      const [responseFinal, responseFinalText, streamedProgressText] =
+        await processRemoteService(URL, invalidServicePropsWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+    } catch (e) {
+      console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
+      error = e as api.AIsError
+    }
+
+    // check result
+    const expectedStatusCode = 503
+    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage)
+  })
+  test('Test remote service chain with invalid URL/invalid hostname (simple): with stream (error expected)', async () => {
+    // service initialization
+    const doStream = true
+
+    // process without stream
+    let error: api.AIsError | undefined
+    try {
+      const [responseFinal, responseFinalText, streamedProgressText] =
+        await processRemoteService(URL, invalidServicePropsWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+    } catch (e) {
+      console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
+      error = e as api.AIsError
+    }
+
+    // check result
+    const expectedStatusCode = 503
+    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage)
+  })
+
+
+  test('Test remote service chain with invalid URL/invalid hostname (chain): without stream (error expected)', async () => {
+    // service initialization
+    const doStream = false
+
+    // process without stream
+    let error: api.AIsError | undefined
+    try {
+      const [responseFinal, responseFinalText, streamedProgressText] =
+        await processRemoteService(URL, invalidServicePropsWithChainWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+    } catch (e) {
+      console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
+      error = e as api.AIsError
+    }
+
+    // check result
+    const expectedStatusCode = 503
+    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage)
+  })
+  test('Test remote service chain with invalid URL/invalid hostname (chain): with stream (error expected)', async () => {
+    // service initialization
+    const doStream = true
+
+    // process without stream
+    let error: api.AIsError | undefined
+    try {
+      const [responseFinal, responseFinalText, streamedProgressText] =
+        await processRemoteService(URL, invalidServicePropsWithChainWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+    } catch (e) {
+      console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
+      error = e as api.AIsError
+    }
+
+    // check result
+    const expectedStatusCode = 503
+    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage)
+  })
 })

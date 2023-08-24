@@ -1,5 +1,4 @@
-import ky from 'ky-universal'
-//TODO: import ('ky-universal')
+import ky, { KyResponse } from 'ky-universal'
 
 import {
     AIsBreaker,
@@ -9,12 +8,14 @@ import {
     Auth,
     Request,
     ResponseFinal,
-    StreamProgressFunction
+    StreamProgressFunction,
+    ERROR_500_Internal_Server_Error
 } from '../../api/index.js'
 import * as utils from '../../utils/index.js'
 import { AIsNetworkRequest } from './AIsNetworkRequest.js'
 import { AIsError, isAIsErrorData } from '../../api/AIsError.js'
 import { BaseAIsService } from '../../base/BaseAIsService.js'
+import { Response } from 'node-fetch'
 
 
 //
@@ -36,202 +37,205 @@ export interface AIsNetworkClientProps extends AIsServiceProps {
     forward2ServiceProps: AIsServiceProps
 }
 
+interface ReponseOrErrorFinal {
+  responseFinal?: ResponseFinal
+  errorFinal?: AIsError
+}
+
+
 export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProps> {
 
   /**
    * Optionally, provide additional context information/description
    * for logging and error messages.
    */
-  getContextService(): string | undefined {
+  getContextService(request?: Request): string | undefined {
     let contextService = super.getContextService() || 'AIsNetworkClient'
     contextService += `->${this.serviceProps?.url}->${this.serviceProps?.forward2ServiceProps?.serviceId}`
     return contextService
   }
 
 
-  async processUnprotected(request: Request, context: string): Promise<ResponseFinal> {
-
-      console.log(`${context} BEFORE START`)
-      const forward2ServiceProps = this.serviceProps?.forward2ServiceProps
-      const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
-      try {
-        console.log(`${context} START`)
-        
-        // remote access - no streaming of partial responses right now (TODO: implement streaming)
-        const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
-        if (isStreamingRequested) {
-          (request as any).stream = true
-        }
-        const aisNetworkRequest: AIsNetworkRequest = {
-          service: forward2ServiceProps,
-          request,
-        }
-
-        let responseFinal: ResponseFinal | undefined
-        let errorFinal: AIsError | undefined
-        if (!isStreamingRequested) {
-          // no streaming (simple)
-          const responseJson = await ky.post(
-            url,
-            {
-                headers: {
-                    'Content-Type': 'application/json', // optional because set automatically
-                    'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
-                },
-                json: aisNetworkRequest,
-                /*
-                dispatcher: new Agent({
-                    bodyTimeout: 0,
-                    headersTimeout: 0,
-                }),
-                */
-                signal: request.abortSignal,
-            }
-          ).json()
-          responseFinal = responseJson as ResponseFinal
-
-        } else {
-          // streaming (more complex)
-          const streamProgressFunction = request.streamProgressFunction as StreamProgressFunction
-          const responseTextIgnored = await ky.post(
-            url,
-            {
-                headers: {
-                    'Content-Type': 'application/json', // optional because set automatically
-                    'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
-                },
-                json: aisNetworkRequest,
-                onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
-                  try {
-                    if (DEBUG) {
-                        console.log('onMessage() called', message)
-                    }
-                    if (!message.data || message.event === 'ping') {
-                        return;
-                    }
-                    if (message.data === '[DONE]') {
-                        // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                        //abortController.abort();
-                        //resolve(undefined)
-                        //done = true;
-                        return;
-                    }
-                    if (message.event === 'error') {
-                      let dataObj = JSON.parse(message.data)
-                      if (dataObj.error) {
-                        dataObj = dataObj.error
-                      }
-                      console.log("STREAMED ERROR: ", dataObj)
-                      errorFinal = AIsError.fromAIsErrorData(dataObj)
-                      console.log("STREAMED ERROR errorFinal: ", errorFinal)
-                      if (errorFinal) {
-                        throw errorFinal
-                      }
-                    }
-                    if (message.event === 'final') {
-                      const dataObj = JSON.parse(message.data)
-                      responseFinal = dataObj
-                    } else {
-                      const dataObj = JSON.parse(message.data)
-                      streamProgressFunction(dataObj)
-                    }
-                  } catch (error) {
-                    console.error(`${context} onDownloadProgress() error:`, error)
-                  }
-                }),
-                /*
-                dispatcher: new Agent({
-                    bodyTimeout: 0,
-                    headersTimeout: 0,
-                }),
-                */
-                signal: request.abortSignal,
-            }
-          ).text() 
-          // ky.post() responseTextIgnored is ignored,
-          //           but we need to wait for the Promise of .text() to finish
-          //console.log("final text", responseTextIgnored)
-        }
-
-        // final response/result
-        console.log(`${context} END (except throwing or returning final result) with responseFinal: `, responseFinal, ', errorFinal: ', errorFinal)
-        if (errorFinal) {
-          throw errorFinal
-        }
-        if (!responseFinal) {
-          throw new AIsError(`${context} Error: No final response`, utils.ERROR_444_No_Response)
-        }
-        return responseFinal
-
-      } catch (error) {
-        console.error("AIsNetworkClientService error", error)
-
-        // error (message) in response?
-        if ((error as any).response) {
-          let aisError: AIsError | undefined
-          try {
-            aisError = await tryToCreateAIsErrorFromKyResponse((error as any).response)
-          } catch (innerError) {
-            console.error("AIsNetworkClientService innerError: "+innerError)
-          }
-          console.log("AIsNetworkClientService aisError: "+ aisError)
-          if (aisError) {
-            console.log("AIsNetworkClientService aisError thrown")
-            throw aisError
-          }
-        }
-
-        // normal error: let it handle by the calling process() function
-        throw error
-      }
+  /**
+   * Do the work of process()
+   * without the need to care about all error handling.
+   * 
+   * @param request  the request to process
+   * @param context  optional context information/description/message prefix
+   *                 for logging and for error messages
+   * @returns The final result.
+   *          In the case of an error it returns an AIsError OR throws an AIError or general Error.
+   */
+  async processUnprotected(request: Request, context: string): Promise<ResponseFinal | AIsError | undefined> {
+    console.log(`${context} BEFORE INNER START`)
+    const forward2ServiceProps = this.serviceProps?.forward2ServiceProps
+    const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
+    console.log(`${context} INNER START`)
+    
+    // remote access
+    const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
+    if (isStreamingRequested) {
+      (request as any).stream = true
     }
-}
-
-//
-// error helpers
-//
-
-/**
- * Throws an AIsError if the response contains an error, otherwise it just returns 
- * @param response T
- */
-async function tryToCreateAIsErrorFromKyResponse(response: any): Promise<AIsError | undefined> {
-  const error = await tryToExtractErrorFromKyResponse(response)
-  if (error) {
-    if (isAIsErrorData(error)) {
-      return AIsError.fromAIsErrorData(error)
+    const aisNetworkRequest: AIsNetworkRequest = {
+      service: forward2ServiceProps,
+      request,
+    }
+    if (!isStreamingRequested) {
+      // no streaming (simple)
+      console.log("********************* before processNonStreamingRequest")
+      const responseOrErrorFinal = this.processNonStreamingRequest(url, request, aisNetworkRequest, context)
+      console.log("********************* mid processNonStreamingRequest")
+      const x = await responseOrErrorFinal
+      console.log("********************* after processNonStreamingRequest")
+      return x
     } else {
-      const errorMessage = error
-      return new AIsError(errorMessage, utils.ERROR_503_Service_Unavailable)
+      // streaming (more complex)
+      //return await this.processStreamingRequest(url, request, aisNetworkRequest, context)
+      console.log("********************* before processStreamingRequest")
+      const responseOrErrorFinal = this.processStreamingRequest(url, request, aisNetworkRequest, context)
+      console.log("********************* mid processStreamingRequest")
+      const x = await responseOrErrorFinal
+      console.log("********************* after processStreamingRequest")
+      return x
     }
   }
-}
-async function tryToExtractErrorFromKyResponse(response: any): Promise<AIsError | string | undefined> {
-  if (response && response.json) {
-    try {
-      const json = await response.json()
-      //console.log("tryToExtractErrorFromKyResponse: ", json)
-      if (json) {
-        const error = json.error
-        if (error) {
-          const errorError = error?.error
-          if (isAIsErrorData(errorError)) {
-            return AIsError.fromAIsErrorData(errorError)
-          }
-          if (isAIsErrorData(error)) {
-            return AIsError.fromAIsErrorData(error)
-          }
-          return JSON.stringify(error)
-        } else {
-          return JSON.stringify(json)
-        }
+
+  async processNonStreamingRequest(
+    url: string,
+    request: Request,
+    aisNetworkRequest: AIsNetworkRequest,
+    context: string
+  ): Promise<ResponseFinal | AIsError> {
+    /*
+    console.log("********************* no await utils.delay(100) *********************")
+    //await utils.delay(100)
+    const responseJson0 = await (ky.post(
+      url,
+      {
+          headers: {
+              'Content-Type': 'application/json', // optional because set automatically
+              'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
+          },
+          json: aisNetworkRequest,
+          hooks: utils.kyHooksToReduceLogging(),
+          throwHttpErrors: false,
+          / *
+          dispatcher: new Agent({
+              bodyTimeout: 0,
+              headersTimeout: 0,
+          }),
+          * /
+          signal: request.abortSignal,
       }
-    } catch (error) {
-      // exctract failed
-      return undefined
+    ).catch((x:KyResponse)=>x))//.json()
+    //await utils.delay(100)
+    const responseJson = await (responseJson0.json().catch((x)=>x))
+    //await utils.delay(100)
+    */
+    const responseJsonPromise =  ky.post(
+      url,
+      {
+          headers: {
+              'Content-Type': 'application/json', // optional because set automatically
+              'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
+          },
+          json: aisNetworkRequest,
+          hooks: utils.kyHooksToReduceLogging(),
+          throwHttpErrors: true,
+          /*
+          dispatcher: new Agent({
+              bodyTimeout: 0,
+              headersTimeout: 0,
+          }),
+          */
+          signal: request.abortSignal,
+      }
+    ).json()
+    const responseJson = await responseJsonPromise
+
+    return responseJson as ResponseFinal
+  }
+
+  async processStreamingRequest(
+    url: string,
+    request: Request,
+    aisNetworkRequest: AIsNetworkRequest,
+    context: string
+  ): Promise<ResponseFinal | AIsError | undefined> {
+    let responseFinal: ResponseFinal | undefined
+    let errorFinal: AIsError | undefined
+
+    const streamProgressFunction = request.streamProgressFunction as StreamProgressFunction
+    utils.delay(100)
+
+    // ky.post() responseTextIgnored is ignored,
+    // but we need to wait for the Promise of .text() to finish
+    const responseTextIgnored = await ky.post(
+      url,
+      {
+          headers: {
+              'Content-Type': 'application/json', // optional because set automatically
+              'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
+          },
+          json: aisNetworkRequest,
+          hooks: utils.kyHooksToReduceLogging(),
+          throwHttpErrors: true, // works also with false (probably)
+          onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
+            try {
+              if (DEBUG) {
+                  console.log('onMessage() called', message)
+              }
+              if (!message.data || message.event === 'ping') {
+                  return;
+              }
+              if (message.data === '[DONE]') {
+                  // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
+                  //abortController.abort();
+                  //resolve(undefined)
+                  //done = true;
+                  return;
+              }
+              if (message.event === 'error') {
+                let dataObj = JSON.parse(message.data)
+                if (dataObj.error) {
+                  dataObj = dataObj.error
+                }
+                console.log("STREAMED ERROR: ", dataObj)
+                errorFinal = AIsError.fromAIsErrorData(dataObj)
+                console.log("STREAMED ERROR errorFinal: ", errorFinal)
+                if (errorFinal) {
+                  throw errorFinal
+                }
+              }
+              if (message.event === 'final') {
+                const dataObj = JSON.parse(message.data)
+                responseFinal = dataObj
+              } else {
+                const dataObj = JSON.parse(message.data)
+                streamProgressFunction(dataObj)
+              }
+            } catch (error) {
+              console.warn(`${context} onDownloadProgress() error:`, error)
+            }
+          }),
+          /*
+          dispatcher: new Agent({
+              bodyTimeout: 0,
+              headersTimeout: 0,
+          }),
+          */
+          signal: request.abortSignal,
+      }
+    ).text() 
+    //console.log("final text", responseTextIgnored)
+
+    if (errorFinal) {
+      return errorFinal
+    } else {
+      return responseFinal
     }
   }
-  return undefined
 }
 
 

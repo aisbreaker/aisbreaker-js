@@ -20,6 +20,8 @@ export * as ky from 'ky-universal'
 
 import { EventSourceMessage, getLines, getMessages } from '@waylaidwanderer/fetch-event-source/parse'
 import { DownloadProgress, HTTPError } from 'ky'
+import { AIsError, isAIsErrorData } from '../api/AIsError.js'
+import { ERROR_500_Internal_Server_Error, ERROR_503_Service_Unavailable } from '../extern/HttpStatusCodes.js'
 
 
 /** Mapping onMessage() event handler to onChunk() */
@@ -93,13 +95,13 @@ function onMessageDebug(onMessage: (message: EventSourceMessage) => void): (mess
  * 
  * Reduce logging spam by deleting some ky error details in the case of an HTTPError
  */
-export function kyHooks(debug?: boolean) { 
+export function kyHooksToReduceLogging(debug?: boolean) { 
     return {
-        beforeError: kyHooksBeforeError(debug),
+        beforeError: kyHooksBeforeErrorToReduceLogging(debug),
     }
 }
 
-export function kyHooksBeforeError(debug?: boolean) {
+export function kyHooksBeforeErrorToReduceLogging(debug?: boolean) {
     return [
         async (error: HTTPError) => {
             if (!debug) {
@@ -120,4 +122,61 @@ export function kyHooksBeforeError(debug?: boolean) {
             return error;
         }
     ]
+}
+
+
+//
+// error helpers
+//
+
+/**
+ * Throws an AIsError if the response contains an error, otherwise it just returns 
+ * 
+ * @param response ky response, potenially with an JSON-encoded AIsError
+ * @returns the AIsError if the response contains an error, otherwise undefined
+ */
+export async function tryToCreateAIsErrorFromKyResponse(response: any): Promise<AIsError | undefined> {
+  let error: AIsError | string | undefined
+  try {
+    error = await tryToExtractErrorFromKyResponse(response)
+  } catch (error) {
+    const message = "tryToCreateAIsErrorFromKyResponse() error: "+error
+    console.error(message, error)
+    error = new AIsError(message, ERROR_500_Internal_Server_Error)
+  }
+  if (error) {
+    if (isAIsErrorData(error)) {
+      return AIsError.fromAIsErrorData(error)
+    } else {
+      const errorMessage = error
+      return new AIsError(errorMessage, ERROR_503_Service_Unavailable)
+    }
+  }
+}
+async function tryToExtractErrorFromKyResponse(response: any): Promise<AIsError | string | undefined> {
+  if (response && response.json) {
+    try {
+      const json = await response.json()
+      //console.log("tryToExtractErrorFromKyResponse: ", json)
+      if (json) {
+        const error = json.error
+        if (error) {
+          const errorError = error?.error
+          if (isAIsErrorData(errorError)) {
+            return AIsError.fromAIsErrorData(errorError)
+          }
+          if (isAIsErrorData(error)) {
+            return AIsError.fromAIsErrorData(error)
+          }
+          return JSON.stringify(error)
+        } else {
+          return JSON.stringify(json)
+        }
+      }
+    } catch (error) {
+      // exctract failed
+      return undefined
+    }
+  }
+  return undefined
 }

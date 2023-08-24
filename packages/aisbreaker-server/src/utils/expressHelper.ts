@@ -2,7 +2,7 @@ import * as express from 'express'
 import {OutgoingHttpHeaders} from 'http'
 import logger from '../utils/logger.js'
 import { AssertionError } from 'assert'
-import { api, utils } from 'aisbreaker-api-js'
+import { api, extern, utils } from 'aisbreaker-api-js'
 
 
 /**
@@ -48,7 +48,7 @@ export function writeJsonResponseAIsErrorAndEnd(
 
   // send headers if not skipped
   if (!skipWriteHeaders) {
-    writeJsonResponseHeaders(res, aisError.statusCode || utils.ERROR_500_Internal_Server_Error, headers)
+    writeJsonResponseHeaders(res, aisError.statusCode || extern.ERROR_500_Internal_Server_Error, headers)
   }
 
   // prepare and send data

@@ -1,4 +1,4 @@
-import { ERROR_404_Not_Found } from "../utils/index.js"
+import { ERROR_404_Not_Found } from "../extern/index.js"
 import { AIsError } from "./AIsError.js"
 import { AIsAPIFactory, AIsServiceProps, AIsService } from "./AIsService.js"
 import { Auth } from "./models/index.js"

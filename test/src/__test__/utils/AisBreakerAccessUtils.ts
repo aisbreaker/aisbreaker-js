@@ -1,9 +1,11 @@
-import { api } from 'aisbreaker-core-nodejs'
+import * as core from 'aisbreaker-core-nodejs'
+import { api } from 'aisbreaker-api-js'
 
 //
 // helper functions for tests
 //
 
+core.init()
 
 export function testPingRemoteAisbreakerServer(aisbreakerServerURL: string) {
     test(`Ping remote AIsBreaker server '${aisbreakerServerURL}'`, async () => {
@@ -50,7 +52,10 @@ export async function processRemoteService(
     }],
     streamProgressFunction: doStream ? streamProgressFunc : undefined,
   });
-  const responseFinalText = responseFinal?.outputs[0]?.text?.content
+  let responseFinalText
+  if (responseFinal?.outputs) {
+    responseFinalText = responseFinal?.outputs[0]?.text?.content
+  }
 
   // both results
   return [responseFinal, responseFinalText, streamedProgressText]

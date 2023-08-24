@@ -86,7 +86,7 @@ export class OpenaiImageService extends base.BaseAIsService<api.AIsServiceProps>
                 },
                 json: body,
                 timeout: TIMEOUT_MILLIS,
-                hooks: utils.kyHooks(false),
+                hooks: utils.kyHooksToReduceLogging(false),
     }
         ).json()
         if ((this as any).props?.debug) {

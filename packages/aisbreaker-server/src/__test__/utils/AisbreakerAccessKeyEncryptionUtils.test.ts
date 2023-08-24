@@ -1,4 +1,4 @@
-import { delay } from 'aisbreaker-api-js/build/utils/AsyncUtils.js'
+import { utils } from 'aisbreaker-api-js'
 import { RequestAuthAndQuotas } from '../../rest-api/index.js'
 import { decryptAisbreakerAccessToken, encryptAisbreakerAccessToken } from '../../utils/index.js'
 
@@ -57,7 +57,7 @@ describe('testing AisbreakerAccessKeyEncryptionUtils', () => {
 
     // decrypt after expiration of the token
     const bufferMillis = 100
-    await delay(1*1000+bufferMillis)
+    await utils.delay(1*1000+bufferMillis)
     await expect(decryptAisbreakerAccessToken(hostname, accessToken))
       .rejects
       .toThrow()

@@ -6,6 +6,7 @@ import morgan from 'morgan'
 import { apiPing, apiVersion } from './rest-api/controllers/apiGreetings.js'
 import { apiProcess } from './rest-api/controllers/apiProcess.js'
 import { oauthToken } from './rest-api/controllers/oauthToken.js'
+import logger from './utils/logger.js'
 
 
 //
@@ -74,7 +75,7 @@ async function startServer() {
       // the home page and more - with required authentication
       app.use(basePath+"/", [ensureAuthenticated, express.static(baseDir+"/webapps/root")]);
       app.get(basePath+"/hello", ensureAuthenticated, function (req, res) {
-        console.log("req.sessionID=", req.sessionID);
+        logger.debug("req.sessionID=", req.sessionID);
         res.send("Hello Chris! ("+addFunc(1, 2)+", "+(new Date())+")");
       });
     */
@@ -104,13 +105,31 @@ async function startServer() {
     })
     */
 
+
+    // avoid server crashes by handling uncaught exceptions and unhandled rejections
+    process.on('uncaughtException', (error, origin) => {
+      logger.error('********** Uncaught exception: ', error, ' with origin: ', origin)
+    })
+    process.on('unhandledRejection', (reason, promise) => {
+      logger.error('********** Unhandled rejection at: ', promise, ' with reason: ', reason);
+    })
+  
+    
     //
     // start the web server now
     //
-    app.listen(port, () => {
-        console.log(`Server running at http://localhost:${port}`);
+    const server = app.listen(port, () => {
+      logger.info(`Server running at http://localhost:${port}`);
     })
+    logger.debug(`Version: aisbreaker-server ${version}`)
 
+    // handle SIGTERM event, e.g. from Docker
+    process.on('SIGTERM', () => {
+      logger.error('SIGTERM signal received: closing HTTP server')
+      server.close(() => {
+        logger.error('HTTP server closed')
+      })
+    })
 }
 startServer()
 

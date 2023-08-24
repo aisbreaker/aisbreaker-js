@@ -34,6 +34,13 @@ const config: Config = {
     testRegex: '/tests/.*\\.(test|spec)?\\.(ts|tsx)$',
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
     */
+
+    // Fast fail logic based on:
+    //   "Jest should fail fast and exit early (change request for --bail)"
+    //   https://github.com/jestjs/jest/issues/6527#issuecomment-1463950981
+    //   https://github.com/jestjs/jest/issues/6527#issuecomment-760092817
+    testRunner: 'jest-circus/runner',
+    testEnvironment: './build/__test__/jest-environment-fail-fast.js',
 }
 
 export default config

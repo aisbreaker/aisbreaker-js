@@ -2,6 +2,13 @@ import winston from 'winston'
 
 import config from '../config.js'
 
+//
+// logger - winstonjs-based logger
+//          with colored log (level) output,
+//          intended to be campatible with interface of aisbreaker-api-js/utils/logger
+//
+
+
 // npm debug levels (winston default):
 // {
 //   error: 0,
@@ -28,10 +35,12 @@ const logger = winston.createLogger({
     winston.format.prettyPrint(),
     winston.format.splat(),
     winston.format.simple(),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+    //winston.format.timestamp({ format: 'YYYY-MM-DDTHH:mm:ss.SSSZ' }),
+    // enforce ISO 8601 format with UTC (YYYY-MM-DDTHH:mm:ss.sssZ):
+    winston.format.timestamp({ format: () => new Date().toISOString() }),
     prettyJson
   ),
-  defaultMeta: { service: 'api-example' },
+  defaultMeta: { service: 'aisbreaker.org' },
   transports: [new winston.transports.Console({})]
 })
 

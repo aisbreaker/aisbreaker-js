@@ -1,10 +1,12 @@
-import { api, services } from 'aisbreaker-core-browserjs'
+import * as core from 'aisbreaker-core-browserjs'
+import { api, services } from 'aisbreaker-api-js'
 
 import { useAisbreakerStore } from '@/store/index.js'
 
 //
 // initialize AIsBreaker API
 //
+core.init()
 const aisbreakerStore = useAisbreakerStore()
 
 let serviceProps: api.AIsServiceProps
@@ -43,17 +45,21 @@ const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(se
 console.log(aisService)
 */
 
-console.log(services)
 
 export function getAIsService(): api.AIsService {
 	// get settings
-	const serviceProps = {
+	const serviceProps = aisbreakerStore.aisServiceProps as api.AIsServiceProps
+    const url = aisbreakerStore.apiURL
+    //const url = 'http://proxy.demo.aisbreaker.org/'
+    /* TODO: DELETE OLD CODE:
+    {
 		serviceId: 'aisbreaker:network',
 		url: aisbreakerStore.apiURL,
 		urlNOT: 'http://proxy.demo.aisbreaker.org/',
 		forward2ServiceProps: aisbreakerStore.aisServiceProps,
 	} as api.AIsServiceProps
-	console.log("getAIsService() - serviceProps: ", JSON.stringify(serviceProps, null, 2))
+    */
+	console.log(`getAIsService() - url: '${url}', serviceProps: ${JSON.stringify(serviceProps, null, 2)}`)
 	const auth = {
 		secret: aisbreakerStore.aisAccessToken,
 	} as api.Auth
@@ -61,7 +67,7 @@ export function getAIsService(): api.AIsService {
 	console.log("getAIsService() - auth: ", authSecretToLog)
 
 	// get AIsService
-	const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+	const aisService: api.AIsService = api.AIsBreaker.getRemoteAIsService(url, serviceProps, auth)
 
   return aisService
 }

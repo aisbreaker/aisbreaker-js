@@ -466,7 +466,7 @@ ${botMessage.message}
                         },
                         json: modelOptions,
                         timeout: TIMEOUT_MILLIS,
-                        hooks: utils.kyHooks(debug),
+                        hooks: utils.kyHooksToReduceLogging(debug),
                         throwHttpErrors: false,
                         onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
                           try {
@@ -493,10 +493,22 @@ ${botMessage.message}
                 )
                 // done
                 const x: KyResponse = finalKyReponse
-                const resp = await x.json() as any
-                console.log('finalKyReponse', resp)
-                if (resp.error) {
-                    let error = reject("OpenaiChat Stream Error: "+JSON.stringify(resp.error))
+                const respStr = await (x as any).text() as string
+                let errorStr: string | undefined
+                console.log('finalKyReponse', respStr)
+                try {
+                    //if (respStr && respStr.toLowerCase().includes("error")) {
+                    //    errorStr = ""+respStr
+                    //}
+                    const resp = JSON.parse(respStr)
+                    if (resp.error) {
+                        errorStr = JSON.stringify(resp.error)
+                    }
+                } catch (e) {
+                    // ignore JSON parse errors
+                }
+                if (errorStr) {
+                    let error = reject("OpenaiChat Stream Error: "+errorStr)
                     return
                 }
 
@@ -517,7 +529,7 @@ ${botMessage.message}
                 },
                 json: modelOptions,
                 timeout: TIMEOUT_MILLIS,
-                hooks: utils.kyHooks(debug),
+                hooks: utils.kyHooksToReduceLogging(debug),
             }
         ).json()
 

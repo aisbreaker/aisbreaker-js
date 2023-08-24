@@ -58,7 +58,7 @@ export class DefaultConversationState implements ConverstationState {
 
         // decode base64 string,
         // alternative to: const json = Buffer.from(base64, 'base64').toString('utf8')
-        //console.log("fromBase64()")
+        //logger.debug("fromBase64()")
         const json = StringUtils.base64ToString(base64)
 
         // parse JSON string and create ConversationState
@@ -75,7 +75,7 @@ export class DefaultConversationState implements ConverstationState {
 
     /** Export to JSON string of a ConversationState object */
     toBase64(): string {
-        //console.log("toBase64()")
+        //logger.debug("toBase64()")
         const json = this.toJSON()
  
         // encode base64 string,

@@ -16,7 +16,7 @@ export function bytesToBase64(bytes: Uint8Array): string {
 
 /*
 function stringToUtf8BytesV1(str: string): Uint8Array {
-    console.log(`stringToUtf8Bytes() with isNativeTextXxxcoderAvailable=${isNativeTextXxxcoderAvailable} and isImportedTextXxxcoderAvailable=${isImportedTextXxxcoderAvailable}`)
+    logger.debug(`stringToUtf8Bytes() with isNativeTextXxxcoderAvailable=${isNativeTextXxxcoderAvailable} and isImportedTextXxxcoderAvailable=${isImportedTextXxxcoderAvailable}`)
     if (isNativeTextXxxcoderAvailable) {
         let encoder = new TextEncoder()
         let uint8Array = encoder.encode(str)
@@ -39,7 +39,7 @@ export function stringToUtf8Bytes(str: string): Uint8Array {
 
 /*
 function utf8BytesToStringV1(bytes: Uint8Array): string {
-    console.log(`utf8BytesToString() with isNativeTextXxxcoderAvailable=${isNativeTextXxxcoderAvailable} and isImportedTextXxxcoderAvailable=${isImportedTextXxxcoderAvailable}`)
+    logger.debug(`utf8BytesToString() with isNativeTextXxxcoderAvailable=${isNativeTextXxxcoderAvailable} and isImportedTextXxxcoderAvailable=${isImportedTextXxxcoderAvailable}`)
     if (isNativeTextXxxcoderAvailable) {
         let decoder = new TextDecoder()
         let str = decoder.decode(bytes)

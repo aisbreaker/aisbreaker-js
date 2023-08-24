@@ -9,7 +9,7 @@
   "scripts": {
     "build": "rm -rf ./build && tsc && chmod a+x build/index*.js",
     "start": "date --iso-8601=seconds && npm run build && date --iso-8601=seconds && node build/index.js",
-    "start:dev": "nodemon",
+    "start:dev": "nodemon --trace-warnings",
     "// test info-1": "https://jestjs.io/docs/ecmascript-modules",
     "// test info-2": "https://kulshekhar.github.io/ts-jest/docs/guides/esm-support/",
     "test-without-build": "NODE_OPTIONS=--experimental-vm-modules jest",

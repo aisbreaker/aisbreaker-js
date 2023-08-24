@@ -1,3 +1,6 @@
+import { utils } from 'aisbreaker-api-js'
+
+
 const config = {
     //
     // basic config
@@ -8,12 +11,4 @@ const config = {
 export default config
   
 // final logging
-log("config.loggerLevel="+config.loggerLevel);
-  
-  
-//
-// internal helpers (general)
-//
-function log(s: string) {
-    console.log("***** CONFIG: "+s)
-}
+utils.logger.info("aisbreaker-server: config.loggerLevel="+config.loggerLevel);

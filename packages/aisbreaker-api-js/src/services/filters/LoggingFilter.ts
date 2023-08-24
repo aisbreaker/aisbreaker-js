@@ -5,15 +5,26 @@ import { BaseAIsFilter, FilterProps } from '../../base/index.js'
 //
 // LoggingFilter: log all process() requests to the console
 //
+import { logger } from '../../utils/logger.js'
 
 const loggingServiceId = 'aisbreaker:logging'
 
 export interface LoggingFilterProps extends FilterProps {
-    logLevel: string
+    /**
+     * LogLevels  = {
+     *   error: 0,
+     *   warn: 1,
+     *   info: 2,
+     *   http: 3,
+     *   verbose: 4,
+     *   debug: 5,
+     *   silly: 6,
+     */
+    logLevel: number
 }
 
 export class LoggingFilter extends BaseAIsFilter<LoggingFilterProps> {
-
+ 
     constructor(serviceProps: LoggingFilterProps, auth?: Auth) {
         super(serviceProps, auth)
     }
@@ -21,16 +32,16 @@ export class LoggingFilter extends BaseAIsFilter<LoggingFilterProps> {
     async process(request: Request): Promise<ResponseFinal> {
         const forward2Service = this.getForward2Service()
         const serviceId = forward2Service.serviceProps.serviceId
+        const logLevel = this.serviceProps.logLevel
 
         // logging before
-        const level = this.serviceProps.logLevel
-        console.log(`[${level}] LoggingFilter.process(request=${JSON.stringify(request)}) - forward to ${serviceId}`)
+        logger.log(logLevel, `LoggingFilter.process(request=${JSON.stringify(request)}) - forward to ${serviceId}`)
 
         // action
         const result = await forward2Service.process(request)
 
         // logging after
-        console.log(`[${level}] LoggingFilter.process() - result=${JSON.stringify(result)}`)
+        logger.log(logLevel, `LoggingFilter.process() - result=${JSON.stringify(result)}`)
         return result
     }
 }

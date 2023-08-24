@@ -90,7 +90,7 @@ const availableCommands = [
 inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
 
 // service initialization
-const servicePros = {
+const serviceProps = {
     serviceId: serviceId,
     debug: DEBUG,
     ...settings,
@@ -98,7 +98,7 @@ const servicePros = {
 const auth = {
     secret: process.env.OPENAI_API_KEY || "",
 }
-const aisService = api.AIsBreaker.getInstance().getAIsService(servicePros, auth);
+const aisService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth);
 
 
 console.log(tryBoxen('Chat CLI', {

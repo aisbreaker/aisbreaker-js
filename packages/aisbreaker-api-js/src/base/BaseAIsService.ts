@@ -1,16 +1,36 @@
 import { HTTPError } from "ky"
-import { AIsError } from "../api/AIsError.js"
-import { AIsServiceProps, AIsAPIFactory, AIsService, Auth, Request, ResponseFinal } from "../api/index.js"
-import { DefaultConversationState, ERROR_400_Bad_Request, ERROR_499_Client_Closed_Request, ERROR_500_Internal_Server_Error, ERROR_501_Not_Implemented, ERROR_502_Bad_Gateway } from "../utils/index.js"
+import {
+  AIsAPIFactory,
+  AIsError,
+  AIsService,
+  AIsServiceProps,
+  Auth,
+  isAIsErrorData,
+  Request,
+  ResponseFinal,
+} from "../api/index.js"
+import {
+  ERROR_400_Bad_Request,
+  ERROR_444_No_Response,
+  ERROR_499_Client_Closed_Request,
+  ERROR_500_Internal_Server_Error,
+  ERROR_501_Not_Implemented,
+  ERROR_502_Bad_Gateway,
+  ERROR_503_Service_Unavailable,
+} from '../extern/HttpStatusCodes.js'
+
+import { DefaultConversationState } from "../utils/index.js"
+import { logger } from '../utils/logger.js'
+
 
 export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements AIsService {
-    serviceProps: PROPS_T
-    auth?: Auth
+  serviceProps: PROPS_T
+  auth?: Auth
 
-    constructor(serviceProps: PROPS_T, auth?: Auth) {
-        this.serviceProps = serviceProps
-        this.auth = auth
-    }
+  constructor(serviceProps: PROPS_T, auth?: Auth) {
+    this.serviceProps = serviceProps
+    this.auth = auth
+  }
 
   /**
    * Let the service do its work.
@@ -19,26 +39,118 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
     // preparation for loggging and exceptions
     const context = `${this.getContext(request)}.process()`
 
-    // action
-    return await protectProcessFunction(async () => {
+    try {
+      logger.debug(`${context} START`)
+
+      // action
+      //const responseFinalOrAIsError = await processFunction()
       // check that all required fields are present
       this.checkRequest(request, context)
 
       // do the work
-      return await this.processUnprotected(request, context)
-    }, context)
+      const responseFinalOrAIsError = await this.processUnprotected(request, context)
+
+      // process the final result
+      if (!responseFinalOrAIsError) {
+        throw new AIsError(`${context} - No final response`, ERROR_444_No_Response)
+      } else if (responseFinalOrAIsError instanceof AIsError) {
+        // re-throw the error unchanged
+        throw responseFinalOrAIsError
+      } else {
+        // return the response
+        logger.debug(`${context} END with successful responseFinal: `, responseFinalOrAIsError)
+        return responseFinalOrAIsError
+      }
+
+    } catch (error) {
+      // error handling
+      const originalMessage = ""+error
+
+      // Is this an error thrwon by ky HTTP client?
+      // Then error.response could contain a message string or a JSON-encoded AIsError
+      if ((error as any).response) {
+        const aisError = undefined as any //await tryToCreateAIsErrorFromKyResponse((error as any).response)
+        if (aisError) {
+          aisError.message = addPrefixIfNotAlreadyPresent(context, `${context}: `, aisError.message)
+          logger.warn(`${context} END with AIsError from network response:`, aisError)
+          throw aisError
+        }
+      }
+
+      // handle different kinds of errors
+      if (error instanceof AIsError) {
+        // re-throw the error unchanged
+        error.message = addPrefixIfNotAlreadyPresent(context, `${context}: `, error.message)
+        logger.warn(`${context} END with AIsError:`, error)
+        throw error
+      }
+      if (isAIsErrorData(error)) {
+        // re-throw as error
+        error.message = addPrefixIfNotAlreadyPresent(context, `${context}: `, error.message)
+        const e = AIsError.fromAIsErrorData(error)
+        logger.warn(`${context} END with AIsErrorData:`, e)
+        throw e
+      }
+
+      if ((error as any).name === 'NetworkError') {
+        const optionalErrorCauseMessage = getOptionalErrorCauseMessageWithColonPrefix(error)
+        const message = addPrefixIfNotAlreadyPresent(context, `${context}: `, `Fetch failed1(Base): ${originalMessage}${optionalErrorCauseMessage}`)
+        logger.warn(`${context} END with NetworkError: ${message}`, error)
+        throw new AIsError(message, ERROR_502_Bad_Gateway)
+      }
+
+      if ((error as any).name === 'TypeError') {
+        // some fetch/ky errors are TypeErrors ( https://stackoverflow.com/questions/69390474/fetchapi-response-on-dns-failure )
+        const optionalErrorCauseMessage = getOptionalErrorCauseMessageWithColonPrefix(error)
+        const message = addPrefixIfNotAlreadyPresent(context, `${context}: `, `Fetch failed2(Base): ${originalMessage}${optionalErrorCauseMessage}`)
+        logger.warn(`${context} END with TypeError: ${message}`, error)
+        throw new AIsError(message, ERROR_503_Service_Unavailable)
+      }
+
+      if ((error as any).name === 'SyntaxError') {
+        // e.g. ky.json() parse error
+        const optionalErrorCauseMessage = getOptionalErrorCauseMessageWithColonPrefix(error)
+        const message = addPrefixIfNotAlreadyPresent(context, `${context}: `, `Parse failed(Base): ${originalMessage}${optionalErrorCauseMessage}`)
+        logger.warn(`${context} END with SyntaxError: ${message}`, error)
+        throw new AIsError(message, ERROR_503_Service_Unavailable)
+      }
+
+      if ((error as any).name === 'AbortError') {
+        const message = addPrefixIfNotAlreadyPresent(context, `${context}: `, `Fetch aborted(Base): ${originalMessage}`)
+        logger.warn(`${context} END with AbortError: ${message}`, error)
+        throw new AIsError(message, ERROR_499_Client_Closed_Request)
+      }
+
+      if (error instanceof HTTPError) {
+        error.message = addPrefixIfNotAlreadyPresent(context, `${context}: `, error.message)
+        logger.warn(`${context} END with HTTPError:`, error)
+        throw AIsError.fromHTTPError(error, context)
+      }
+
+      // any other error is an internal (server) error
+      logger.warn(`${context} END with internal error:`, error)
+      const optionalErrorCauseMessage = getOptionalErrorCauseMessageWithColonPrefix(error)
+      throw new AIsError(
+        `${context}: General Error(Base) - ${error}${optionalErrorCauseMessage}`,
+        ERROR_500_Internal_Server_Error
+      )
+    }
   }
+
 
   /**
    * Do the work of process()
    * without the need to care about all error handling.
-    * @param request
-    * @param context  optional context information/description/message prefix
-    *                 for logging and for error messages
+   * 
+   * @param request  the request to process
+   * @param context  optional context information/description/message prefix
+   *                 for logging and for error messages
+   * @returns The final result.
+   *          In the case of an error it returns an AIsError OR throws an AIError or general Error.
    */
-  async processUnprotected(request: Request, context: string): Promise<ResponseFinal> {
+  async processUnprotected(request: Request, context: string): Promise<ResponseFinal | AIsError | undefined> {
     const className = this.constructor.name
-    throw new AIsError(`${className}: Either process() or processUnprotected() must be implemented/overridden!`, ERROR_501_Not_Implemented)
+    throw new AIsError(`${className}/${context}: Either process() or processUnprotected() must be implemented/overridden!`, ERROR_501_Not_Implemented)
   }
 
   /**
@@ -63,98 +175,84 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
     return contextService
   }
 
-    //
-    // helper methods
-    //
+  //
+  // helper methods
+  //
 
-    /** check that all required fields are present
-     * 
-     * @param request
-     * @param context  optional context information/description/message prefix
-     *                 for logging and for error messages
-     */
-    checkRequest(request: Request, context: string) {
-        // check that all required fields are present
-        if (!request) {
-            throw new AIsError(`${context}.process() - request is missing`, ERROR_400_Bad_Request)
-        }
-        if (!request.inputs) {
-            throw new AIsError(`${context}.process() - request.inputs is missing`, ERROR_400_Bad_Request)
-        }
-        if (!request.inputs[0]) {
-            throw new AIsError(`${context}.process() - request.inputs[0] is missing`, ERROR_400_Bad_Request)
-        }
+  /** check that all required fields are present
+   * 
+   * @param request
+   * @param context  optional context information/description/message prefix
+   *                 for logging and for error messages
+   */
+  checkRequest(request: Request, context: string) {
+    // check that all required fields are present
+    if (!request) {
+      throw new AIsError(`${context}.process() - request is missing`, ERROR_400_Bad_Request)
+    }
+    if (!request.inputs) {
+      throw new AIsError(`${context}.process() - request.inputs is missing`, ERROR_400_Bad_Request)
+    }
+    if (!request.inputs[0]) {
+      throw new AIsError(`${context}.process() - request.inputs[0] is missing`, ERROR_400_Bad_Request)
+    }
+  }
+
+  getConversationState(request: Request): DefaultConversationState {
+    return DefaultConversationState.fromBase64(request.conversationState)
+  }
+
+  /**
+   * `task:service/model` -> `model`
+   * Examples:
+   *   `chat:foo.com/gpt-next` -> `gpt-next`
+   *   `text-to-image:bar-ai/my-model` -> `my-model`
+   * 
+   * @param serviceId `
+   */
+  getModelFromServiceId(serviceId: string): string | undefined {
+    const parts = serviceId.split('/')
+    if (parts.length >= 2) {
+      // model found
+      return parts[1]
     }
 
-    getConversationState(request: Request): DefaultConversationState {
-        return DefaultConversationState.fromBase64(request.conversationState)
-    }
-
-    /**
-     * `task:service/model` -> `model`
-     * Examples:
-     *   `chat:foo.com/gpt-next` -> `gpt-next`
-     *   `text-to-image:bar-ai/my-model` -> `my-model`
-     * 
-     * @param serviceId `
-     */
-    getModelFromServiceId(serviceId: string): string | undefined {
-        const parts = serviceId.split('/')
-        if (parts.length >= 2) {
-            // model found
-            return parts[1]
-        }
-
-        // no model found
-        return undefined
-    }
-}
-
-/**
- * In the case of an error, try to catch it and convert it to an AIsError.
- */
-export async function protectProcessFunction(
-  processFunction: ()=>Promise<ResponseFinal>,
-  context: string
-  ): Promise<ResponseFinal> {
-  try {
-
-    // action
-    return await processFunction()
-
-  } catch (error) {
-    // error handling
-    let originalMessage = ""+error
-
-    if (error instanceof AIsError) {
-      // re-throw the error unchanged
-      console.error(`${context} - AIsError:`, error)
-      throw error
-    }
-
-    if ((error as any).name === 'NetworkError') {
-      const message = `${context}: fetch failed: ${originalMessage}`
-      console.error(message, error)
-      throw new AIsError(message, ERROR_502_Bad_Gateway)
-    }
-
-    if ((error as any).name === 'AbortError') {
-      const message = `${context}: fetch aborted: ${originalMessage}`
-      console.error(message, error)
-      throw new AIsError(message, ERROR_499_Client_Closed_Request)
-    }
-
-    if (error instanceof HTTPError) {
-      console.log(`${context} - HTTPError:`, error)
-      throw AIsError.fromHTTPError(error, context)
-    }
-
-    // any other error is an internal (server) error
-    console.log(`${context} - internal error:`, error)
-    throw new AIsError(`${context}.process() - ${error}`, ERROR_500_Internal_Server_Error)
+    // no model found
+    return undefined
   }
 }
 
+//
+// helper functions
+//
+
+function addPrefixIfNotAlreadyPresent(
+  expectedPrefixSubstring: string,
+  prefixToAdd: string,
+  message: string
+): string {
+  // pre-check
+  if (!message) {
+    return prefixToAdd + "<undefined>"
+  }
+  // action
+  if (message.includes(expectedPrefixSubstring)) {
+    // nothing to do
+    return message
+  } else {
+    // add prefix
+    return prefixToAdd + message
+  }
+}
+
+/** @returns a root cause message (with prefix ': '), or an empty string*/
+function getOptionalErrorCauseMessageWithColonPrefix(error: any): string {
+  if (error?.cause) {
+    return `: ${error.cause}`
+  } else {
+    return ''
+  }
+}
 
 export abstract class BaseAIsServiceFactory<SERVICE_T extends AIsService> 
     implements AIsAPIFactory<AIsServiceProps, SERVICE_T> {

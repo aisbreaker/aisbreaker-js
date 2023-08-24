@@ -1,6 +1,8 @@
 import * as express from 'express'
 import {OutgoingHttpHeaders} from 'http'
 import logger from '../utils/logger.js'
+import { AssertionError } from 'assert'
+import { api, extern, utils } from 'aisbreaker-api-js'
 
 
 /**
@@ -29,9 +31,40 @@ export function writeJsonResponse(
   res.end(data)
 }
 
+/**
+ * Helper to write JSON response
+ * 
+ * @param res
+ * @param statusCode  response code, e.g. 200
+ * @param payload     the JSON response
+ * @param headers 
+ */
+export function writeJsonResponseAIsErrorAndEnd(
+  res: express.Response,
+  aisError: api.AIsErrorData,
+  skipWriteHeaders: boolean = false,
+  headers?: OutgoingHttpHeaders | undefined
+  ): void {
+
+  // send headers if not skipped
+  if (!skipWriteHeaders) {
+    writeJsonResponseHeaders(res, aisError.statusCode || extern.ERROR_500_Internal_Server_Error, headers)
+  }
+
+  // prepare and send data
+  const errorObj = api.AIsError.fromAIsErrorData(aisError).getErrorObject()
+  let data: any = stringify(errorObj, null, 2)
+  console.log(`writeJsonResponseAIsError() - data=${data}`)
+  res.end(data)
+}
+
 
 export function writeJsonResponseHeaders(res: express.Response, statusCode: number, headers?: OutgoingHttpHeaders | undefined): void {
   res.writeHead(statusCode, {...headers, 'Content-Type': 'application/json'})
+}
+
+export function writeEventStreamResponseHeaders(res: express.Response, statusCode: number, headers?: OutgoingHttpHeaders | undefined): void {
+  res.writeHead(statusCode, {...headers, 'Content-Type': 'text/event-stream'})
 }
 
 export function writeJsonServerSideEventProgressResponse(res: express.Response, payload: any) {
@@ -39,14 +72,19 @@ export function writeJsonServerSideEventProgressResponse(res: express.Response, 
   res.write(`data: ${stringify(payload)}\n\n`)
 }
 
-export function writeJsonServerSideEventFinalResponse(res: express.Response, payload: any) {
+export function writeJsonServerSideEventFinalResponseAndEnd(res: express.Response, payload: any) {
   res.write(`event: final\n`)
   res.end(`data: ${stringify(payload)}\n\n`)
 }
 
-export function writeJsonServerSideEventErrorResponse(res: express.Response, payload: any) {
+export function writeJsonServerSideEventErrorResponseAndEnd(res: express.Response, payload: any) {
   res.write(`event: error\n`)
   res.end(`data: ${stringify(payload)}\n\n`)
+}
+
+export function writeJsonServerSideEventAIsErrorResponseAndEnd(res: express.Response, aisError: api.AIsErrorData) {
+  const errorObj = api.AIsError.fromAIsErrorData(aisError).getErrorObject()
+  writeJsonServerSideEventErrorResponseAndEnd(res, errorObj)
 }
 
 
@@ -132,7 +170,7 @@ export function extractHttpAuthHeaderSecret(req: express.Request): string | unde
 // JSON formatter for HTTP responses
 //
 function stringify(value: any, replacer?: (number | string)[] | null, space?: string | number): string {
-  let data: any = undefined
+  let data: string
   if (typeof value === 'object') {
     // normal case
     data = JSON.stringify(value, replacer, space)
@@ -151,7 +189,7 @@ function stringify(value: any, replacer?: (number | string)[] | null, space?: st
   } else {
     // unknonw case
     logger.warn(`stringify() with unknown type of value=${typeof value}`)
-    data = stringify
+    data = `{stringify() with unknown type of value=${typeof value}}`
   }
   return data
 }

@@ -1,5 +1,6 @@
 import { AIsServiceProps, AIsService, Auth, ClientRequest, Request, ResponseFinal } from '../../api/index.js'
 import { BaseAIsFilter, FilterProps } from '../../base/index.js'
+import { logger } from '../../utils/logger.js'
 
 
 //
@@ -34,7 +35,7 @@ export class NormalizeFilter extends BaseAIsFilter<FilterProps> {
     private normalizeRequest(request: ClientRequest): Request {
         if (request.text) {
             if (request.inputs && request.inputs.length > 0) {
-                console.log(`request.text is set but ignored, because request.inputs is set and has higher priority`)
+                logger.debug(`request.text is set but ignored, because request.inputs is set and has higher priority`)
                 delete request.text
             } else {
                 request.inputs = [{text: {role: 'user', content: request.text}}]

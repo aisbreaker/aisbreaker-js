@@ -10,7 +10,7 @@ import * as tiktoken from 'tiktoken'
 // API url:  https://api.openai.com/v1/chat/completions
 //
 
-const chatBaseServiceId = 'chat:openai.com'
+const chatBaseServiceId = 'chat:openai.old'
 
 const DEFAULT_CHATGPT_MODEL = 'gpt-3.5-turbo'
 const DEFAULT_URL = 'https://api.openai.com/v1/chat/completions'

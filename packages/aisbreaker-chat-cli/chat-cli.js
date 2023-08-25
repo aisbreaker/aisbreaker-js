@@ -21,7 +21,8 @@ import clipboard from 'clipboardy';
 import inquirer from 'inquirer';
 import inquirerAutocompletePrompt from 'inquirer-autocomplete-prompt';
 import Keyv from 'keyv';
-import { api } from 'aisbreaker-core-nodejs';
+import { api } from 'aisbreaker-api-js';
+import * as core from 'aisbreaker-core-nodejs';
 
 const arg = process.argv.find(_arg => _arg.startsWith('--settings'));
 const path = arg?.split('=')[1] ?? './settings.js';
@@ -90,14 +91,15 @@ const availableCommands = [
 inquirer.registerPrompt('autocomplete', inquirerAutocompletePrompt);
 
 // service initialization
+core.init();
 const serviceProps = {
     serviceId: serviceId,
     debug: DEBUG,
     ...settings,
-}
+};
 const auth = {
     secret: process.env.OPENAI_API_KEY || "",
-}
+};
 const aisService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth);
 
 

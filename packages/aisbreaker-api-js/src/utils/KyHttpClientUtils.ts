@@ -63,7 +63,7 @@ export function kyOnDownloadProgress4onMessage(
 
   let onDownloadProgress = function (progress: DownloadProgress, chunk: Uint8Array): void {
     try {
-      logger.debug("kyOnDownloadProgress4onMessage", progress)
+      logger.silly("kyOnDownloadProgress4onMessage", progress)
       let onChunk = onChunk4onMessage(onMessageDebug(onMessage))
       onChunk(chunk)
     } catch (err) {
@@ -101,18 +101,29 @@ export function kyHooksBeforeErrorToReduceLogging(debug?: boolean) {
   return [
     async (error: HTTPError) => {
       if (!debug) {
-        logger.debug("kyHooksBeforeError(): Delete some ky error details in HTTPError for less logging spam");
+        logger.info("kyHooksBeforeErrorToReduceLogging(): Skip/delete some ky error details in HTTPError object for less logging spam")
         const originalResponse = error.response;
-        (error as any).request =  "Deleted in kyHooksBeforeError()";
-        (error as any).response = "Deleted in kyHooksBeforeError()";
-        (error as any).options =  "Deleted in kyHooksBeforeError()";
+        (error as any).request =  "Skipped in kyHooksBeforeErrorToReduceLogging()";
+        (error as any).response = "Skipped in kyHooksBeforeErrorToReduceLogging()";
+        (error as any).options =  "Skipped in kyHooksBeforeErrorToReduceLogging()";
         if (originalResponse.json) {
           try {
             error.response = await originalResponse.json();
-            error.response.hint = "Details deleted in kyHooksBeforeError()"
+            error.response.ATTENTION = "***** Object details skipped/deleted in kyHooksBeforeErrorToReduceLogging() - for less logging spam!!! *****"
           } catch (err) {
             error.response = err
           }
+        }
+        // try to keep response.status and response.statusText
+        // for later use in AIsError.fromHTTPError()
+        try {
+          if (!error.response) {
+            error.response = {}
+          }
+          error.response.status = originalResponse.status
+          error.response.statusText = originalResponse.statusText
+        } catch (e) {
+          logger.warn("kyHooksBeforeErrorToReduceLogging() error: ", e)
         }
       }
       return error;

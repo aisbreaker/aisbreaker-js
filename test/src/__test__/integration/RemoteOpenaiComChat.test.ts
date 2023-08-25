@@ -92,19 +92,31 @@ describe('Test remote service chat:openai.com', () => {
     expect(streamedProgressText).toEqual(responseFinalText)
   }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
-/* TODO: copy and adapt from "with stream":
   test('Test remote service chat:openai.com: without stream, invalid access token', async () => {
     // service initialization
     const doStream = false
 
-    // process without stream
-    const [responseFinal, responseFinalText, streamedProgressText] =
-      await processRemoteService(URL, serviceProps, invalidAuth, jsPrompt, doStream)
+    // process with stream
+    let error: api.AIsError | undefined
+    try {
+      const [responseFinal, responseFinalText, streamedProgressText] =
+        await processRemoteService(URL, serviceProps, invalidOpenaiComAuth, jsPrompt, doStream)
+    } catch (e) {
+      console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
+      error = e as api.AIsError
+    }
 
     // check result
-    expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
+    const expectedStatusCode = 401
+    // error messages from openai.com:
+    const expectedRootCauseMessage = 'Incorrect API key provided' 
+    const expectedRootCauseMessage2 = 'You can find your API key at https://platform.openai.com/account/api-keys'
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage)
+    expect(error?.message).toContain(expectedRootCauseMessage2)
   })
-*/
+
   test('Test remote service chat:openai.com: with stream, invalid access token', async () => {
     // service initialization
     const doStream = true
@@ -120,7 +132,7 @@ describe('Test remote service chat:openai.com', () => {
     }
 
     // check result
-    const expectedStatusCode = 500 // TODO: fix to 401
+    const expectedStatusCode = 401
     // error messages from openai.com:
     const expectedRootCauseMessage = 'Incorrect API key provided' 
     const expectedRootCauseMessage2 = 'You can find your API key at https://platform.openai.com/account/api-keys'

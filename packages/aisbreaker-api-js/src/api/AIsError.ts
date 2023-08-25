@@ -1,5 +1,5 @@
 import { HTTPError } from "ky"
-import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, getStatusText } from '../extern/index.js'
+import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, ERROR_503_Service_Unavailable, getStatusText } from '../extern/index.js'
 import { logger } from '../utils/logger.js'
 
 //
@@ -88,6 +88,9 @@ export class AIsError extends Error implements AIsErrorData {
 
     logger.debug(`fromHTTPError:`, httpError)
 
+    logger.debug(`***** fromHTTPError DETAILS:`, JSON.stringify(httpError, null, 2))
+
+
     if (httpError.response) {
       // it has a response, so it looks like an HTTP error
       const response = httpError.response
@@ -96,10 +99,17 @@ export class AIsError extends Error implements AIsErrorData {
         const e = response.error
         e.message = messagePrefix+e.message
         return AIsError.fromAIsErrorData(e)
+      } else if (response.error) {
+        // a propgated non-AIsBreaker error (e.g. from OpenAI API)
+        const e = response.error
+        const errorMessage = e.message || ""+e
+        const statusCode = response.status || ERROR_503_Service_Unavailable
+        const statusText = response.statusText
+        return new AIsError(messagePrefix+httpError.message+": "+errorMessage, statusCode, statusText)
       } else {
         // a "normal HTTP error"
         const statusCode = response.status
-        const statusText = response.statusText
+        const statusText = response.statusText || ERROR_503_Service_Unavailable
         return new AIsError(messagePrefix+httpError.message, statusCode, statusText)
       }
     } else if (httpError.request) {

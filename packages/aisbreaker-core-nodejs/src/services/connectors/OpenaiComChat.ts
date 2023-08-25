@@ -1,4 +1,4 @@
-import ky, { HTTPError, KyResponse, TimeoutError } from 'ky-universal'
+import ky from 'ky-universal'
 import * as tiktoken from 'tiktoken'
 import { api, base, extern, utils } from 'aisbreaker-api-js'
 
@@ -13,9 +13,10 @@ const logger = utils.logger
 const chatBaseServiceId = 'chat:openai.com'
 
 const DEFAULT_CHATGPT_MODEL = 'gpt-3.5-turbo'
+//const DEFAULT_CHATGPT_MODEL = 'gpt-4'
 const DEFAULT_URL = 'https://api.openai.com/v1/chat/completions'
 const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
-const DEBUG = true
+let DEBUG = false
 const TRACE_HTTP = false
 
 export interface OpenaiComChatProps extends api.AIsServiceProps {
@@ -32,7 +33,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
 
     // check props
     if (!auth?.secret) {
-        throw new api.AIsError(`OpenaiComChatService: missing auth.secret`, extern.ERROR_401_Unauthorized)
+      throw new api.AIsError(`OpenaiComChatService: missing auth.secret`, extern.ERROR_401_Unauthorized)
     }
 
     // determine some OpenAI details
@@ -144,21 +145,15 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     const responseJsonPromise = ky.post(
       url,
       {
-          headers: {
-              'Content-Type': 'application/json', // optional because set automatically
-              'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-OpenaiComChatService'}`,
-          },
-          json: openaiChatRequest,
-          timeout: TIMEOUT_MILLIS,
-          hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
-          throwHttpErrors: true,
-          /*
-          dispatcher: new Agent({
-              bodyTimeout: 0,
-              headersTimeout: 0,
-          }),
-          */
-          signal: abortController.signal,
+        headers: {
+          'Content-Type': 'application/json', // optional because set automatically
+          'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-OpenaiComChatService'}`,
+        },
+        json: openaiChatRequest,
+        timeout: TIMEOUT_MILLIS,
+        hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
+        throwHttpErrors: true,
+        signal: abortController.signal,
       }
     ).json()
     const responseJson = await responseJsonPromise
@@ -208,9 +203,6 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     context: string
   ): Promise<IncompleteFinalResponse | api.AIsError | undefined> {
 
-    let responseFinal: api.ResponseFinal | undefined
-    let errorFinal: api.AIsError | undefined
-
     const streamProgressFunction = request.streamProgressFunction as api.StreamProgressFunction
     const streamOpenaiProgressFunc: OpenaiChatSSEFunc = (data: OpenaiChatSSE) => {
       // convert SSE to response event
@@ -224,63 +216,58 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     const responseText = await ky.post(
       url,
       {
-          headers: {
-              'Content-Type': 'application/json', // optional because set automatically
-              'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-OpenaiComChatService'}`,
-          },
-          json: openaiChatRequest,
-          timeout: TIMEOUT_MILLIS,
-          hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
-          throwHttpErrors: true,
-          onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
-            try {
-              if (DEBUG) {
-                  logger.debug('onMessage() called', message)
-              }
-              if (!message.data || message.event === 'ping') {
-                  return;
-              }
-              if (message.data === '[DONE]') {
-                  // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the Promise/resolve will return instead
-                  abortController.abort()
-                  //done = true;
-                  return
-              }
-              /*
-              if (message.event === 'error') {
-                let dataObj = JSON.parse(message.data)
-                if (dataObj.error) {
-                  dataObj = dataObj.error
-                }
-                errorFinal = api.AIsError.fromAIsErrorData(dataObj)
-                logger.warn("STREAMED ERROR errorFinal: ", errorFinal)
-                if (errorFinal) {
-                  throw errorFinal
-                }
-              }
-              */
-              // normal data received (without event name)
-              const dataObj = JSON.parse(message.data)
-              streamOpenaiProgressFunc(dataObj)
-
-            } catch (error) {
-              logger.warn(`${context} onDownloadProgress() error:`, error)
+        headers: {
+          'Content-Type': 'application/json', // optional because set automatically
+          'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-OpenaiComChatService'}`,
+        },
+        json: openaiChatRequest,
+        timeout: TIMEOUT_MILLIS,
+        hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
+        throwHttpErrors: true,
+        onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
+          try {
+            if (DEBUG) {
+                logger.debug('onMessage() called', message)
             }
-          }),
-          /*
-          dispatcher: new Agent({
-              bodyTimeout: 0,
-              headersTimeout: 0,
-          }),
-          */
-          signal: abortController.signal,
+            if (!message.data || message.event === 'ping') {
+                return;
+            }
+            /*
+            if (message.event === 'error') {
+              let dataObj = JSON.parse(message.data)
+              if (dataObj.error) {
+                dataObj = dataObj.error
+              }
+              errorFinal = api.AIsError.fromAIsErrorData(dataObj)
+              logger.warn("STREAMED ERROR errorFinal: ", errorFinal)
+              if (errorFinal) {
+                throw errorFinal
+              }
+              return
+            }
+            */
+            if (message.data === '[DONE]') {
+              // streamProgressFunc('[DONE]')  // don't call streamProgressFunc() at the end; the return will resolve the Promise
+              abortController.abort()
+              return
+            }
+            // normal data received (without event name)
+            const dataObj = JSON.parse(message.data)
+            streamOpenaiProgressFunc(dataObj)
+
+          } catch (error) {
+            logger.warn(`${context} onDownloadProgress() error:`, error)
+          }
+        }),
+        signal: abortController.signal,
       }
     ).text() 
-    //logger.debug("final text", responseTextIgnored)
 
     // error response from OpenAI API (not from SSE)?
     let errorStr: string | undefined
-    logger.debug('final ky reponse (streamed): responseText: ', responseText)
+    if (DEBUG) {
+      logger.debug('final ky reponse (streamed): responseText: ', responseText)
+    }
     try {
         //if (respStr && respStr.toLowerCase().includes("error")) {
         //    errorStr = ""+respStr
@@ -298,8 +285,8 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
 
     // summarize the streamed result, incl. usage caclulation
     const resultOutputs = responseCollector.getResponseFinalOutputs()
-    const inputsTokens = this.countInputsTokens(request.inputs)
-    const outputsTokens = this.countOutputsTokens(resultOutputs)
+    //const inputsTokens = this.countInputsTokens(request.inputs)
+    //const outputsTokens = this.countOutputsTokens(resultOutputs)
     const resultUsage = {
         engine: this.getEngine(responseCollector.lastObservedEngineId),
         //totalTokens: inputsTokens + outputsTokens,
@@ -309,13 +296,6 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     if (shouldGenerateTitle) {
       conversation.title = await this.generateTitle(userMessage, replyMessage);
       returnData.title = conversation.title;
-    }
-    */
-
-    // avoids some rendering issues when using the CLI app (TODO: can this be deleted or moved to the CLI app???)
-    /*
-    if (DEBUG) {
-      logger.debug()
     }
     */
   

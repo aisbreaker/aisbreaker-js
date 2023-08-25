@@ -7,12 +7,14 @@
 //   ./simple-chat-cli.js "What is the meaning of life?"
 //
 
-import { api } from 'aisbreaker-core-nodejs';
+import { api } from 'aisbreaker-api-js';
+import * as core from 'aisbreaker-core-nodejs';
 
 
 async function action() {
     console.log("simple-chat-cli");
     console.log("---------------");
+    core.init();
 
     // service initialization
     const servicePros = {

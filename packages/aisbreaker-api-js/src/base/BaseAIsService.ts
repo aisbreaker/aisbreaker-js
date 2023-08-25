@@ -58,7 +58,7 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
         throw responseFinalOrAIsError
       } else {
         // return the response
-        logger.debug(`${context} END with successful responseFinal: `, responseFinalOrAIsError)
+        logger.silly(`${context} END with successful responseFinal: `, responseFinalOrAIsError)
         return responseFinalOrAIsError
       }
 

@@ -63,7 +63,7 @@ export function kyOnDownloadProgress4onMessage(
 
   let onDownloadProgress = function (progress: DownloadProgress, chunk: Uint8Array): void {
     try {
-      logger.debug("kyOnDownloadProgress4onMessage", progress)
+      logger.silly("kyOnDownloadProgress4onMessage", progress)
       let onChunk = onChunk4onMessage(onMessageDebug(onMessage))
       onChunk(chunk)
     } catch (err) {

@@ -62,8 +62,10 @@ function handleSubmit() {
   onConversation()
 }
 
+
 async function onConversation() {
   let message = prompt.value
+  prompt.value = ''
 
   console.log(`onConversation(): ${message}`)
 
@@ -73,8 +75,7 @@ async function onConversation() {
   if (!message || message.trim() === '')
     return
 
-  controller = new AbortController()
-
+  // prompt
   addChatToStore(
     +uuid,
     {
@@ -87,18 +88,11 @@ async function onConversation() {
       requestOptions: { prompt: message, options: null },
     },
   )
+
   scrollToBottom()
-
   loading.value = true
-  prompt.value = ''
 
-  //let options: Chat.ConversationRequest = {}
-  //const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-  const lastConversationState = conversationList.value[conversationList.value.length - 1]?.conversationState
-
-  //if (lastContext && usingContext.value)
-  //  options = { ...lastContext }
-
+  // (future) response
   addChatToStore(
     +uuid,
     {
@@ -112,7 +106,27 @@ async function onConversation() {
       requestOptions: { prompt: message, options: { /*...options*/ } },
     },
   )
-  scrollToBottom()
+  const lastIndexInDataSources = dataSources.value.length - 1
+
+  //let options: Chat.ConversationRequest = {}
+  //const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
+  const lastConversationState = conversationList.value[conversationList.value.length - 1]?.conversationState
+
+
+  await onGenerate(lastIndexInDataSources, message, lastConversationState, true)
+}
+
+async function onGenerate(
+  indexInDataSources: number,
+  message: string,
+  conversationState: any,
+  doScrollToButton: boolean,
+) {
+  controller = new AbortController()
+  loading.value = true
+
+
+  if (doScrollToButton) { scrollToBottom() }
 
   try {
     let lastText = ''
@@ -127,7 +141,7 @@ async function onConversation() {
         try {
           updateChatSomeInStore(
             +uuid,
-            dataSources.value.length - 1,
+            indexInDataSources,
             {
               dateTime: dateToLocaleString(new Date()),
               text: lastText,
@@ -135,7 +149,7 @@ async function onConversation() {
               error: false,
               loading: true,
               //conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-              conversationState: lastConversationState,
+              conversationState: conversationState,
               requestOptions: { prompt: message, options: { /*...options*/ } },
             },
           )
@@ -149,7 +163,7 @@ async function onConversation() {
           }
           */
 
-          scrollToBottomIfAtBottom()
+          if (doScrollToButton) { scrollToBottomIfAtBottom() }
         }
         catch (error) {
           //
@@ -164,7 +178,7 @@ async function onConversation() {
                 content: message,
             },
         } ],
-        conversationState: lastConversationState,
+        conversationState: conversationState,
         streamProgressFunction: streamProgressFunc,
         abortSignal: controller.signal,
     })
@@ -173,7 +187,7 @@ async function onConversation() {
     lastText = (dataText ?? '')
     updateChatSomeInStore(
       +uuid,
-      dataSources.value.length - 1,
+      indexInDataSources,
       {
         dateTime: dateToLocaleString(new Date()),
         text: lastText,
@@ -185,8 +199,6 @@ async function onConversation() {
         requestOptions: { prompt: message, options: { /*...options*/ } },
       },
     )
-
-    //await fetchChatAPIOnce()
   }
   catch (error: any) {
     console.log(`onConversation() error`, error) // TODO
@@ -195,7 +207,7 @@ async function onConversation() {
     if (error.message === 'canceled') {
       updateChatSomeInStore(
         +uuid,
-        dataSources.value.length - 1,
+        indexInDataSources,
         {
           loading: false,
         },
@@ -204,12 +216,12 @@ async function onConversation() {
       return
     }
 
-    const currentChat = getChatByUuidAndIndexFromStore(+uuid, dataSources.value.length - 1)
+    const currentChat = getChatByUuidAndIndexFromStore(+uuid, indexInDataSources)
 
     if (currentChat?.text && currentChat.text !== '') {
       updateChatSomeInStore(
         +uuid,
-        dataSources.value.length - 1,
+        indexInDataSources,
         {
           text: `${currentChat.text}\n[${errorMessage}]`,
           error: false,
@@ -221,7 +233,7 @@ async function onConversation() {
 
     updateChatSomeInStore(
       +uuid,
-      dataSources.value.length - 1,
+      indexInDataSources,
       {
         dateTime: dateToLocaleString(new Date()),
         text: errorMessage,
@@ -233,133 +245,27 @@ async function onConversation() {
         requestOptions: { prompt: message, options: { /*...options*/ } },
       },
     )
-    scrollToBottomIfAtBottom()
+    if (doScrollToButton) { scrollToBottomIfAtBottom() }
   }
   finally {
     updateChatSomeInStore(
         +uuid,
-        dataSources.value.length - 1,
+        indexInDataSources,
         {
           loading: false,
         },
       )
-    scrollToBottomIfAtBottom()
+    if (doScrollToButton) { scrollToBottomIfAtBottom() }
     loading.value = false
   }
 }
 
 async function onRegenerate(index: number) {
-  if (loading.value)
-    return
-
-  controller = new AbortController()
-
   const { requestOptions } = dataSources.value[index]
-
   let message = requestOptions?.prompt ?? ''
+  const conversationStateOfLastTime = index >=2 ? dataSources.value[index-2]?.conversationState : undefined
 
-  let options: Chat.ConversationRequest = {}
-
-  if (requestOptions.options)
-    options = { ...requestOptions.options }
-
-  loading.value = true
-
-  updateChatSomeInStore(
-    +uuid,
-    index,
-    {
-      dateTime: dateToLocaleString(new Date()),
-      text: '',
-      inversion: false,
-      error: false,
-      loading: true,
-      conversationOptions: null,
-      conversationState: null,
-      requestOptions: { prompt: message, options: { ...options } },
-    },
-  )
-
-  try {
-    let lastText = ''
-    const fetchChatAPIOnce = async () => {
-      await fetchChatAPIProcess<Chat.ConversationResponse>({
-        prompt: message,
-        options,
-        signal: controller.signal,
-        onDownloadProgress: ({ event }) => {
-          const xhr = event.target
-          const { responseText } = xhr
-          // Always process the final line
-          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-          let chunk = responseText
-          if (lastIndex !== -1)
-            chunk = responseText.substring(lastIndex)
-          try {
-            const data = JSON.parse(chunk)
-            updateChatSomeInStore(
-              +uuid,
-              index,
-              {
-                dateTime: dateToLocaleString(new Date()),
-                text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                //conversationState: xxx,
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
-
-            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
-              lastText = data.text
-              message = ''
-              return fetchChatAPIOnce()
-            }
-          }
-          catch (error) {
-            //
-          }
-        },
-      })
-      updateChatSomeInStore(+uuid, index, { loading: false })
-    }
-    await fetchChatAPIOnce()
-  }
-  catch (error: any) {
-    if (error.message === 'canceled') {
-      updateChatSomeInStore(
-        +uuid,
-        index,
-        {
-          loading: false,
-        },
-      )
-      return
-    }
-
-    const errorMessage = error?.message ?? t('common.wrong')
-
-    updateChatSomeInStore(
-      +uuid,
-      index,
-      {
-        dateTime: dateToLocaleString(new Date()),
-        text: errorMessage,
-        inversion: false,
-        error: true,
-        loading: false,
-        conversationOptions: null,
-        conversationState: null,
-        requestOptions: { prompt: message, options: { ...options } },
-      },
-    )
-  }
-  finally {
-    loading.value = false
-  }
+  await onGenerate(index, message, conversationStateOfLastTime, false)
 }
 
 function handleExport() {

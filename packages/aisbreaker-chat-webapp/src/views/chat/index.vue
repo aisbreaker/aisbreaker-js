@@ -16,7 +16,7 @@ import { useChatStore, usePromptStore } from '@/store/index.js'
 import { fetchChatAPIProcess } from '@/api/index.js'
 import { t } from '@/locales/index.js'
 import { getAIsService } from '@/api/aisbreakerClient.js'
-import { api, services } from 'aisbreaker-core-browserjs'
+import { api, services } from 'aisbreaker-api-js'
 
 let controller = new AbortController()
 

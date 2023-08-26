@@ -36,7 +36,7 @@ const { usingContext, toggleUsingContext } = useUsingContext()
 const { uuid } = route.params as { uuid: string }
 
 const dataSources = computed(() => chatStore.getChatByUuid(+uuid))
-const conversationList = computed(() => dataSources.value.filter((item: any) => (!item.inversion && !!item.conversationOptions)))
+const conversationList = computed(() => dataSources.value.filter((item: any) => (!item.inversion && /*!!item.conversationOptions*/ !!item.conversationState)))
 
 const prompt = ref<string>('')
 const loading = ref<boolean>(false)
@@ -83,6 +83,7 @@ async function onConversation() {
       inversion: true,
       error: false,
       conversationOptions: null,
+      conversationState: null,
       requestOptions: { prompt: message, options: null },
     },
   )
@@ -93,7 +94,7 @@ async function onConversation() {
 
   //let options: Chat.ConversationRequest = {}
   //const lastContext = conversationList.value[conversationList.value.length - 1]?.conversationOptions
-  const lastConversationState = undefined // TODO: conversationList.value[conversationList.value.length - 1]?.conversationState
+  const lastConversationState = conversationList.value[conversationList.value.length - 1]?.conversationState
 
   //if (lastContext && usingContext.value)
   //  options = { ...lastContext }
@@ -107,6 +108,7 @@ async function onConversation() {
       inversion: false,
       error: false,
       conversationOptions: null,
+      conversationState: null,
       requestOptions: { prompt: message, options: { /*...options*/ } },
     },
   )
@@ -115,53 +117,6 @@ async function onConversation() {
   try {
     let lastText = ''
     console.log(`onConversation()#2: ${message}`)
-    /*
-    const fetchChatAPIOnce = async () => {
-      await fetchChatAPIProcess<Chat.ConversationResponse>({
-        prompt: message,
-        options,
-        signal: controller.signal,
-        onDownloadProgress: ({ event }) => {
-          const xhr = event.target
-          const { responseText } = xhr
-          // Always process the final line
-          const lastIndex = responseText.lastIndexOf('\n', responseText.length - 2)
-          let chunk = responseText
-          if (lastIndex !== -1)
-            chunk = responseText.substring(lastIndex)
-          try {
-            const data = JSON.parse(chunk)
-            updateChatInStore(
-              +uuid,
-              dataSources.value.length - 1,
-              {
-                dateTime: dateToLocaleString(new Date()),
-                text: lastText + (data.text ?? ''),
-                inversion: false,
-                error: false,
-                loading: true,
-                conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
-                requestOptions: { prompt: message, options: { ...options } },
-              },
-            )
-
-            if (openLongReply && data.detail.choices[0].finish_reason === 'length') {
-              options.parentMessageId = data.id
-              lastText = data.text
-              message = ''
-              return fetchChatAPIOnce()
-            }
-
-            scrollToBottomIfAtBottom()
-          }
-          catch (error) {
-            //
-          }
-        },
-      })
-      updateChatSomeInStore(+uuid, dataSources.value.length - 1, { loading: false })
-    }
-    */
 
     const streamProgressFunc: api.StreamProgressFunction =
       (responseEvent: api.ResponseEvent) => {
@@ -170,7 +125,7 @@ async function onConversation() {
         let dataText = responseEvent.outputs[0]?.text?.content || ''
         lastText += (dataText ?? '')
         try {
-          updateChatInStore(
+          updateChatSomeInStore(
             +uuid,
             dataSources.value.length - 1,
             {
@@ -180,8 +135,8 @@ async function onConversation() {
               error: false,
               loading: true,
               //conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+              conversationState: lastConversationState,
               requestOptions: { prompt: message, options: { /*...options*/ } },
-              //conversationState: responseEvent.conversationState,
             },
           )
 
@@ -216,7 +171,7 @@ async function onConversation() {
     console.log(`onConversation() responseFinal: ${JSON.stringify(responseFinal/*, undefined, 2*/)}`)
     let dataText = responseFinal.outputs[0]?.text?.content || ''
     lastText = (dataText ?? '')
-    updateChatInStore(
+    updateChatSomeInStore(
       +uuid,
       dataSources.value.length - 1,
       {
@@ -226,8 +181,8 @@ async function onConversation() {
         error: false,
         loading: false,
         //conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+        conversationState: responseFinal.conversationState,
         requestOptions: { prompt: message, options: { /*...options*/ } },
-        //conversationState: responseEvent.conversationState,
       },
     )
 
@@ -264,7 +219,7 @@ async function onConversation() {
       return
     }
 
-    updateChatInStore(
+    updateChatSomeInStore(
       +uuid,
       dataSources.value.length - 1,
       {
@@ -274,6 +229,7 @@ async function onConversation() {
         error: true,
         loading: false,
         conversationOptions: null,
+        conversationState: null,
         requestOptions: { prompt: message, options: { /*...options*/ } },
       },
     )
@@ -309,7 +265,7 @@ async function onRegenerate(index: number) {
 
   loading.value = true
 
-  updateChatInStore(
+  updateChatSomeInStore(
     +uuid,
     index,
     {
@@ -319,6 +275,7 @@ async function onRegenerate(index: number) {
       error: false,
       loading: true,
       conversationOptions: null,
+      conversationState: null,
       requestOptions: { prompt: message, options: { ...options } },
     },
   )
@@ -340,7 +297,7 @@ async function onRegenerate(index: number) {
             chunk = responseText.substring(lastIndex)
           try {
             const data = JSON.parse(chunk)
-            updateChatInStore(
+            updateChatSomeInStore(
               +uuid,
               index,
               {
@@ -350,6 +307,7 @@ async function onRegenerate(index: number) {
                 error: false,
                 loading: true,
                 conversationOptions: { conversationId: data.conversationId, parentMessageId: data.id },
+                //conversationState: xxx,
                 requestOptions: { prompt: message, options: { ...options } },
               },
             )
@@ -384,7 +342,7 @@ async function onRegenerate(index: number) {
 
     const errorMessage = error?.message ?? t('common.wrong')
 
-    updateChatInStore(
+    updateChatSomeInStore(
       +uuid,
       index,
       {
@@ -394,6 +352,7 @@ async function onRegenerate(index: number) {
         error: true,
         loading: false,
         conversationOptions: null,
+        conversationState: null,
         requestOptions: { prompt: message, options: { ...options } },
       },
     )

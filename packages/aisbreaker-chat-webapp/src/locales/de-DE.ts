@@ -59,6 +59,8 @@ export default {
     apiServiceProperties: 'Service Properties',
     apiAccessToken: 'Access Token',
     setting: 'Einstellung',
+    settingHeader: 'Einstellungen',
+    settingHeaderSavedAutomatically: 'Automatisch Gespeichert',
     use: 'Benutzung',
     general: 'Allgemein',
     advanced: 'Erweitert',

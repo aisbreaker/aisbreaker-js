@@ -152,7 +152,8 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
             if (message.event === 'final') {
               // final data received
               const dataObj = JSON.parse(message.data)
-              abortController.abort()
+              // disabled, because it cause AbortError in aisbreaker-chat-web browser app:
+              //abortController.abort()
               responseFinal = dataObj
               return
             } else {

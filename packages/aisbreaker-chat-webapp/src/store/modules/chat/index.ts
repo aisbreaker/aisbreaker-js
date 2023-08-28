@@ -122,7 +122,6 @@ export const useChatStore = defineStore('chat-store', {
       if (!uuid || uuid === 0) {
         if (this.chat.length) {
           this.chat[0].data[index] = chat
-          this.conversationState = conversationState
           this.recordState()
         }
         return

@@ -7,6 +7,7 @@ import Use from './Use.vue'
 import Advanced from './Advanced.vue'
 import About from './About.vue'
 import { SvgIcon } from '@/components/common/index.js'
+import { t } from '@/locales/index.js'
 
 interface Props {
   visible: boolean
@@ -37,17 +38,17 @@ const show = computed({
 <template>
   <NModal v-model:show="show" :auto-focus="false" preset="card" style="width: 95%; max-width: 640px">
     <template #header>
-      {{ $t('setting.settingHeader') }}
+      {{ t('setting.settingHeader') }}
     </template>
     <template #header-extra>
-      {{ $t('setting.settingHeaderSavedAutomatically') }}
+      {{ t('setting.settingHeaderSavedAutomatically') }}
     </template>
     <div>
       <NTabs v-model:value="active" type="line" animated>
         <NTabPane name="Service" tab="Service">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:list-settings-line" />
-            <span class="ml-2">{{ $t('setting.apiService') }}</span>
+            <span class="ml-2">{{ t('setting.apiService') }}</span>
           </template>
           <div class="min-h-[100px]">
             <Service />
@@ -56,7 +57,7 @@ const show = computed({
         <NTabPane name="Config" tab="Config">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:chat-settings-line" />
-            <span class="ml-2">{{ $t('setting.config') }}</span>
+            <span class="ml-2">{{ t('setting.config') }}</span>
           </template>
           <div class="min-h-[100px]">
             <Config />
@@ -65,7 +66,7 @@ const show = computed({
         <NTabPane name="Use" tab="Use">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:user-settings-line" iconNO="ri:file-user-line" />
-            <span class="ml-2">{{ $t('setting.use') }}</span>
+            <span class="ml-2">{{ t('setting.use') }}</span>
           </template>
           <div class="min-h-[100px]">
             <Use />
@@ -75,7 +76,7 @@ const show = computed({
         <NTabPane v-if="isChatGPTAPI" name="Advanced" tab="Advanced">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:equalizer-line" />
-            <span class="ml-2">{{ $t('setting.advanced') }}</span>
+            <span class="ml-2">{{ t('setting.advanced') }}</span>
           </template>
           <div class="min-h-[100px]">
             <Advanced />
@@ -85,7 +86,7 @@ const show = computed({
         <NTabPane name="About" tab="About">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:information-line" />
-            <span class="ml-2">{{ $t('setting.about') }}</span>
+            <span class="ml-2">{{ t('setting.about') }}</span>
           </template>
           <About />
         </NTabPane>

@@ -4,6 +4,7 @@ import { NSpin } from 'naive-ui'
 import { fetchChatConfig } from '@/api/index.js'
 import pkg from '@/../package.json'
 import { useAisbreakerStore, useAuthStore } from '@/store/index.js'
+import { t } from '@/locales/index.js'
 
 interface ConfigState {
   timeoutMs?: number
@@ -75,19 +76,19 @@ const apiURL = computed({
           If you find this project helpful, please give us a Star on GitHub and spread the work, thank you!
         </p>
       </div>
-      <p>{{ $t("setting.api") }}：{{ apiURL }}</p>
+      <p>{{ t("setting.api") }}：{{ apiURL }}</p>
 
       <!--
-      <p>{{ $t("setting.api") }}：{{ config?.apiModel ?? '-' }}</p>
+      <p>{{ t("setting.api") }}：{{ config?.apiModel ?? '-' }}</p>
       <p v-if="isChatGPTAPI">
-        {{ $t("setting.monthlyUsage") }}：{{ config?.usage ?? '-' }}
+        {{ t("setting.monthlyUsage") }}：{{ config?.usage ?? '-' }}
       </p>
       <p v-if="!isChatGPTAPI">
-        {{ $t("setting.reverseProxy") }}：{{ config?.reverseProxy ?? '-' }}
+        {{ t("setting.reverseProxy") }}：{{ config?.reverseProxy ?? '-' }}
       </p>
-      <p>{{ $t("setting.timeout") }}：{{ config?.timeoutMs ?? '-' }}</p>
-      <p>{{ $t("setting.socks") }}：{{ config?.socksProxy ?? '-' }}</p>
-      <p>{{ $t("setting.httpsProxy") }}：{{ config?.httpsProxy ?? '-' }}</p>
+      <p>{{ t("setting.timeout") }}：{{ config?.timeoutMs ?? '-' }}</p>
+      <p>{{ t("setting.socks") }}：{{ config?.socksProxy ?? '-' }}</p>
+      <p>{{ t("setting.httpsProxy") }}：{{ config?.httpsProxy ?? '-' }}</p>
     -->
     </div>
   </NSpin>

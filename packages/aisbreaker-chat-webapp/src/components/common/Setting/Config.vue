@@ -41,29 +41,29 @@ function handleReset() {
 
       <!-- System prompt -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[120px]">{{ $t('setting.systemPrompt') }} </span>
+        <span class="flex-shrink-0 w-[120px]">{{ t('setting.systemPrompt') }} </span>
         <div class="flex-1">
           <NInput v-model:value="aisSystemPrompt" type="textarea" :autosize="{ minRows: 1, maxRows: 4 }"
             placeholder="< cannot be set at the moment >" 
-            XXXdisabled />
+            disabled />
         </div>
         <!--
         <NButton size="tiny" text type="primary" @click="updateSettings({ systemPrompt })">
-          {{ $t('common.save') }}
+          {{ t('common.save') }}
         </NButton>
         -->
       </div>
 
       <!-- Creativity -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[120px]">{{ $t('setting.creativity') }} </span>
+        <span class="flex-shrink-0 w-[120px]">{{ t('setting.creativity') }} </span>
         <div class="flex-1">
-          <NSlider v-model:value="aisCreativity" :min="-1" :max="1"  :step="0.1" XXXdisabled />
+          <NSlider v-model:value="aisCreativity" :min="-1" :max="1"  :step="0.1" disabled />
         </div>
         <span>{{ aisCreativity }}</span>
         <!--
         <NButton size="tiny" text type="primary" @click="updateSettings({ temperature })">
-          {{ $t('common.save') }}
+          {{ t('common.save') }}
         </NButton>
         -->
       </div>
@@ -71,7 +71,7 @@ function handleReset() {
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[120px]">&nbsp;</span>
         <NButton size="small" @click="handleReset">
-          {{ $t('common.resetToDefaults') }}
+          {{ t('common.resetToDefaults') }}
         </NButton>
       </div>
 

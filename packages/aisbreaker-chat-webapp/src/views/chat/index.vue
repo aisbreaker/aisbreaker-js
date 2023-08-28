@@ -4,7 +4,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { NAutoComplete, NButton, NInput, useDialog, useMessage } from 'naive-ui'
-import html2canvas from 'html2canvas'
+//import html2canvas from 'html2canvas'
 import { Message } from './components/index.js'
 import { useScroll } from './hooks/useScroll.js'
 import { useChat } from './hooks/useChat.js'
@@ -13,10 +13,15 @@ import HeaderComponent from './components/Header/index.vue'
 import { HoverButton, SvgIcon } from '@/components/common/index.js'
 import { useBasicLayout } from '@/hooks/useBasicLayout.js'
 import { useChatStore, usePromptStore } from '@/store/index.js'
-import { fetchChatAPIProcess } from '@/api/index.js'
 import { t } from '@/locales/index.js'
 import { getAIsService } from '@/api/aisbreakerClient.js'
-import { api, services } from 'aisbreaker-api-js'
+import { api } from 'aisbreaker-api-js'
+
+/* work around for html2canvas TypeScript compile error of "import html2canvas from 'html2canvas'" */
+import * as html2canvasExports from 'html2canvas'
+type TYPE_H2C = (element: HTMLElement, options?: Partial<html2canvasExports.Options>) => Promise<HTMLCanvasElement>
+const html2canvas = html2canvasExports.default as unknown as TYPE_H2C
+
 
 let controller = new AbortController()
 

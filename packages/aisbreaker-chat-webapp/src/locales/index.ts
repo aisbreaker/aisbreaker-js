@@ -7,16 +7,18 @@ import ruRU from './ru-RU.js'
 import viVN from './vi-VN.js'
 import zhCN from './zh-CN.js'
 import zhTW from './zh-TW.js'
-import { useAppStoreWithOut } from '@/store/modules/app/index.js'
 import type { Language } from '@/store/modules/app/helper.js'
 
-const appStore = useAppStoreWithOut()
-
-const defaultLocale = appStore.language || 'en-US'
+// reduce imports to avoid cyclic dependencies/startup problems:
+//import { useAppStoreWithOut } from '@/store/modules/app/index.js'
+//const appStore = useAppStoreWithOut()
+//const defaultLocale = appStore.language || 'en-US'
+const defaultLocale = 'en-US'
 
 /** See also: store/modules/app/helper.js + src/hooks/useLanguage.ts */
 const i18n = createI18n({
   locale: defaultLocale,
+  //legacy: false,
   fallbackLocale: 'en-US',
   allowComposition: true,
   messages: {

@@ -104,14 +104,14 @@ function renderOptionWithTooltip({ node, option }: { node: VNode; option: Select
 
       <!-- AIsBreaker API server -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[120px]">{{ $t('setting.apiServerUrl') }}</span>
+        <span class="flex-shrink-0 w-[120px]">{{ t('setting.apiServerUrl') }}</span>
         <NInput v-model:value="apiURL" placeholder="https://api.demo.aisbreaker.org ... http://localhost:3000/ ..." />
       </div>
 
       <!-- Service Properties template -->
       <!-- TODO: https://www.naiveui.com/en-US/os-theme/components/select#add-tooltip.vue -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[120px]">{{ $t('setting.apiServiceTemplate') }}</span>
+        <span class="flex-shrink-0 w-[120px]">{{ t('setting.apiServiceTemplate') }}</span>
         <NSelect
             class="flex-1"
             :value="aisServicePropsTemplateName"
@@ -123,7 +123,7 @@ function renderOptionWithTooltip({ node, option }: { node: VNode; option: Select
     </div>
       <!-- Service Properties details -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[120px]">{{ $t('setting.apiServiceProperties') }}</span>
+        <span class="flex-shrink-0 w-[120px]">{{ t('setting.apiServiceProperties') }}</span>
         <NInput v-model:value="aisServicePropsStr"
           class="flex-1"
           type="textarea"
@@ -132,7 +132,7 @@ function renderOptionWithTooltip({ node, option }: { node: VNode; option: Select
           placeholder="{ service properties }" />
         <!--
         <NButton size="tiny" text type="primary" @XXclick="updateSettings({ systemMessage })">
-          {{ $t('common.save') }}
+          {{ t('common.save') }}
         </NButton>
         -->
       </div>
@@ -147,7 +147,7 @@ function renderOptionWithTooltip({ node, option }: { node: VNode; option: Select
   
       <!-- (AIsBreaker) access token -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[120px]">{{ $t('setting.apiAccessToken') }}</span>
+        <span class="flex-shrink-0 w-[120px]">{{ t('setting.apiAccessToken') }}</span>
         <NInput v-model:value="aisAccessToken"
           class="flex-1"
           type="textarea"
@@ -159,7 +159,7 @@ function renderOptionWithTooltip({ node, option }: { node: VNode; option: Select
     <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[120px]">&nbsp;</span>
         <NButton size="small" @click="handleReset">
-          {{ $t('common.resetToDefaults') }}
+          {{ t('common.resetToDefaults') }}
         </NButton>
       </div>
 

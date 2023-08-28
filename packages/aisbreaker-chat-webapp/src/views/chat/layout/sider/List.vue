@@ -5,6 +5,7 @@ import { SvgIcon } from '@/components/common/index.js'
 import { useAppStore, useChatStore } from '@/store/index.js'
 import { useBasicLayout } from '@/hooks/useBasicLayout.js'
 import { debounce } from '@/utils/functions/debounce.js'
+import { t } from '@/locales/index.js'
 
 const { isMobile } = useBasicLayout()
 
@@ -56,7 +57,7 @@ function isActive(uuid: number) {
       <template v-if="!dataSources.length">
         <div class="flex flex-col items-center mt-4 text-center text-neutral-300">
           <SvgIcon icon="ri:inbox-line" class="mb-2 text-3xl" />
-          <span>{{ $t('common.noData') }}</span>
+          <span>{{ t('common.noData') }}</span>
         </div>
       </template>
       <template v-else>
@@ -93,7 +94,7 @@ function isActive(uuid: number) {
                       <SvgIcon icon="ri:delete-bin-line" />
                     </button>
                   </template>
-                  {{ $t('chat.deleteHistoryConfirm') }}
+                  {{ t('chat.deleteHistoryConfirm') }}
                 </NPopconfirm>
               </template>
             </div>

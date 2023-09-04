@@ -19,7 +19,9 @@ COPY . .
 # DEBUG
 RUN ls -l node_modules
 
-RUN npm install aisbreaker-api-js:0.0.42
+RUN export VERSION=`cat VERSION` && \
+    npm install "aisbreaker-api-js@${VERSION}" && \
+    npm install "aisbreaker-core-nodejs@${VERSION}"
 
 RUN ls -l node_modules
 

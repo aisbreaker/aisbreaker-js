@@ -7,7 +7,7 @@ echo "MODULES=$MODULES"
 # build and (if present) test all packages
 #
 # CANNOT USE "npm run build --workspaces" or "npm run test --workspaces --if-present"
-#    because it would npt fail on errors (https://github.com/npm/rfcs/issues/575)
+#    because it would not fail on errors (https://github.com/npm/rfcs/issues/575)
 for MODULE in $MODULES; do
   echo "--- Build+Test: $MODULE (if-present)"
   pushd $MODULE

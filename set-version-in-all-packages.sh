@@ -15,7 +15,7 @@
 
 
 # command line argument
-export VERSION=$1
+export VERSION="$1"
 if [[ -z "$VERSION" ]] ; then
   echo "ERROR: No new VERSION parameter specified."
   exit 1
@@ -38,7 +38,7 @@ echo "MODULES=$MODULES"
 NPM_VERSION_OPT="--no-git-tag-version"
 #NPM_VERSION_OPT=""
 echo "- Set version in top module"
-npm version $VERSION $NPM_VERSION_OPT || exit 1
+npm version "$VERSION" $NPM_VERSION_OPT || exit 1
 
 echo "-- Set version in sub modules/packages"
 for MODULE in $MODULES; do
@@ -51,6 +51,13 @@ for MODULE in $MODULES; do
   #npm version $VERSION $NPM_VERSION_OPT || exit 1
   #ls ./package*json | xargs -n 1 sed "s/\"version\": \".*\"/\"version\": \"$VERSION\"/g" -i 
   ls ./package.json | xargs -n 1 sed "s/\"version\": \".*\"/\"version\": \"$VERSION\"/g" -i 
+
+  # write version to VERSION file - needed for Docker builds
+  if [[ -f "VERSION" ]]; then
+    # VERSION file exists - update it
+    echo -n "$VERSION" > VERSION
+  fi
+
   popd
 
   # update dependencies in all modules
@@ -75,4 +82,5 @@ sleep 5
 rm -rf node_modules
 rm -rf packages/*/node_modules test/node_modules
 npm install
+
 

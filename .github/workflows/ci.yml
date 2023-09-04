@@ -30,25 +30,47 @@ jobs:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
 
       # Build and publish Docker image for packages/aisbreaker-server/
-      - name: Login and push to hub.docker.com
+      - name: Build Docker image, login and push to hub.docker.com
         run: |
-          export VERSION="0.0.0"
           cd packages/aisbreaker-server/
+
+          export VERSION=`cat VERSION`
+          if [[ -z "$VERSION" ]] ; then
+            echo "Couldn't find valid VERSION file"
+            exit 1
+          fi
+
           docker build -t "aisbreaker/aisbreaker-server:${VERSION}" -t "aisbreaker/aisbreaker-server:latest" .
           docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
           docker push --all-tags "aisbreaker/aisbreaker-server"
 
-  publish-docker:
+  build-and-publish-docker-image:
     runs-on: ubuntu-latest
     needs: build-and-publish-npm
+    env:
+      PACKAGE_DIR: packages/aisbreaker-server
+      IMAGE_NAME: aisbreaker/aisbreaker-server
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
       - name: Build Docker image
-        #run: docker build -t my-image .
-        run: echo "docker build -t my-image ."
-      - name: Push Docker image
         run: |
+          cd "${PACKAGE_DIR]}/"
+
+          export VERSION=`cat VERSION`
+          if [[ -z "$VERSION" ]] ; then
+            echo "Couldn't find valid VERSION file"
+            exit 1
+          fi
+
+          cp ../../package-lock.json ./
+          docker build -t "${IMAGE_NAME}:${VERSION}" -t "${IMAGE_NAME}:latest" .
+
+      - name: Publish Docker image 
+        run: |
+          cd packages/aisbreaker-server/
+
           docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
-      #    docker push my-image
+          docker push --all-tags "${IMAGE_NAME}"
 

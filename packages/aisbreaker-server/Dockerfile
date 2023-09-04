@@ -17,11 +17,11 @@ COPY . .
 
 
 # DEBUG
-ls -l node_modules
+RUN ls -l node_modules
 
-npm install aisbreaker-api-js:0.0.42
+RUN npm install aisbreaker-api-js:0.0.42
 
-ls -l node_modules
+RUN ls -l node_modules
 
 
 

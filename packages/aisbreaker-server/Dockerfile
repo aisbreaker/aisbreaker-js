@@ -15,6 +15,16 @@ RUN npm install
 # Bundle app source
 COPY . .
 
+
+# DEBUG
+ls -l node_modules
+
+npm install aisbreaker-api-js:0.0.42
+
+ls -l node_modules
+
+
+
 # Compile TypeScript files
 RUN npm run build
 

@@ -129,6 +129,11 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
 
       // any other error is an internal (server) error
       logger.warn(`${context} END with internal error:`, error)
+      try {
+        logger.warn(`${context} END with internal error:`, error, ', as JSON:', JSON.stringify(error))
+      } catch (ex) {
+        // ignore
+      }
       const optionalErrorCauseMessage = getOptionalErrorCauseMessageWithColonPrefix(error)
       throw new AIsError(
         `${context}: General Error(Base) - ${error}${optionalErrorCauseMessage}`,

@@ -12,19 +12,31 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       # Setup .npmrc file to publish to npm
       - name: Setup npm authentication
         uses: actions/setup-node@v3
         with:
           node-version: '16.x'
           registry-url: 'https://registry.npmjs.org'
+
       - name: Install dependencies
         run: npm install
+
       - name: Build and Publish all packages/modules to npm
         run: |
           ./build-and-publish-all-packages.sh
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+
+      # Build and publish Docker image for packages/aisbreaker-server/
+      - name: Login and push to hub.docker.com
+        run: |
+          export VERSION="0.0.0"
+          cd packages/aisbreaker-server/
+          docker build -t "aisbreaker/aisbreaker-server:${VERSION}" -t "aisbreaker/aisbreaker-server:latest" .
+          docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+          docker push --all-tags
 
   publish-docker:
     runs-on: ubuntu-latest

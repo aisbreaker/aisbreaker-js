@@ -42,7 +42,7 @@ for MODULE in $MODULES; do
   echo "--- Publish: $MODULE"
 
   # publish
-  npm publish --workspace $MODULE
+  npm publish --workspace $MODULE || exit 1
   #npm install --workspaces $NAME
   echo ""
   sleep 3

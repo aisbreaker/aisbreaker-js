@@ -36,7 +36,7 @@ jobs:
           cd packages/aisbreaker-server/
           docker build -t "aisbreaker/aisbreaker-server:${VERSION}" -t "aisbreaker/aisbreaker-server:latest" .
           docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
-          docker push --all-tags
+          docker push --all-tags "aisbreaker/aisbreaker-server"
 
   publish-docker:
     runs-on: ubuntu-latest

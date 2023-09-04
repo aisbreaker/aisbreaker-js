@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build all modules/packages and set the provided VERSION argument everywhere it's needed
+# Build all modules/packages.
 #
 # Some limitations of npm workspaces CLI (as of 2023-07-06):
 # - npm --workspaces version doesn't update dependencies
@@ -13,13 +13,6 @@
 #
 # Base idea of the script inspired by https://gist.github.com/mcollina/ba08a2e941e37a48a6f496e26f498607
 
-
-# command line argument
-export VERSION=$1
-if [[ -z "$VERSION" ]] ; then
-  echo "ERROR: No new VERSION parameter specified."
-  exit 1
-fi
 
 # definition of helpers: silent pushd + popd
 pushd () {
@@ -40,44 +33,18 @@ echo "sleep 3"
 sleep 3
 
 
-# update version in all modules/packages
+# publish all modules/packages
 NPM_VERSION_OPT="--no-git-tag-version"
 #NPM_VERSION_OPT=""
-echo "- Set version in top module"
-npm version $VERSION $NPM_VERSION_OPT || exit 1
 
-echo "-- Set version in sub modules/packages"
+echo "-- Publish modules/packages"
 for MODULE in $MODULES; do
-  echo "--- Set version + publish: $MODULE"
-  pushd $MODULE
-  export NAME=`node -e "console.log(require('./package.json').name)"`
-
-  # update version
-  echo "Set version of $NAME in $MODULE"
-  #npm version $VERSION $NPM_VERSION_OPT || exit 1
-  ls ./package*json | xargs -n 1 sed "s/\"version\": \".*\"/\"version\": \"$VERSION\"/g" -i 
-  popd
-
-  # update dependencies in all modules
-  for MOD in $MODULES; do
-    echo "Set dependency-version of $NAME in $MOD"
-    ls $MOD/package*json | xargs -n 1 sed "s/\"$NAME\": \".*\"/\"$NAME\": \"^$VERSION\"/g" -i 
-  done
+  echo "--- Publish: $MODULE"
 
   # publish
-  echo "Publish now: $NAME"
   npm publish --workspace $MODULE
   #npm install --workspaces $NAME
   echo ""
   sleep 3
 done
-
-echo "sleep 5"
-sleep 5
-
-# re-install with new/fresh versions
-echo "-- Re-install with new/fresh versions"
-rm -rf node_modules
-rm -rf packages/*/node_modules
-npm install
 

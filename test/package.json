@@ -1,5 +1,6 @@
 {
   "name": "aisbreaker-integration-tests",
+  "version": "0.0.42",
   "type": "module",
   "main": "build/index.js",
   "types": "build/index.d.ts",

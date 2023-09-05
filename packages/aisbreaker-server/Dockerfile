@@ -9,7 +9,7 @@ WORKDIR /app
 # where available (npm@5+)
 COPY package*.json ./
 # DEBUG - TODO REMOVE
-RUN ls -l node_modules
+#RUN ls -l node_modules
 # replace symlinks from aisbreaker-* packages
 RUN export VERSION=`cat VERSION` && \
     npm install "aisbreaker-api-js@${VERSION}" && \

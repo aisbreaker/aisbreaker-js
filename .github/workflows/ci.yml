@@ -143,7 +143,8 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - aisbreaker-server-docker-image-build-and-publish
-      - aisbreaker-chat-webapp-docker-image-build-and-publish
+      # TODO: enable this job:
+      #- aisbreaker-chat-webapp-docker-image-build-and-publish
     env:
       PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server
@@ -200,7 +201,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: 
       - aisbreaker-server-k8s-dev-deploy
-      - aisbreaker-chat-webapp-k8s-dev-deploy
+      # TODO: enable this job:
+      #- aisbreaker-chat-webapp-k8s-dev-deploy
     env:
       PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server

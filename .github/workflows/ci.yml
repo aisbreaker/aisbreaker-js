@@ -3,6 +3,7 @@ name: Publish
 on:
   push:
     branches:
+      # TODO: only run on 'main' branch after initial setup:
       - develop
       - main
       - feature/ci-publish-and-deploy-docker-images
@@ -184,8 +185,8 @@ jobs:
       - aisbreaker-server-docker-image-build-and-publish
       - aisbreaker-chat-webapp-docker-image-build-and-publish
     env:
-      PACKAGE_DIR: packages/aisbreaker-server
-      IMAGE_NAME: aisbreaker/aisbreaker-server
+      PACKAGE_DIR: packages/aisbreaker-chat-webapp
+      IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -250,8 +251,9 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - aisbreaker-k8s-prod-deploy-approval
-    environment:
-      name: demo-prod
+    # don't specify environment here again - to avoid need of multiple approvals:
+    #environment:
+    #  name: demo-prod
     env:
       PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server
@@ -267,11 +269,12 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - aisbreaker-k8s-prod-deploy-approval
-    environment:
-      name: demo-prod
+    # don't specify environment here again - to avoid need of multiple approvals:
+    #environment:
+    #  name: demo-prod
     env:
-      PACKAGE_DIR: packages/aisbreaker-server
-      IMAGE_NAME: aisbreaker/aisbreaker-server
+      PACKAGE_DIR: packages/aisbreaker-chat-webapp
+      IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

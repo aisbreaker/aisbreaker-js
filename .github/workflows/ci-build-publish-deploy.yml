@@ -181,6 +181,7 @@ jobs:
       IMAGE_NAME: aisbreaker/aisbreaker-server
       KUBE_NAMESPACE: aisbreaker-dev
       KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-api-server.yaml.tmpl
+      KUBE_DEPLOYMENT_TEMPLATE_REPLACEMENTS: '$IMAGE_NAME:$VERSION'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -200,7 +201,8 @@ jobs:
           
       - name: Customize k8s deployment file
         run: |
-          envsubst '$IMAGE_NAME' '$VERSION' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          export VERSION=`cat VERSION`
+          envsubst '${{env.KUBE_DEPLOYMENT_TEMPLATE_REPLACEMENTS}}' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
           echo "---- server.yaml ----"
           cat server.yaml
 
@@ -223,7 +225,9 @@ jobs:
     env:
       IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
       KUBE_NAMESPACE: aisbreaker-dev
+      API_SERVER_URL: https://api.demo.app-dev.cloud.service01.net
       KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-chat-server.yaml.tmpl
+      KUBE_DEPLOYMENT_TEMPLATE_REPLACEMENTS: '$IMAGE_NAME:$VERSION:$API_SERVER_URL'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -243,7 +247,8 @@ jobs:
           
       - name: Customize k8s deployment file
         run: |
-          envsubst '$IMAGE_NAME' '$VERSION' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          export VERSION=`cat VERSION`
+          envsubst '${{env.KUBE_DEPLOYMENT_TEMPLATE_REPLACEMENTS}}' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
           echo "---- server.yaml ----"
           cat server.yaml
 

@@ -202,8 +202,8 @@ jobs:
           
       - name: Customize k8s deployment file
         run: |
-          env | sort
           envsubst '$IMAGE_NAME' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          echo "---- server.yaml ----"
           cat server.yaml
 
       - name: Apply k8s deployment file

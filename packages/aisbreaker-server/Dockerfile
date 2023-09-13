@@ -43,7 +43,8 @@ RUN rm -rf src
 #        iputils \
 #        netcat-openbsd \
 #        vim
-#    # install vue app
+#
+#    # Install the Vue app
 #    COPY --from=build-stage-container /app/dist /usr/share/nginx/html
 #    EXPOSE 80
 #    CMD ["nginx", "-g", "daemon off;"]
@@ -51,9 +52,10 @@ RUN rm -rf src
 
 
 #
-# production stage container (for nodejs app)
+# production stage container (for nodejs/express app)
 #
 FROM node:lts-alpine as production-stage-container
+
 # Install useful tools: bash, netcat, IP utils (incl. Ping), curl, vim
 RUN apk --no-cache add \
     bash \
@@ -61,14 +63,12 @@ RUN apk --no-cache add \
     iputils \
     netcat-openbsd \
     vim
-# install vue app
 
 # Create app directory
 WORKDIR /app
 
-# install nodejs app
+# Install nodejs/express app
 COPY --from=build-stage-container /app /app/
 
 EXPOSE 3000
-ENTRYPOINT [ "node", "index.js" ]
-
+ENTRYPOINT [ "node", "build/index.js" ]

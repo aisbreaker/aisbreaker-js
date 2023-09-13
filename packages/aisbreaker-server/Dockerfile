@@ -28,6 +28,8 @@ COPY . .
 # compile TypeScript files
 RUN npm run build
 
+# cleaup
+RUN rm -rf src
 
 
 #
@@ -62,11 +64,11 @@ RUN apk --no-cache add \
 # install vue app
 
 # Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
 # install nodejs app
-COPY --from=build-stage-container /app/build /usr/src/app/
+COPY --from=build-stage-container /app /app/
 
 EXPOSE 3000
-ENTRYPOINT [ "node", "build/index.js" ]
+ENTRYPOINT [ "node", "index.js" ]
 

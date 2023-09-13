@@ -193,7 +193,7 @@ jobs:
         # Includes code similar to:
         #    echo "${{secrets.KUBE_CONFIG}}" | base64 -d > ~/.kube/config
         env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+          KUBE_CONFIG: ${{secrets.KUBE_CONFIG}}
 
       - name: Test kubectl setup - show namespaces
         uses: actions-hub/kubectl@master
@@ -202,17 +202,19 @@ jobs:
           
       - name: Customize k8s deployment file
         run: |
+          env | sort
           envsubst '$IMAGE_NAME' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          cat server.yaml
 
       - name: Apply k8s deployment file
         uses: actions-hub/kubectl@master
         with:
-          args: apply -f server.yaml --namespace ${KUBE_NAMESPACE}
+          args: apply -f server.yaml --namespace ${{env.KUBE_NAMESPACE}}
   
       - name: Check k8s deployment
         uses: actions-hub/kubectl@master
         with:
-          args: get pods --namespace ${KUBE_NAMESPACE}
+          args: get pods --namespace ${{env.KUBE_NAMESPACE}}
 
 
   aisbreaker-chat-webapp-k8s-dev-deploy:

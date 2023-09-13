@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: aisbreaker-demo-chat-server-container
-        image: ${IMAGE_NAME}
+        image: ${IMAGE_NAME}:${VERSION}
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

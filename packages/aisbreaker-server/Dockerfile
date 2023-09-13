@@ -51,7 +51,7 @@ RUN npm run build
 #
 # production stage container (for nodejs app)
 #
-FROM nginx:stable-alpine as production-stage-container
+FROM node:lts-alpine as production-stage-container
 # Install useful tools: bash, netcat, IP utils (incl. Ping), curl, vim
 RUN apk --no-cache add \
     bash \

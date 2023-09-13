@@ -97,7 +97,7 @@ jobs:
   # - secrets.DOCKER_PASSWORD
   #
   aisbreaker-server-docker-image-build-and-publish:
-    # almost duplicated code - except env values
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-image-build-and-publish
     runs-on: ubuntu-latest
     needs: build-and-publish-npms
     env:
@@ -128,9 +128,9 @@ jobs:
           docker push --all-tags "${IMAGE_NAME}"
 
   aisbreaker-chat-webapp-docker-image-build-and-publish:
-    # almost duplicated code - except env values
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-image-build-and-publish
     runs-on: ubuntu-latest
-    # TODO: enable this job:
+    # TODO: enable this job: / TODO: update this job
     if: false 
     needs: build-and-publish-npms
     env:
@@ -173,46 +173,52 @@ jobs:
   #   - https://nicwortel.nl/blog/2022/continuous-deployment-to-kubernetes-with-github-actions
   #
   aisbreaker-server-k8s-dev-deploy:
-    # almost duplicated code - except env values???
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
     runs-on: ubuntu-latest
     needs:
       - aisbreaker-server-docker-image-build-and-publish
       # TODO: enable this job:
       #- aisbreaker-chat-webapp-docker-image-build-and-publish
     env:
-      PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server
+      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-api-server.yaml.tmpl
+      KUBE_NAMESPACE: aisbreaker-dev
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      #- name: TODO
-      #  run: |
-      #    mkdir ~/.kube/
-      #    echo "${{secrets.KUBE_CONFIG}}" | base64 -d > ~/.kube/config
-          
-      # https://github.com/actions-hub/kubectl :
-      - uses: actions-hub/kubectl@master
+      - name: Setup kubectl
+        uses: actions-hub/kubectl@master
+        # https://github.com/actions-hub/kubectl:
+        # Includes code similar to:
+        #    echo "${{secrets.KUBE_CONFIG}}" | base64 -d > ~/.kube/config
         env:
           KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
 
-
-      # TODO: set correct VERSION in deployment.yml
-      #   https://www.baeldung.com/linux/envsubst-command
-
-      - uses: actions-hub/kubectl@master
+      - name: Test kubectl setup - show namespaces
+        uses: actions-hub/kubectl@master
         with:
           args: get namespaces
           
-      - uses: actions-hub/kubectl@master
+      - name: Customize k8s deployment file
+        run: |
+          envsubst '$IMAGE_NAME' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml"
+
+      - name: Apply k8s deployment file
+        uses: actions-hub/kubectl@master
         with:
-          args: get pods
+          args: apply -f server.yaml --namespace ${KUBE_NAMESPACE}
+  
+      - name: Check k8s deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: get pods --namespace ${KUBE_NAMESPACE}
 
 
   aisbreaker-chat-webapp-k8s-dev-deploy:
-    # almost duplicated code - except env values???
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
     runs-on: ubuntu-latest
-    # TODO: enable this job:
+    # TODO: enable this job: / TODO: update this job
     if: false 
     needs:
       - aisbreaker-server-docker-image-build-and-publish
@@ -280,7 +286,7 @@ jobs:
   # - k8s deployment with several specific GitHub actions:
   #   - https://nicwortel.nl/blog/2022/continuous-deployment-to-kubernetes-with-github-actions
   aisbreaker-server-k8s-prod-deploy:
-    # almost duplicated code - except env values
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
     runs-on: ubuntu-latest
     needs:
       - aisbreaker-k8s-prod-deploy-approval
@@ -298,13 +304,15 @@ jobs:
         run: 'echo "TOOD: TO IMPLEMENT aisbreaker-server-k8s-prod-deploy"'
 
   aisbreaker-chat-webapp-k8s-prod-deploy:
-    # almost duplicated code - except env values
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
     runs-on: ubuntu-latest
     needs:
       - aisbreaker-k8s-prod-deploy-approval
     # don't specify environment here again - to avoid need of multiple approvals:
     #environment:
     #  name: demo-prod
+    # TODO: enable this job: / TODO: update this job
+    if: false 
     env:
       PACKAGE_DIR: packages/aisbreaker-chat-webapp
       IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp

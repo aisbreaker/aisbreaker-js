@@ -1,0 +1,39 @@
+#
+# Kubernetes configuration for aisbreaker-api-server as deployment
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aisbreaker-demo-api-server-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aisbreaker-demo-api-server-server
+  template:
+    metadata:
+      labels:
+        app: aisbreaker-demo-api-server-server
+    spec:
+      containers:
+      - name: aisbreaker-demo-api-server-container
+        image: ${IMAGE_NAME}
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+          # provide environment variable with pod and namespace name using Kubernetes Downward API,
+          #   https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/user-guide/downward-api.md
+          #   https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/user-guide/downward-api/dapi-pod.yaml
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 500m
+            memory: 500Mi

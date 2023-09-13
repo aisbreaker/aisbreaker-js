@@ -202,7 +202,7 @@ jobs:
           
       - name: Customize k8s deployment file
         run: |
-          envsubst '$IMAGE_NAME' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml"
+          envsubst '$IMAGE_NAME' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
 
       - name: Apply k8s deployment file
         uses: actions-hub/kubectl@master

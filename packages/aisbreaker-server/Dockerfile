@@ -4,14 +4,16 @@
 FROM node:lts-alpine as build-stage-container
 WORKDIR /app
 
+
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
-COPY package*.json ./
+COPY package*.json VERSION ./
 # DEBUG - TODO REMOVE
 #RUN ls -l node_modules
 # replace symlinks from aisbreaker-* packages
 RUN export VERSION=`cat VERSION` && \
+    echo "V=${VERSION}" && set -x && ls -l && \
     npm install "aisbreaker-api-js@${VERSION}" && \
     npm install "aisbreaker-core-nodejs@${VERSION}"
 # DEBUG - TODO REMOVE
@@ -28,7 +30,7 @@ COPY . .
 # compile TypeScript files
 RUN npm run build
 
-# cleaup
+# cleaunp
 RUN rm -rf src
 
 

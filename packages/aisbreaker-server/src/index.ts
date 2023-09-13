@@ -14,7 +14,7 @@ import logger from './utils/logger.js'
 //
 const app = express()
 const port = 3000
-const version = process.env.npm_package_version || 'unknown version'
+const version = process.env.npm_package_version || process.env.VERSION || 'unknown version'
 
 const basePathApiV1 = "/api/v1"
 const basePathApiV1alpha1 = "/api/v1alpha1"

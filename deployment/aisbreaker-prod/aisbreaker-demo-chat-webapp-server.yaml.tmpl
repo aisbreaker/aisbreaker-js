@@ -5,16 +5,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: aisbreaker-demo-chat-server-deployment
+  name: aisbreaker-demo-chat-webapp-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: aisbreaker-demo-chat-server-server
+      app: aisbreaker-demo-chat-webapp-server
   template:
     metadata:
       labels:
-        app: aisbreaker-demo-chat-server-server
+        app: aisbreaker-demo-chat-webapp-server
     spec:
       containers:
       - name: aisbreaker-demo-chat-server-container

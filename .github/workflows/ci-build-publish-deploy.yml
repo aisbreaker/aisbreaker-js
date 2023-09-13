@@ -181,7 +181,7 @@ jobs:
       PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server
       KUBE_NAMESPACE: aisbreaker-dev
-      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-api-server.yaml.tmpl
+      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-api-server-server.yaml.tmpl
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -227,7 +227,7 @@ jobs:
       IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
       KUBE_NAMESPACE: aisbreaker-dev
       API_SERVER_URL: https://api.demo.app-dev.cloud.service01.net
-      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-chat-server.yaml.tmpl
+      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-chat-webapp-server.yaml.tmpl
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

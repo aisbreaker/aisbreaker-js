@@ -258,6 +258,19 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error?.message).toContain(expectedRootCauseMessage)
   })
 
+  // helper function
+  function expectInvalidHostError(error: api.AIsError | undefined) {
+    // check result (expect "... getaddrinfo EAI_AGAIN localhost-invalid ..." or "... getaddrinfo ENOTFOUND localhost-invalid ...")
+    const expectedStatusCode = 503
+    const expectedRootCauseMessage0 = `Error`
+    const expectedRootCauseMessage1 = `getaddrinfo`
+    const expectedRootCauseMessage2 = `localhost-invalid`
+    expect(error).toBeDefined()
+    expect(error?.statusCode).toBe(expectedStatusCode)
+    expect(error?.message).toContain(expectedRootCauseMessage0)
+    expect(error?.message).toContain(expectedRootCauseMessage1)
+    expect(error?.message).toContain(expectedRootCauseMessage2)
+  }
 
   test('Test remote service chain with invalid URL/invalid hostname (simple): without stream (error expected)', async () => {
     // service initialization
@@ -274,11 +287,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     }
 
     // check result
-    const expectedStatusCode = 503
-    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
-    expect(error).toBeDefined()
-    expect(error?.statusCode).toBe(expectedStatusCode)
-    expect(error?.message).toContain(expectedRootCauseMessage)
+    expectInvalidHostError(error)
   })
   test('Test remote service chain with invalid URL/invalid hostname (simple): with stream (error expected)', async () => {
     // service initialization
@@ -295,11 +304,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     }
 
     // check result
-    const expectedStatusCode = 503
-    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
-    expect(error).toBeDefined()
-    expect(error?.statusCode).toBe(expectedStatusCode)
-    expect(error?.message).toContain(expectedRootCauseMessage)
+    expectInvalidHostError(error)
   })
 
 
@@ -318,11 +323,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     }
 
     // check result
-    const expectedStatusCode = 503
-    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
-    expect(error).toBeDefined()
-    expect(error?.statusCode).toBe(expectedStatusCode)
-    expect(error?.message).toContain(expectedRootCauseMessage)
+    expectInvalidHostError(error)
   })
   test('Test remote service chain with invalid URL/invalid hostname (chain): with stream (error expected)', async () => {
     // service initialization
@@ -339,10 +340,6 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     }
 
     // check result
-    const expectedStatusCode = 503
-    const expectedRootCauseMessage = `getaddrinfo EAI_AGAIN localhost-invalid`
-    expect(error).toBeDefined()
-    expect(error?.statusCode).toBe(expectedStatusCode)
-    expect(error?.message).toContain(expectedRootCauseMessage)
+    expectInvalidHostError(error)
   })
 })

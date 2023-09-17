@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "module": "es2022",
+    "module": "node16",
     "target": "es6",
     "lib": ["DOM", "es6"],
     "strict": true,

@@ -2,8 +2,24 @@
 import { api } from 'aisbreaker-api-js'
 
 
-export const defaultApiURL: string = 'http://localhost:3000'
+//
+// default API URL - depends on the URL of this WebApp
+//
+const hostname = window.location.hostname
+const protocol = window.location.protocol // 'http:' or 'https:'
+console.log(`WebApp server 'protocol//hostname': '${protocol}//${hostname}'`)
+export const defaultApiURL: string =
+  (hostname == 'localhost' || hostname == '127.0.0.1') ?
+  // testing with localhost
+  'http://localhost:3000'
+  :
+  // production
+  `${protocol}//api.${hostname}`
+console.log(`defaultApiURL': '${defaultApiURL}'`)
 
+//
+// AIs Service Props Templates
+//
 export interface AIsServicePropsTemplate {
   name: string
   description: string

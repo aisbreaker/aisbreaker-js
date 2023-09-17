@@ -280,11 +280,14 @@ jobs:
       - name: Install dependencies
         run: |
           export VERSION=`cat packages/aisbreaker-server/VERSION`
-          echo "V=${VERSION}" && set -x && ls -l
+          echo "V=${VERSION}"
+          set -x
+          ls -l
           # replace symlinks from aisbreaker-* packages
           npm install --d "aisbreaker-api-js@${VERSION}"
           npm install --d "aisbreaker-core-nodejs@${VERSION}"
           npm install
+          ls -l
       
       - name: Build and run integration tests
         run: |

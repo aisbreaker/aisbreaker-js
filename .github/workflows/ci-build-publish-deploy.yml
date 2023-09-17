@@ -257,6 +257,11 @@ jobs:
           echo "---- server.yaml ----"
           cat server.yaml
 
+      - name: Delete (old) k8s deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: delete -f server.yaml --namespace ${{env.KUBE_NAMESPACE}}
+
       - name: Apply k8s deployment file
         uses: actions-hub/kubectl@master
         with:

@@ -25,6 +25,11 @@ spec:
         env:
           - name: VERSION
             value: "${VERSION}"
+          - name: AISBREAKER_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aisbreaker-api-server-secrets
+                key: aisbreaker-api-key
 
           # provide environment variable with pod and namespace name using Kubernetes Downward API,
           #   https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/user-guide/downward-api.md

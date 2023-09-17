@@ -41,6 +41,7 @@ const config: Config = {
     //   https://github.com/jestjs/jest/issues/6527#issuecomment-760092817
     testRunner: 'jest-circus/runner',
     testEnvironment: './build/__test__/jest-environment-fail-fast.js',
+    reporters: [ 'default', 'jest-junit' ],
 }
 
 export default config

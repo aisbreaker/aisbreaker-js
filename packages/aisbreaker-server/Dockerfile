@@ -1,5 +1,5 @@
 #
-# build stage
+# build stage container
 #
 FROM node:lts-alpine as build-stage-container
 WORKDIR /app
@@ -31,25 +31,6 @@ RUN npm run build
 
 # cleaunp
 RUN rm -rf src
-
-
-#
-# production stage container (for webapp)
-#
-#    FROM nginx:stable-alpine as production-stage-container
-#    # Install useful tools: bash, netcat, IP utils (incl. Ping), curl, vim
-#    RUN apk --no-cache add \
-#        bash \
-#        curl \
-#        iputils \
-#        netcat-openbsd \
-#        vim
-#
-#    # Install the Vue app
-#    COPY --from=build-stage-container /app/dist /usr/share/nginx/html
-#    EXPOSE 80
-#    CMD ["nginx", "-g", "daemon off;"]
-
 
 
 #

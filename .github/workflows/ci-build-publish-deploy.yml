@@ -282,12 +282,10 @@ jobs:
           export VERSION=`cat packages/aisbreaker-server/VERSION`
           echo "V=${VERSION}"
           set -x
-          ls -l
+          # avaoid symlinks from aisbreaker-* packages
+          rm -rf package.json
+          cd test/
           npm install
-          ls -l node_modules/
-          # replace symlinks from aisbreaker-* packages
-          npm install --d "aisbreaker-api-js@${VERSION}"
-          npm install --d "aisbreaker-core-nodejs@${VERSION}"
           ls -l node_modules/
       
       - name: Build and run integration tests

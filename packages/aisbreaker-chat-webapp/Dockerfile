@@ -1,5 +1,5 @@
 #
-# build stage
+# build stage container
 #
 FROM node:lts-alpine as build-stage-container
 WORKDIR /app
@@ -34,7 +34,7 @@ RUN rm -rf src
 
 
 #
-# production stage container (for webapp)
+# production stage container (for webapp delivered by nginx)
 #
 FROM nginx:stable-alpine as production-stage-container
 # Install useful tools: bash, netcat, IP utils (incl. Ping), curl, vim

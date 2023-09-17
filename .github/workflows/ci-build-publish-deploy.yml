@@ -293,7 +293,11 @@ jobs:
           cd test/
           env | sort
           ./integration-tests.sh
-
+        env:
+          AISBREAKER_SERVER_URL: ${{secrets.AISBREAKER_SERVER_URL}}
+          AISBREAKER_API_KEY: ${{secrets.AISBREAKER_API_KEY}}
+          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
+  
   #
   # deploy - wait for manual approval/review
   # 

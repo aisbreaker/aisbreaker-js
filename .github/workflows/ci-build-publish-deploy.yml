@@ -8,6 +8,12 @@ on:
       - main
       - feature/ci-publish-and-deploy-docker-images
 
+permissions:
+  # permissions needed for jest-juni test reports (see https://github.com/dorny/test-reporter/issues/168#issuecomment-1128147475)
+  statuses: write
+  checks: write
+
+
 jobs:
 
   #

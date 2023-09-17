@@ -9,16 +9,13 @@
   "workspaces": [
     "packages/aisbreaker-api-js",
     "packages/aisbreaker-core-nodejs",
-    "packages/aisbreaker-server"
-  ],
-  "//ignoredWorkspaces": [
-    "packages/aisbreaker-api-js",
-    "packages/aisbreaker-core-nodejs",
     "packages/aisbreaker-chat-cli",
     "packages/aisbreaker-server",
     "packages/aisbreaker-core-browserjs",
     "packages/aisbreaker-chat-webapp",
     "test"
+  ],
+  "//ignoredWorkspaces": [
   ],
   "devDependencies": {},
   "dependencies": {}

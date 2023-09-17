@@ -291,6 +291,7 @@ jobs:
       - name: Build and run integration tests
         run: |
           cd test/
+          env | sort
           ./integration-tests.sh
 
   #

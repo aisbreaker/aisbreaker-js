@@ -181,7 +181,7 @@ jobs:
       IMAGE_NAME: aisbreaker/aisbreaker-server
       KUBE_NAMESPACE: aisbreaker-dev
       KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-api-server-server.yaml.tmpl
-    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
+    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy (THIS IS THE ORIGINAL)
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -202,7 +202,7 @@ jobs:
       - name: Customize k8s deployment file
         run: |
           export VERSION=`cat ${PACKAGE_DIR}/VERSION`
-          envsubst '$IMAGE_NAME:$VERSION:$API_SERVER_URL' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          envsubst '$IMAGE_NAME:$VERSION' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
           echo "---- server.yaml ----"
           cat server.yaml
 
@@ -230,9 +230,8 @@ jobs:
       PACKAGE_DIR: packages/aisbreaker-chat-webapp
       IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
       KUBE_NAMESPACE: aisbreaker-dev
-      API_SERVER_URL: https://api.demo.app-dev.cloud.service01.net
       KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-chat-webapp-server.yaml.tmpl
-    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
+    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy (THIS IS A COPY)
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -253,7 +252,7 @@ jobs:
       - name: Customize k8s deployment file
         run: |
           export VERSION=`cat ${PACKAGE_DIR}/VERSION`
-          envsubst '$IMAGE_NAME:$VERSION:$API_SERVER_URL' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          envsubst '$IMAGE_NAME:$VERSION' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
           echo "---- server.yaml ----"
           cat server.yaml
 
@@ -334,13 +333,47 @@ jobs:
     env:
       PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server
-    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
+      KUBE_NAMESPACE: aisbreaker-prod
+      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-api-server-server.yaml.tmpl
+    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy (THIS IS A COPY)
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: actions-hub/kubectl@master
+        # https://github.com/actions-hub/kubectl:
+        # Includes code similar to:
+        #    echo "${{secrets.KUBE_CONFIG}}" | base64 -d > ~/.kube/config
+        env:
+          KUBE_CONFIG: ${{secrets.KUBE_CONFIG}}
+
+      - name: Test kubectl setup - show namespaces
+        uses: actions-hub/kubectl@master
+        with:
+          args: get namespaces
+          
+      - name: Customize k8s deployment file
+        run: |
+          export VERSION=`cat ${PACKAGE_DIR}/VERSION`
+          envsubst '$IMAGE_NAME:$VERSION' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          echo "---- server.yaml ----"
+          cat server.yaml
+
+      - name: Delete (old) k8s deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: delete -f server.yaml --namespace ${{env.KUBE_NAMESPACE}}
+
+      - name: Apply k8s deployment file
+        uses: actions-hub/kubectl@master
+        with:
+          args: apply -f server.yaml --namespace ${{env.KUBE_NAMESPACE}}
   
-      - name: TODO
-        run: 'echo "TOOD: TO IMPLEMENT aisbreaker-server-k8s-prod-deploy"'
+      - name: Check k8s deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: get pods --namespace ${{env.KUBE_NAMESPACE}}
 
   aisbreaker-chat-webapp-k8s-prod-deploy:
     runs-on: ubuntu-latest
@@ -349,17 +382,48 @@ jobs:
     # don't specify environment here again - to avoid need of multiple approvals:
     #environment:
     #  name: demo-prod
-    # TODO: enable this job: / TODO: update this job
-    if: false 
     env:
       PACKAGE_DIR: packages/aisbreaker-chat-webapp
       IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
-    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy
+      KUBE_NAMESPACE: aisbreaker-prod
+      KUBE_DEPLOYMENT_TEMPLATE_FILE: deployment/aisbreaker-dev/aisbreaker-demo-chat-webapp-server.yaml.tmpl
+    # duplicated code in 'steps' in jobs: aisbreaker-*-k8s-[dev|prod]-deploy (THIS IS A COPY)
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-  
-      - name: TODO
-        run: 'echo "TOOD: TO IMPLEMENT aisbreaker-chat-webapp-k8s-prod-deploy"'
 
+      - name: Setup kubectl
+        uses: actions-hub/kubectl@master
+        # https://github.com/actions-hub/kubectl:
+        # Includes code similar to:
+        #    echo "${{secrets.KUBE_CONFIG}}" | base64 -d > ~/.kube/config
+        env:
+          KUBE_CONFIG: ${{secrets.KUBE_CONFIG}}
+
+      - name: Test kubectl setup - show namespaces
+        uses: actions-hub/kubectl@master
+        with:
+          args: get namespaces
+          
+      - name: Customize k8s deployment file
+        run: |
+          export VERSION=`cat ${PACKAGE_DIR}/VERSION`
+          envsubst '$IMAGE_NAME:$VERSION' < "${KUBE_DEPLOYMENT_TEMPLATE_FILE}" > server.yaml
+          echo "---- server.yaml ----"
+          cat server.yaml
+
+      - name: Delete (old) k8s deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: delete -f server.yaml --namespace ${{env.KUBE_NAMESPACE}}
+
+      - name: Apply k8s deployment file
+        uses: actions-hub/kubectl@master
+        with:
+          args: apply -f server.yaml --namespace ${{env.KUBE_NAMESPACE}}
+  
+      - name: Check k8s deployment
+        uses: actions-hub/kubectl@master
+        with:
+          args: get pods --namespace ${{env.KUBE_NAMESPACE}}
   

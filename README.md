@@ -58,3 +58,15 @@ Test the package installation (TODO: REVIEW AND ADAPT):
     # start from npm repo
     npx aisbreaker-core-nodejs
 
+
+Configure CI
+------------
+
+Environment variables needed for CI:
+- NPM_AUTH_TOKEN (for publishing to npmjs.com)
+- DOCKER_PASSWORD (for pushing to hub.docker.com)
+- DOCKER_USERNAME (for pushing to hub.docker.com)
+- KUBE_CONFIG (for deployment)
+- AISBREAKER_SERVER_URL (for integration testing; optional, default: http://localhost:3000)
+- AISBREAKER_API_KEY (for integration testing)
+- OPENAI_API_KEY (for integration testing)

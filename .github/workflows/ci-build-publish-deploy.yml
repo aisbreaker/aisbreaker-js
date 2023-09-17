@@ -287,7 +287,7 @@ jobs:
           npm install --d "aisbreaker-api-js@${VERSION}"
           npm install --d "aisbreaker-core-nodejs@${VERSION}"
           npm install
-          ls -l
+          ls -l node_modules/
       
       - name: Build and run integration tests
         run: |

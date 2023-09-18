@@ -50,7 +50,7 @@ for MODULE in $MODULES; do
   echo "Set version of $NAME in $MODULE"
   #npm version $VERSION $NPM_VERSION_OPT || exit 1
   #ls ./package*json | xargs -n 1 sed "s/\"version\": \".*\"/\"version\": \"$VERSION\"/g" -i 
-  ls ./package.json | xargs -n 1 sed "s/\"version\": \".*\"/\"version\": \"$VERSION\"/g" -i 
+  ls ./package.json | xargs -n 1 sed -r "s/\"version\": \".*[0-9]+.[0-9]+.[0-9]+\"/\"version\": \"$VERSION\"/g" -i
 
   # write version to VERSION file - needed for Docker builds
   if [[ -f "VERSION" ]]; then
@@ -63,7 +63,7 @@ for MODULE in $MODULES; do
   # update dependencies in all modules
   for MOD in $MODULES; do
     echo "Set dependency-version of $NAME in $MOD"
-    ls $MOD/package*json | xargs -n 1 sed "s/\"$NAME\": \".*\"/\"$NAME\": \"^$VERSION\"/g" -i 
+    ls $MOD/package*json | xargs -n 1 sed -r "s/\"$NAME\": \".*[0-9]+.[0-9]+.[0-9]+\"/\"$NAME\": \"^$VERSION\"/g" -i
   done
 
   # publish

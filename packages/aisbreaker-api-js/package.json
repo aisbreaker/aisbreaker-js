@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-api-js",
-  "version": "0.0.42",
+  "version": "0.1.0",
   "description": "This package contains AIsBreaker pure JS API which provides an easy-to-use and service-agnostic API to access different AI services (like OpenAI/ChatGPT API, Open-Assistant API, Google Bart API and many more) in a uniform way. More details: https://aisbreaker.org/",
   "type": "module",
   "main": "build/index.js",

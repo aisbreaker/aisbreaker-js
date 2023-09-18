@@ -1,11 +1,11 @@
-name: Publish
+name: Build-Publish-Deploy
 
-on:
-  push:
-    branches:
-      # TODO: only run on 'main' branch after initial setup:
-      - develop
-      - main
+on: [push, fork]
+#on:
+#  push:
+#    branches:
+#      - develop
+#      - main
 
 permissions:
   # permissions needed for jest-juni test reports (see https://github.com/dorny/test-reporter/issues/168#issuecomment-1128147475)
@@ -17,45 +17,36 @@ jobs:
 
   #
   # Build all packages, but do not publish.
-  # This is intended to run on repo forks only.
   #
-  # Assumption: This (environment) variable is NOT SET in CI:
-  # - secrets.NPM_AUTH_TOKEN
+  # This is intended to run on branches!=main and on repo forks only.
   #
   build-npms:
     runs-on: ubuntu-latest
-    if: github.repository != 'aisbreaker/aisbreaker-js'
+    if: github.repository != 'aisbreaker/aisbreaker-js' || github.ref != 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Setup .npmrc file to publish to npm
-      - name: Setup npm authentication
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
-
       - name: Install dependencies
         run: npm install
 
-      - name: Build and Publish all packages/modules to npm
+      - name: Build all packages/modules 
         run: |
           echo "./build-all-packages.sh"
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
 
 
 
   #
-  # Build and publish all npm packages
+  # Build and publish all npm packages.
+  #
+  # Intended to run on the main repo + main branch only.
   #
   # Required (environment) variable(s) from CI:
   # - secrets.NPM_AUTH_TOKEN
   #
   build-and-publish-npms:
     runs-on: ubuntu-latest
-    if: github.repository == 'aisbreaker/aisbreaker-js'
+    if: github.repository == 'aisbreaker/aisbreaker-js' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

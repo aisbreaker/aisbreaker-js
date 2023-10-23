@@ -1,7 +1,16 @@
 import { api } from 'aisbreaker-api-js'
 import { processRemoteService, testPingRemoteAisbreakerServer } from '../utils/AisBreakerAccessUtils.js'
-import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY, OPENAI_API_KEY } from './config.js'
+import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY, OPENAI_API_KEY } from './test-config.js'
 
+
+/**
+ * Server Integration Tests:
+ * Test remote service chat:openai.com
+ * 
+ * @group integration/server
+ */
+
+const OPENAI_LONG_ANSWER_TIMEOUT_MILLIS = 10000
 
 // precondition checks
 describe('Test preconditions', () => {
@@ -16,8 +25,6 @@ describe('Test preconditions', () => {
   })
 
 })
-
-const OPENAI_LONG_ANSWER_TIMEOUT_MILLIS = 10000
 
 
 // tests

@@ -35,6 +35,10 @@ const config: Config = {
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
     */
 
+    // configure test groups
+    // differences between `runner` and `testRunner`: https://www.npmjs.com/package/jest-runner-groups#update-jest-config
+    runner: 'groups',
+
     // Fast fail logic based on:
     //   "Jest should fail fast and exit early (change request for --bail)"
     //   https://github.com/jestjs/jest/issues/6527#issuecomment-1463950981

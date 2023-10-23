@@ -1,5 +1,5 @@
-Integration tests for some AIsBreaker packages
-==============================================
+Server Integration Tests: Test AIsBreaker API Client and (Demo) Server together
+===============================================================================
 
 Configuration (environment variables), e.g. to configure in CI environment:
 - AISBREAKER_SERVER_URL (optional, default: http://localhost:3000)

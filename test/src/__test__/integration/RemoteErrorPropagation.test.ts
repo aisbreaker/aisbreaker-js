@@ -1,7 +1,13 @@
 import { api } from 'aisbreaker-api-js'
 import { processRemoteService, testPingRemoteAisbreakerServer } from '../utils/AisBreakerAccessUtils.js'
-import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './config.js'
+import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './test-config.js'
 
+/**
+ * Server Integration Tests:
+ * Test remote error propagation
+ * 
+ * @group integration/server
+ */
 
 // precondition checks
 describe('Test preconditions', () => {
@@ -12,7 +18,6 @@ describe('Test preconditions', () => {
   })
 
 })
-
 
 // tests
 describe('Test remote error propagation (with complex remote service chain)', () => {
@@ -84,7 +89,6 @@ describe('Test remote error propagation (with complex remote service chain)', ()
   }
   const jsPrompt = "What is JavaScript?"
   const jsContainedAnswer = "tpircSavaJ"
-
 
 
   test('Test remote error propagation: without stream, invalid access token, but not needed (success expected)', async () => {

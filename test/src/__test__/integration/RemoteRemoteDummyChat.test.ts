@@ -1,7 +1,14 @@
 import { api } from 'aisbreaker-api-js'
 import { processRemoteService, testPingRemoteAisbreakerServer } from '../utils/AisBreakerAccessUtils.js'
-import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './config.js'
+import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './test-config.js'
 
+
+/**
+ * Server Integration Tests:
+ * Test complex remote service chain
+ * 
+ * @group integration/server
+ */
 
 // precondition checks
 describe('Test preconditions', () => {

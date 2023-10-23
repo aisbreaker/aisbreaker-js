@@ -1,5 +1,6 @@
 import { api } from 'aisbreaker-api-js'
-import { processRemoteService, testPingRemoteAisbreakerServer } from '../utils/AisBreakerAccessUtils.js'
+import * as core from 'aisbreaker-core-nodejs'
+import { processClientService, testPingRemoteAisbreakerServer } from 'aisbreaker-test-utils'
 import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './test-config.js'
 
 
@@ -12,6 +13,8 @@ import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './test-
 
 // precondition checks
 describe('Test preconditions', () => {
+  core.init()
+
   testPingRemoteAisbreakerServer(URL)
 
   test('Check for AISBREAKER_API_KEY', () => {
@@ -51,7 +54,7 @@ describe('Test complex remote service chain', () => {
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-    await processRemoteService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
+    await processClientService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -63,7 +66,7 @@ describe('Test complex remote service chain', () => {
 
     // process with stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processRemoteService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
+      await processClientService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -80,7 +83,7 @@ describe('Test complex remote service chain', () => {
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, serviceProps, invalidAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, serviceProps, invalidAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -102,7 +105,7 @@ describe('Test complex remote service chain', () => {
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, serviceProps, invalidAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, serviceProps, invalidAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError

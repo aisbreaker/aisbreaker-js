@@ -8,5 +8,5 @@ Configuration (environment variables), e.g. to configure in CI environment:
 
 Run all tests:
 ```bash
-./integration-tests.sh
+./server-integration-tests.sh
 ```

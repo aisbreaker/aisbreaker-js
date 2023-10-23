@@ -1,5 +1,6 @@
 //import type {Config} from 'jest';
 import type { JestConfigWithTsJest as Config } from 'ts-jest'
+//import { FailFastTestEnvironment } from 'aisbreaker-test-utils'
 
 const config: Config = {
     "roots": [
@@ -44,7 +45,7 @@ const config: Config = {
     //   https://github.com/jestjs/jest/issues/6527#issuecomment-1463950981
     //   https://github.com/jestjs/jest/issues/6527#issuecomment-760092817
     testRunner: 'jest-circus/runner',
-    testEnvironment: './build/__test__/jest-environment-fail-fast.js',
+    testEnvironment: '../node_modules/aisbreaker-test-utils/build/FailFastTestEnvironment.js',
     reporters: [ 'default', 'jest-junit' ],
 }
 

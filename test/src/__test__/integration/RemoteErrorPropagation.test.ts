@@ -1,10 +1,25 @@
 import { api } from 'aisbreaker-api-js'
-import { processRemoteService, testPingRemoteAisbreakerServer } from '../utils/AisBreakerAccessUtils.js'
-import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './config.js'
+import * as core from 'aisbreaker-core-nodejs'
+import { processClientService, testPingRemoteAisbreakerServer } from 'aisbreaker-test-utils'
+import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './test-config.js'
 
+//
+// helper functions for tests
+//
+
+
+
+/**
+ * Server Integration Tests:
+ * Test remote error propagation
+ * 
+ * @group integration/server
+ */
 
 // precondition checks
 describe('Test preconditions', () => {
+  core.init()
+
   testPingRemoteAisbreakerServer(URL)
 
   test('Check for AISBREAKER_API_KEY', () => {
@@ -12,7 +27,6 @@ describe('Test preconditions', () => {
   })
 
 })
-
 
 // tests
 describe('Test remote error propagation (with complex remote service chain)', () => {
@@ -86,14 +100,13 @@ describe('Test remote error propagation (with complex remote service chain)', ()
   const jsContainedAnswer = "tpircSavaJ"
 
 
-
   test('Test remote error propagation: without stream, invalid access token, but not needed (success expected)', async () => {
     // service initialization
     const doStream = false
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processRemoteService(URL, serviceProps, thirdPartyAuth, jsPrompt, doStream)
+      await processClientService(URL, serviceProps, thirdPartyAuth, jsPrompt, doStream)
 
     // check result: succcess (access token not needed)
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -104,7 +117,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processRemoteService(URL, serviceProps, thirdPartyAuth, jsPrompt, doStream)
+      await processClientService(URL, serviceProps, thirdPartyAuth, jsPrompt, doStream)
 
     // check result: succcess (access token not needed)
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -149,7 +162,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServiceProps, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServiceProps, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -170,7 +183,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServicePropsLongerChain, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServicePropsLongerChain, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -223,7 +236,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServiceProps, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServiceProps, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -244,7 +257,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServicePropsLongerChain, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServicePropsLongerChain, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -280,7 +293,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServicePropsWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServicePropsWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -297,7 +310,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServicePropsWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServicePropsWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -316,7 +329,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServicePropsWithChainWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServicePropsWithChainWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -333,7 +346,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processRemoteService(URL, invalidServicePropsWithChainWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
+        await processClientService(URL, invalidServicePropsWithChainWithInvalidURL, validAisbreakerAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError

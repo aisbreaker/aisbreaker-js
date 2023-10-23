@@ -7,7 +7,7 @@ import type { Circus, } from "@jest/types"
 import { TestEnvironment, } from "jest-environment-node"
 // import TestEnvironment from "jest-environment-jsdom"
 
-class FailFastEnvironment extends TestEnvironment
+class FailFastTestEnvironment extends TestEnvironment
 {
   failedTest = false
 
@@ -29,4 +29,4 @@ class FailFastEnvironment extends TestEnvironment
   }
 }
 
-export default FailFastEnvironment
+export default FailFastTestEnvironment

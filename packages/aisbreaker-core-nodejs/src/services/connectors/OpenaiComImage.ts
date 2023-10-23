@@ -3,7 +3,7 @@ import ky from 'ky-universal'
 
 
 //
-// general API implementation for OpenAI API
+// general API implementation for OpenAI Image generation API
 //
 // API docs: https://platform.openai.com/docs/api-reference/images/create
 // API url:  https://api.openai.com/v1/images/generations

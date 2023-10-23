@@ -7,7 +7,7 @@ const logger = utils.logger
 
 
 //
-// AIsNetworkClient: Service (client) to access a remote AIsBreaker (proxy) server.
+// general API implementation for OpenAI Chat completion API
 //
 
 const chatBaseServiceId = 'chat:openai.com'

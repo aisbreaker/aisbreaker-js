@@ -18,8 +18,8 @@
     "unit-tests": "npm run build && npm run unit-tests-without-build",
     "connector-integration-tests-without-build": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector",
     "connector-integration-tests": "npm run build && npm run connector-integration-tests-without-build",
-    "connector-integration-tests-without-build:single01": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector integration/RemoteRemoteDummyChat.test.js",
-    "connector-integration-tests:single": "npm run build && npm run connector-integration-tests-without-build:single"
+    "connector-integration-tests-without-build:single01": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector services/connectors/HuggingfaceCoChat.test.js",
+    "connector-integration-tests:single": "npm run build && npm run connector-integration-tests-without-build:single01"
   },
   "author": "aisbreaker",
   "license": "MIT",

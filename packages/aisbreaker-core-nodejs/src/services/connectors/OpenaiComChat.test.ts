@@ -52,7 +52,7 @@ describe('Test service chat:openai.com', () => {
   }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
-  test('Test remote service chat:openai.com: with stream, success', async () => {  
+  test('Test service chat:openai.com: with stream, success', async () => {  
     // service initialization
     const doStream = true
 
@@ -65,7 +65,7 @@ describe('Test service chat:openai.com', () => {
     expect(streamedProgressText).toEqual(responseFinalText)
   }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
-  test('Test remote service chat:openai.com: without stream, invalid access token', async () => {
+  test('Test service chat:openai.com: without stream, invalid access token', async () => {
     // service initialization
     const doStream = false
 
@@ -90,7 +90,7 @@ describe('Test service chat:openai.com', () => {
     expect(error?.message).toContain(expectedRootCauseMessage2)
   })
 
-  test('Test remote service chat:openai.com: with stream, invalid access token', async () => {
+  test('Test service chat:openai.com: with stream, invalid access token', async () => {
     // service initialization
     const doStream = true
 

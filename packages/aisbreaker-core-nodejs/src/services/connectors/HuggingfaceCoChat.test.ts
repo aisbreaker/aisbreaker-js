@@ -10,7 +10,12 @@ import { init as coreInit } from '../../index.js'
  * @group integration/connector
  */
 
-const HUGGINGFACE_LONG_ANSWER_TIMEOUT_MILLIS = 10000
+// timeout to limit test runs
+//const HUGGINGFACE_LONG_ANSWER_TIMEOUT_MILLIS = 10*1000
+
+// timeout that would alos wait for loading a model:
+const HUGGINGFACE_LONG_ANSWER_TIMEOUT_MILLIS = 3*60*1000
+
 
 // precondition checks
 describe('Test preconditions', () => {
@@ -28,8 +33,10 @@ describe('Test preconditions', () => {
 describe('Test service chat:huggingface.co', () => {
   // commont settings
   const serviceProps = {
-    //"serviceId": "chat:huggingface.co",
-    "serviceId": "chat:huggingface.co/microsoft/DialoGPT-large",
+    "serviceId": "chat:huggingface.co",
+    //"serviceId": "chat:huggingface.co/microsoft/DialoGPT-large", // worked correctly 2023-11-08
+    //"serviceId": "chat:huggingface.co/RatInChat/Pilup7575",  // almost never used model - to test model loading, but with higher timeout above (https://huggingface.co/RatInChat/Pilup7575)
+    //"serviceId": "chat:huggingface.co/0xDEADBEA7/DialoGPT-small-rick", // almost never used model - to test model loading, but with higher timeout above (https://huggingface.co/RatInChat/Pilup7575)
   }
   const validAuth = {
     secret: HUGGINGFACE_API_KEY || "",
@@ -70,8 +77,7 @@ describe('Test service chat:huggingface.co', () => {
     }
 
     // check result
-    //const expectedStatusCode = 401
-    const expectedStatusCode = 400
+    const expectedStatusCode = 401
     // error messages from huggingface.co:
     const expectedRootCauseMessage = 'Authorization header is correct, but the token seems invalid' 
     //const expectedRootCauseMessage2 = 'You can find your API key at https://platform.openai.com/account/api-keys'

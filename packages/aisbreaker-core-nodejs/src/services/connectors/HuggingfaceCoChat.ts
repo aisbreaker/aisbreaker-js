@@ -7,13 +7,9 @@ const logger = utils.logger
 
 //
 // general API implementation for Huggingface.co inference API for text generation API,
-// docs: https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task
-//
-// ???general API implementation for Huggingface.co inference API for text generation API,
-// ???docs: https://huggingface.co/docs/api-inference/detailed_parameters#text-generation-task
-//
-// More about the task-specific parameters:
-//   https://huggingface.co/docs/inference-endpoints/supported_tasks#conversational
+// docs:
+//   - https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task
+//   - https://huggingface.co/docs/inference-endpoints/supported_tasks#conversational
 //
 // curl example request:
 //   curl -v https://api-inference.huggingface.co/models/microsoft/DialoGPT-large \
@@ -37,6 +33,8 @@ const serviceDefaults: HuggingfaceCoChatDefaults = {
   engine: 'microsoft/DialoGPT-large',           // this model can correctly answer "What is JavaScript?"
   //engine: 'microsoft/DialoGPT-small',         // this model cannot correctly answer "What is JavaScript?"
   //engine: 'facebook/blenderbot-400M-distill', // this model cannot correctly answer "What is JavaScript?"
+  //engine: 'RatInChat/Pilup7575',  // almost never used model - to test model loading (https://huggingface.co/RatInChat/Pilup7575)
+  //engine: '0xDEADBEA7/DialoGPT-small-rick', // almost never used model - to test model loading (https://huggingface.co/RatInChat/Pilup7575)
 }
 
 
@@ -92,14 +90,15 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
         past_user_inputs: pastUserInputs,
         generated_responses: generatedResponses,
         text: request.inputs[0]?.text?.content || '',
-        /*
-        model: this.model,
-        temperature: typeof specialOpts.temperature === 'undefined' ? 0.8 : specialOpts.temperature,
-        top_p: typeof specialOpts.top_p === 'undefined' ? 1 : specialOpts.top_p,
-        presence_penalty: typeof specialOpts.presence_penalty === 'undefined' ? 1 : specialOpts.presence_penalty,
-        //stop: options.stop,
-        */
-      }
+      },
+      /*
+      parameters: {
+        temperature: 1.0,
+      },
+      */
+      options: {
+        wait_for_model: true, // details: https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task
+      },
     }
     const abortController = utils.createSecondAbortControllerFromAbortController(request.abortSignal)
 
@@ -133,7 +132,10 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
     const responseFinal: api.ResponseFinal = {
       outputs: incompleteResponse.outputs,
       conversationState: conversationState.toBase64(),
-      usage: incompleteResponse.usage,
+      usage: {
+        ...incompleteResponse.usage,
+        warnings: incompleteResponse?.internResponse?.warnings,
+      },
       internResponse: incompleteResponse.internResponse,
     }
     return responseFinal
@@ -143,7 +145,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
   async processNonStreamingRequest(
     url: string,
     request: api.Request,
-    HuggingfaceChatRequest: HuggingfaceChatRequest,
+    huggingfaceChatRequest: HuggingfaceChatRequest,
     abortController: AbortController,
     responseCollector: utils.ResponseCollector,
     conversationState: utils.DefaultConversationState,
@@ -162,7 +164,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
       url,
       {
         headers: headers,
-        json: HuggingfaceChatRequest,
+        json: huggingfaceChatRequest,
         timeout: this.timeoutMillis,
         hooks: utils.kyHooksToReduceLogging(this.enableTraceHttp),
         throwHttpErrors: true,
@@ -235,7 +237,11 @@ function aiReponse2Outputs(data: HuggingfaceChatResponse): api.Output[] {
 
 type HuggingfaceChatMessage = string
 
-/* Example HuggingfaceChatRequest
+/*
+  HuggingfaceChatRequest
+    https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task
+  
+  Example HuggingfaceChatRequest:
   {
     "inputs":{
         "past_user_inputs":[
@@ -252,11 +258,22 @@ type HuggingfaceChatMessage = string
 */
 interface HuggingfaceChatRequest {
   inputs: HuggingfaceChatRequestInputs
+  parameters?: HuggingfaceChatRequestParameters
+  options?: HuggingfaceChatRequestOptions
 }
 interface HuggingfaceChatRequestInputs {
   past_user_inputs: string[]
   generated_responses: string[]
   text: string
+}
+interface HuggingfaceChatRequestParameters {
+  min_length?: number
+  max_length?: number
+  temperature?: number
+}
+interface HuggingfaceChatRequestOptions {
+  use_cache?: boolean
+  wait_for_model?: boolean
 }
 
 function inputText2HuggingfaceChatMessage(input: api.InputText): HuggingfaceChatMessage {

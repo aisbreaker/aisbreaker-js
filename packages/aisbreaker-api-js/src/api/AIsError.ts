@@ -1,5 +1,5 @@
 import { HTTPError } from "ky"
-import { ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, ERROR_503_Service_Unavailable, getStatusText } from '../extern/index.js'
+import { ERROR_401_Unauthorized, ERROR_500_Internal_Server_Error, ERROR_502_Bad_Gateway, ERROR_503_Service_Unavailable, getStatusText, statusTextes } from '../extern/index.js'
 import { logger } from '../utils/logger.js'
 
 //
@@ -103,8 +103,15 @@ export class AIsError extends Error implements AIsErrorData {
         // a propgated non-AIsBreaker error (e.g. from OpenAI API)
         const e = response.error
         const errorMessage = e.message || ""+e
-        const statusCode = response.status || ERROR_503_Service_Unavailable
-        const statusText = response.statusText
+        let statusCode = response.status || ERROR_503_Service_Unavailable
+        let statusText = response.statusText || getStatusText(statusCode)
+        // special handling for some specific errors
+        if (statusCode === 400 && errorMessage.includes("the token seems invalid")) {
+          // special error e.g. at HuggingFace API: "400 Bad Request: Authorization header is correct, but the token seems invalid"
+          statusCode = ERROR_401_Unauthorized
+          statusText = getStatusText(statusCode)
+        }
+        // all (other) errors
         return new AIsError(messagePrefix+httpError.message+": "+errorMessage, statusCode, statusText)
       } else {
         // a "normal HTTP error"

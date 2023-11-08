@@ -12,6 +12,9 @@ const logger = utils.logger
 // ???general API implementation for Huggingface.co inference API for text generation API,
 // ???docs: https://huggingface.co/docs/api-inference/detailed_parameters#text-generation-task
 //
+// More about the task-specific parameters:
+//   https://huggingface.co/docs/inference-endpoints/supported_tasks#conversational
+//
 // curl example request:
 //   curl -v https://api-inference.huggingface.co/models/microsoft/DialoGPT-large \
 //        -X POST \
@@ -25,29 +28,28 @@ const logger = utils.logger
   will result in a Http 415 Unsupported Media type error.
   ???
 */
+export interface HuggingfaceCoChatDefaults extends base.AIsServiceDefaults { }
 
-const chatBaseServiceId = 'chat:huggingface.co'
-
-// recommended default modell from https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task :
-//const DEFAULT_MODEL = 'microsoft/DialoGPT-large'
-//const DEFAULT_MODEL = 'microsoft/DialoGPT-small'
-const DEFAULT_MODEL = 'facebook/blenderbot-400M-distill'
-const DEFAULT_URL = 'https://api-inference.huggingface.co/models/'
-const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
-let DEBUG = false
-const TRACE_HTTP = false
-
-export interface HuggingfaceCoChatProps extends api.AIsServiceProps {
-  /** access this Huggingface API server */
-  url?: string
+const defaultServiceId = 'chat:huggingface.co'
+const serviceDefaults: HuggingfaceCoChatDefaults = {
+  url: 'https://api-inference.huggingface.co/models/${engine}',
+  // recommended default model/engine from https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task :
+  engine: 'microsoft/DialoGPT-large',           // this model can correctly answer "What is JavaScript?"
+  //engine: 'microsoft/DialoGPT-small',         // this model cannot correctly answer "What is JavaScript?"
+  //engine: 'facebook/blenderbot-400M-distill', // this model cannot correctly answer "What is JavaScript?"
 }
 
-export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoChatProps> {
-  model: string
-  url: string
 
-  constructor(props: HuggingfaceCoChatProps, auth?: api.Auth) {
-    super(props, auth)
+export interface HuggingfaceCoChatProps extends api.AIsServiceProps { }
+
+export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoChatProps, HuggingfaceCoChatDefaults> {
+  // properties to tune this service
+  timeoutMillis = 3 * 60 * 1000 // 3 minutes
+  enableDebug = false
+  enableTraceHttp = false
+
+  constructor(props: HuggingfaceCoChatProps, serviceDefaults: HuggingfaceCoChatDefaults, auth?: api.Auth) {
+    super(props, serviceDefaults, auth)
 
     // check props
     /* unauthorized access is allowed
@@ -55,19 +57,8 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
       throw new api.AIsError(`HuggingfaceCoChatService: missing auth.secret`, extern.ERROR_401_Unauthorized)
     }
     */
-
-    // determine some Huggingface details
-    this.model = this.getModelFromServiceId(props.serviceId) || DEFAULT_MODEL
-    this.url = (this.serviceProps.url || DEFAULT_URL) /*+ '/'*/ + this.model // TODO: more advanced algo needed
   }
-
-  getEngine(model: string = DEFAULT_MODEL): api.Engine {
-      const engine: api.Engine = {
-          serviceId: `${chatBaseServiceId}/${model}`
-      }
-      return engine
-  }
-
+ 
 
   /**
    * Do the work of process()
@@ -125,7 +116,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
       context,
     )
 
-    if (DEBUG) {
+    if (this.enableDebug) {
       logger.debug(`incompleteResp=${JSON.stringify(incompleteResp)}`)
     }
 
@@ -172,8 +163,8 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
       {
         headers: headers,
         json: HuggingfaceChatRequest,
-        timeout: TIMEOUT_MILLIS,
-        hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
+        timeout: this.timeoutMillis,
+        hooks: utils.kyHooksToReduceLogging(this.enableTraceHttp),
         throwHttpErrors: true,
         signal: abortController.signal,
       }
@@ -181,7 +172,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
     const responseJson = await responseJsonPromise
 
     // simple checks of the result
-    if (DEBUG) {
+    if (this.enableDebug) {
       logger.debug(`responseJson: ${JSON.stringify(responseJson)}`)
     }
     if (!responseJson) {
@@ -190,18 +181,15 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
 
     // convert response
     const huggingfaceChatResponse = responseJson as HuggingfaceChatResponse
-    const resultOutputs = huggingfaceChatReponse2Outputs(huggingfaceChatResponse)
-
-    // summarize the non-streamed result result, incl. usage
-    const resultUsage = {
-        engine: this.getEngine(this.model),
-        totalMilliseconds: responseCollector.getMillisSinceStart(),
-    }
+    const resultOutputs = aiReponse2Outputs(huggingfaceChatResponse)
 
     // almost final result
     const incompleteFinalResponse: IncompleteFinalResponse = {
       outputs: resultOutputs,
-      usage: resultUsage,
+      usage: {
+        service: this.getService(),
+        totalMilliseconds: responseCollector.getMillisSinceStart(),
+      },
       internResponse: huggingfaceChatResponse,
     }
     return incompleteFinalResponse
@@ -222,7 +210,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
 //
 // data converters Huggingface API <-> AIsBreaker API
 //
-function huggingfaceChatReponse2Outputs(data: HuggingfaceChatResponse): api.Output[] {
+function aiReponse2Outputs(data: HuggingfaceChatResponse): api.Output[] {
     const d = data as any
     const outputs: api.Output[] = []
 
@@ -334,9 +322,9 @@ type HuggingfaceChatResponse = object
 //
 // factory
 //
-export class HuggingfaceCoChatFactory implements api.AIsAPIFactory<api.AIsServiceProps, HuggingfaceCoChatService> {
+export class HuggingfaceCoChatFactory implements api.AIsAPIFactory<HuggingfaceCoChatProps, HuggingfaceCoChatService> {
   createAIsService(props: api.AIsServiceProps, auth?: api.Auth): HuggingfaceCoChatService {
-      return new HuggingfaceCoChatService(props, auth)
+      return new HuggingfaceCoChatService(props, serviceDefaults, auth)
   }
 }
 
@@ -344,4 +332,4 @@ export class HuggingfaceCoChatFactory implements api.AIsAPIFactory<api.AIsServic
 //
 // register this service/connector
 //
-api.AIsBreaker.getInstance().registerFactory({serviceId: chatBaseServiceId, factory: new HuggingfaceCoChatFactory()})
+api.AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new HuggingfaceCoChatFactory()})

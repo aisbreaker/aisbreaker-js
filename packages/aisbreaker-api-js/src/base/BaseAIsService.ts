@@ -8,6 +8,7 @@ import {
   isAIsErrorData,
   Request,
   ResponseFinal,
+  Service,
 } from "../api/index.js"
 import {
   ERROR_400_Bad_Request,
@@ -21,15 +22,46 @@ import {
 
 import { DefaultConversationState } from "../utils/index.js"
 import { logger } from '../utils/logger.js'
+import { AIsServiceDefaults } from "./AIsServiceDefaults.js"
+import { getTaskVendorEngineFromServiceId } from "./TaskVendorEngineUtils.js"
+import { getServiceUrl } from "./ServiceUrlUtils.js"
+import { assert } from "console"
 
 
-export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements AIsService {
+export abstract class BaseAIsService<PROPS_T extends AIsServiceProps,
+                                     DEFAULTS_T extends AIsServiceDefaults>
+                implements AIsService {
+  // provided properties                  
   serviceProps: PROPS_T
+  serviceDefaults: DEFAULTS_T
   auth?: Auth
 
-  constructor(serviceProps: PROPS_T, auth?: Auth) {
+  // derived properties
+  task: string
+  vendor: string
+  engineOpt?: string
+  engine: string
+  urlOpt?: string
+  url: string
+
+  constructor(serviceProps: PROPS_T, serviceDefaults: DEFAULTS_T, auth?: Auth) {
     this.serviceProps = serviceProps
+    this.serviceDefaults = serviceDefaults
     this.auth = auth
+
+    // derive settings from the parameters
+    const taskVendorEngine = getTaskVendorEngineFromServiceId(serviceProps.serviceId, serviceDefaults)
+
+    if (!taskVendorEngine.task) {
+      throw new Error (`task is missing for serviceId: ${serviceProps.serviceId}`)
+    }
+    this.task = taskVendorEngine.task
+    this.vendor = taskVendorEngine.vendor || this.constructor.name
+    this.engineOpt = taskVendorEngine.engine
+    this.engine = this.engineOpt || '<unknown-engine>'
+
+    this.urlOpt = this.getServiceUrl(serviceProps.url, this.engineOpt, serviceDefaults)
+    this.url = this.urlOpt || '<unknown-url>'
   }
 
   /**
@@ -158,6 +190,26 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
     throw new AIsError(`${className}/${context}: Either process() or processUnprotected() must be implemented/overridden!`, ERROR_501_Not_Implemented)
   }
 
+  //
+  // functions for service implementation
+  //
+
+  /**
+   * @returns ResponseFinal.usage.service
+   */
+  getService(actualEngine?: string): Service {
+    const service = {
+      serviceId: this.serviceProps.serviceId,
+      engine: actualEngine || this.engineOpt,
+      url: this.urlOpt,
+    }
+    return service
+  }
+
+  //
+  // functions for logging and error handling
+  //
+
   /**
    * Optionally, provide additional context information/description
    * for logging and error messages.
@@ -184,7 +236,26 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
   // helper methods
   //
 
-  /** check that all required fields are present
+  /**
+   * Derive the service URL.
+   * 
+   * Implemented as method here to allow overriding.
+   * 
+   * @param url       The (base) URL specified in AIsServiceProps.
+   * @param engine    The engine derived form serviceId
+   * @param serviceDefaults 
+   * @returns The URL to access the actual AI service.
+   */
+  getServiceUrl(
+    url: string | undefined,
+    engine: string | undefined,
+    serviceDefaults: AIsServiceDefaults): string | undefined {
+    
+    return getServiceUrl(url, engine, serviceDefaults)
+  }
+  
+  /**
+   * Check that all required fields are present
    * 
    * @param request
    * @param context  optional context information/description/message prefix
@@ -205,25 +276,6 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps> implements
 
   getConversationState(request: Request): DefaultConversationState {
     return DefaultConversationState.fromBase64(request.conversationState)
-  }
-
-  /**
-   * `task:service/model` -> `model`
-   * Examples:
-   *   `chat:foo.com/gpt-next` -> `gpt-next`
-   *   `text-to-image:bar-ai/my-model` -> `my-model`
-   * 
-   * @param serviceId `
-   */
-  getModelFromServiceId(serviceId: string): string | undefined {
-    const parts = serviceId.split('/')
-    if (parts.length >= 2) {
-      // model found
-      return parts[1]
-    }
-
-    // no model found
-    return undefined
   }
 }
 

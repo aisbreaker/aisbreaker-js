@@ -28,7 +28,8 @@ describe('Test preconditions', () => {
 describe('Test service chat:huggingface.co', () => {
   // commont settings
   const serviceProps = {
-    "serviceId": "chat:huggingface.co",
+    //"serviceId": "chat:huggingface.co",
+    "serviceId": "chat:huggingface.co/microsoft/DialoGPT-large",
   }
   const validAuth = {
     secret: HUGGINGFACE_API_KEY || "",
@@ -49,6 +50,8 @@ describe('Test service chat:huggingface.co', () => {
       await processLocalService(serviceProps, validAuth, jsPrompt, doStream)
 
     // check result
+    console.log("Test service chat:huggingface.co: without stream, success - responseFinal: ",
+                JSON.stringify(responseFinal, null, 2))
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
   }, HUGGINGFACE_LONG_ANSWER_TIMEOUT_MILLIS)
 

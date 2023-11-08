@@ -107,8 +107,8 @@ export class MirrorFilter extends BaseAIsFilter<FilterProps> {
     protected getMirroredUsage(origUsage: Usage): Usage {
         return {
             ...origUsage,
-            engine: {
-                serviceId: this.getMirroredServiceId(origUsage?.engine?.serviceId),
+            service: {
+                serviceId: this.getMirroredServiceId(origUsage?.service?.serviceId),
             }
         }
     }

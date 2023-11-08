@@ -37,11 +37,12 @@ export class AIsBreaker {
     /**
      * TODO: make this more intelligent to find services that do not exactly match the given serviceId
      */
-    private getFactory(props: AIsServiceProps): AIsAPIFactory<AIsServiceProps, AIsService> {
+    getFactory(props: AIsServiceProps): AIsAPIFactory<AIsServiceProps, AIsService> {
         const serviceId = props.serviceId
 
         // action
-        const factory = this.serviceId2FactoryMapping.get(serviceId)
+        const bestServiceIdKey = this.getBestKeyForServiceId(Array.from(this.serviceId2FactoryMapping.keys()), serviceId)
+        const factory = this.serviceId2FactoryMapping.get(bestServiceIdKey)
 
         // error handling and logging
         if (!factory) {
@@ -51,6 +52,17 @@ export class AIsBreaker {
         logger.debug(`getFactory('${serviceId}') succeeded`)
 
         return factory
+    }
+
+    private getBestKeyForServiceId(serviceIdKeys: string[], serviceId: string): string {
+      // filter out all matching keys
+      const serviceIdTaskAndVendor = serviceId.split('/')[0]
+      const matchingKeys = serviceIdKeys.filter(key => key.startsWith(serviceIdTaskAndVendor) &&
+                                                       serviceId.startsWith(key))
+
+      // return the longest matching key
+      const longestMatchingKey = matchingKeys.reduce((a, b) => a.length > b.length ? a : b, "")
+      return longestMatchingKey
     }
 
 

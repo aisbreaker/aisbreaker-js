@@ -1,16 +1,10 @@
-
-
-/*
-export interface TaskVendorEngine {
-  task?: string
-  vendor?: string
-  engine?: string
-}
-*/
-
 import { TaskVendorEngine } from "./TaskVendorEngine.js"
 
-/** extract engineId from serviceId (or fallback to default) */
+//
+// helper to parse serviceId to task, vendor, and engine
+//
+
+/** extract task, vendor, and engine from serviceId (or fallback to defaults) */
 export function getTaskVendorEngineFromServiceId(
   serviceId: string | undefined, defaults: TaskVendorEngine): TaskVendorEngine {
   // trival case

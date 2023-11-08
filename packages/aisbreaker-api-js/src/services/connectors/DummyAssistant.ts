@@ -10,6 +10,7 @@ import {
     AIsBreaker,
     Auth,
 } from '../../api/index.js'
+import { AIsServiceDefaults } from '../../base/AIsServiceDefaults.js'
 import { BaseAIsService } from '../../base/index.js'
 import { delay } from '../../utils/AsyncUtils.js'
 
@@ -18,18 +19,26 @@ import { delay } from '../../utils/AsyncUtils.js'
 // DummyAssistant service API
 //
 
-const dummyServiceId = 'chat:dummy'
+export interface DummyAssistantDefaults extends AIsServiceDefaults { 
+  greeting: string
+}
+  
+const defaultServiceId = 'chat:dummy'
+const serviceDefaults: DummyAssistantDefaults = {
+  greeting: 'Hello',
+}
+
 
 export interface DummyAssistantServiceProps extends AIsServiceProps {
     greeting?: string
 }
 
-export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceProps> {
+export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceProps, DummyAssistantDefaults> {
     greeting: string
 
-    constructor(serviceProps: DummyAssistantServiceProps, auth?: Auth) {
-        super(serviceProps)
-        this.greeting = serviceProps.greeting || 'Hello'
+    constructor(serviceProps: DummyAssistantServiceProps, serviceDefaults: DummyAssistantDefaults, auth?: Auth) {
+        super(serviceProps, serviceDefaults, auth)
+        this.greeting = serviceProps.greeting || serviceDefaults.greeting
     }
 
     /**
@@ -49,7 +58,7 @@ export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceP
         }
 
         // generate output
-        const resultText = `${this.greeting}, the answer to '${messageText}' from DummyAssistantService is unknown ...`
+        const resultText = `${this.greeting}, this is the reponse to '${messageText}' from DummyAssistantService ... To get a useful answer, choose a different service/serviceId ...`
         const resultIndex = 0
         const resultRole = 'assistant'
         const outputs: Output[] = [{
@@ -89,19 +98,14 @@ export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceP
         // update conversation (after dummy request-response)
         conversationState.addOutputs(outputs)
 
-        // calculate usage
-        const usage: Usage = {
-            engine: {
-                serviceId: dummyServiceId,
-            },
-            totalMilliseconds: 1,
-        }
-
         // return final response
         const response: ResponseFinal = {
             outputs: outputs,
             conversationState: conversationState.toBase64(),
-            usage: usage,
+            usage: {
+                service: this.getService(),
+                totalMilliseconds: 1,
+            }
         }
         return response
     }
@@ -121,7 +125,7 @@ export class DummyAssistantService extends BaseAIsService<DummyAssistantServiceP
 
 export class DummyAssistantFactory implements AIsAPIFactory<DummyAssistantServiceProps, DummyAssistantService> {
     createAIsService(props: DummyAssistantServiceProps, auth?: Auth): DummyAssistantService {
-        return new DummyAssistantService(props, auth)
+        return new DummyAssistantService(props, serviceDefaults, auth)
     }
 }
 
@@ -129,4 +133,4 @@ export class DummyAssistantFactory implements AIsAPIFactory<DummyAssistantServic
 //
 // register this service/connector
 //
-AIsBreaker.getInstance().registerFactory({serviceId: dummyServiceId, factory: new DummyAssistantFactory()})
+AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new DummyAssistantFactory()})

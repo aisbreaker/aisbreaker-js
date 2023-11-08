@@ -11,36 +11,28 @@ import fs from 'fs'
 // Authentication/getting STABILITY_API_KEY: https://platform.stability.ai/docs/getting-started/authentication
 //
 
-const textToImageBaseServiceId = 'text-to-image:stability.ai'
+export interface StabilityAiImageDefaults extends base.AIsServiceDefaults { }
 
-const DEFAULT_IMAGE_MODEL = 'stable-diffusion-v1-5'
+const defaultServiceId = 'text-to-image:stability.ai'
+const serviceDefaults: StabilityAiImageDefaults = {
+  url: 'https://api.stability.ai/v1/generation/${engine}/text-to-image',
+  engine: 'stable-diffusion-v1-5',
+}
+
 const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
+export interface StabilityAiImageProps extends api.AIsServiceProps { }
 
-export class StabilityAiImageService extends base.BaseAIsService<api.AIsServiceProps> {
-  model: string
-  url: string
 
-  constructor(props: api.AIsServiceProps, auth?: api.Auth) {
-    super(props, auth)
+export class StabilityAiImageService extends base.BaseAIsService<StabilityAiImageProps, StabilityAiImageDefaults> {
+  constructor(props: StabilityAiImageProps, serviceDefaults: StabilityAiImageDefaults, auth?: api.Auth) {
+    super(props, serviceDefaults, auth)
 
     // check props
     if (!auth?.secret) {
       throw new api.AIsError(`StabilityAiTextToImageService: missing auth.secret`, extern.ERROR_401_Unauthorized)
     }
-  
-    // backend
-    this.model = this.getModelFromServiceId(props.serviceId) || DEFAULT_IMAGE_MODEL
-    this.url = props.url || `https://api.stability.ai/v1/generation/${this.model}/text-to-image`
   }
-
-  getEngine(model: string): api.Engine {
-    const engine: api.Engine = {
-      serviceId: `${textToImageBaseServiceId}/${model}`,
-    }
-    return engine
-  }
-
 
   /**
    * Do the work of process()
@@ -91,11 +83,7 @@ export class StabilityAiImageService extends base.BaseAIsService<api.AIsServiceP
     */
 
     // convert the result
-    let resultOutputs = StabilityAIText2ImageResponse2Outputs(responseJson as StabilityAIText2ImageResponse)
-    let resultUsage: api.Usage = {
-      engine: this.getEngine(this.model),
-      totalMilliseconds: responseCollector.getMillisSinceStart(),
-    }
+    let resultOutputs = response2Outputs(responseJson as StabilityAIText2ImageResponse)
     let resultInternResponse: any = responseJson
 
     // write base64 images to files
@@ -105,7 +93,11 @@ export class StabilityAiImageService extends base.BaseAIsService<api.AIsServiceP
     const responseFinal: api.ResponseFinal = {
       outputs: resultOutputs,
       //conversationState: undefined,
-      usage: resultUsage,
+      usage: {
+        service: this.getService(),
+        totalMilliseconds: responseCollector.getMillisSinceStart(),
+      },
+
       internResponse: resultInternResponse,
     }
     return responseFinal
@@ -129,7 +121,7 @@ function writeBase64ImageToFile(base64: string, filename: string) {
   });
 }
 
-function StabilityAIText2ImageResponse2Outputs(res: StabilityAIText2ImageResponse): api.Output[] {
+function response2Outputs(res: StabilityAIText2ImageResponse): api.Output[] {
   const outputs: api.Output[] = []
 
   let index = 0
@@ -212,9 +204,12 @@ type StabilityAIText2ImageResponse = {
 }
 
 
+//
+// factory
+//
 export class StabilityAiImageFactory implements api.AIsAPIFactory<api.AIsServiceProps, StabilityAiImageService> {
   createAIsService(props: api.AIsServiceProps, auth?: api.Auth): StabilityAiImageService {
-    return new StabilityAiImageService(props, auth)
+    return new StabilityAiImageService(props, serviceDefaults, auth)
   }
 }
 
@@ -222,4 +217,4 @@ export class StabilityAiImageFactory implements api.AIsAPIFactory<api.AIsService
 //
 // register this service/connector
 //
-api.AIsBreaker.getInstance().registerFactory({serviceId: textToImageBaseServiceId, factory: new StabilityAiImageFactory()})
+api.AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new StabilityAiImageFactory()})

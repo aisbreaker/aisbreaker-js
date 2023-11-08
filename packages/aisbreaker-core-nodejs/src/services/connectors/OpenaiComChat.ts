@@ -15,8 +15,14 @@ export interface OpenaiComChatDefaults extends base.AIsServiceDefaults { }
 const defaultServiceId = 'chat:openai.com'
 const serviceDefaults: OpenaiComChatDefaults = {
   url: 'https://api.openai.com/v1/chat/completions',
-  engine: 'gpt-3.5-turbo',
-  //engine: 'gpt-4',
+  // OpenAI model/engine lists:
+  // - https://platform.openai.com/docs/models/gpt-3-5
+  // - https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
+  //engine: 'gpt-3.5-turbo', // worked 2023-11-08 and before; Currently points to gpt-3.5-turbo-0613. Will point to gpt-3.5-turbo-1106 starting Dec 11, 2023
+  engine: 'gpt-3.5-turbo-1106', // worked 2023-11-08
+  //engine: 'gpt-4', // worked 2023-11-08
+  //engine: 'gpt-4-1106-preview', // (GPT-4 Turbo) worked 2023-11-08
+  //engine: 'gpt-4-vision-preview', // (GPT-4 Turbo with vision) worked 2023-11-08
 }
 
 

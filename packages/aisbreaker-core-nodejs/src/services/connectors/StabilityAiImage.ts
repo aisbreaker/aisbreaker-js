@@ -83,7 +83,7 @@ export class StabilityAiImageService extends base.BaseAIsService<StabilityAiImag
     */
 
     // convert the result
-    let resultOutputs = response2Outputs(responseJson as StabilityAIText2ImageResponse)
+    let resultOutputs = aiResponse2Outputs(responseJson as StabilityAIText2ImageResponse)
     let resultInternResponse: any = responseJson
 
     // write base64 images to files
@@ -121,7 +121,7 @@ function writeBase64ImageToFile(base64: string, filename: string) {
   });
 }
 
-function response2Outputs(res: StabilityAIText2ImageResponse): api.Output[] {
+function aiResponse2Outputs(res: StabilityAIText2ImageResponse): api.Output[] {
   const outputs: api.Output[] = []
 
   let index = 0

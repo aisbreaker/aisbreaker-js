@@ -99,7 +99,7 @@ export class OpenaiComImageService extends base.BaseAIsService<OpenaiComImagePro
     */
 
     // convert the result
-    let resultOutputs = response2Outputs(responseJson as OpenaiImageResponse)
+    let resultOutputs = aiResponse2Outputs(responseJson as OpenaiImageResponse)
     let resultInternResponse: any = responseJson
 
     // update conversation (after OpenAI API request-response)
@@ -119,7 +119,7 @@ export class OpenaiComImageService extends base.BaseAIsService<OpenaiComImagePro
   }
 }
 
-function response2Outputs(res: OpenaiImageResponse): api.Output[] {
+function aiResponse2Outputs(res: OpenaiImageResponse): api.Output[] {
   const outputs: api.Output[] = []
 
   if (res.data) {

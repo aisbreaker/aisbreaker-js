@@ -75,10 +75,10 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     }
     const abortController = utils.createSecondAbortControllerFromAbortController(request.abortSignal)
 
-    let incompleteResp: IncompleteFinalResponse | api.AIsError | undefined
+    let incompleteResponse: api.ResponseFinal | api.AIsError | undefined
     if (!isStreamingRequested) {
       // no streaming (simple)
-      incompleteResp = await this.processNonStreamingRequest(
+      incompleteResponse = await this.processNonStreamingRequest(
         this.url,
         request,
         openaiChatRequest,
@@ -90,7 +90,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
 
     } else {
       // streaming (more complex)
-      incompleteResp = await this.processStreamingRequest(
+      incompleteResponse = await this.processStreamingRequest(
         this.url,
         request,
         openaiChatRequest,
@@ -102,20 +102,20 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     }
 
     // complete result
-    if (!incompleteResp || incompleteResp instanceof api.AIsError) {
+    if (!incompleteResponse || incompleteResponse instanceof api.AIsError) {
       // some error
-      return incompleteResp
+      return incompleteResponse
     }
 
     // update conversation (after OpenAI API request-response)
-    conversationState.addOutputs(incompleteResp.outputs)
+    conversationState.addOutputs(incompleteResponse.outputs)
 
     // return response
     const responseFinal: api.ResponseFinal = {
-      outputs: incompleteResp.outputs,
+      outputs: incompleteResponse.outputs,
       conversationState: conversationState.toBase64(),
-      usage: incompleteResp.usage,
-      internResponse: incompleteResp.internResponse,
+      usage: incompleteResponse.usage,
+      internResponse: incompleteResponse.internResponse,
     }
     return responseFinal
   }
@@ -129,7 +129,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     responseCollector: utils.ResponseCollector,
     conversationState: utils.DefaultConversationState,
     context: string
-  ): Promise<IncompleteFinalResponse | api.AIsError> {
+  ): Promise<api.ResponseFinal | api.AIsError> {
     const responseJsonPromise = ky.post(
       url,
       {
@@ -167,7 +167,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     */
 
     // almost final result
-    const incompleteFinalResponse: IncompleteFinalResponse = {
+    const incompleteResponse: api.ResponseFinal = {
       outputs: resultOutputs,
       usage: {
         service: this.getService((openaiChatResponse as any)?.model),
@@ -176,7 +176,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
       },
       internResponse: openaiChatResponse,
     }
-    return incompleteFinalResponse
+    return incompleteResponse
   }
 
   /** process streaming */
@@ -188,7 +188,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     responseCollector: utils.ResponseCollector,
     conversationState: utils.DefaultConversationState,
     context: string
-  ): Promise<IncompleteFinalResponse | api.AIsError | undefined> {
+  ): Promise<api.ResponseFinal | api.AIsError | undefined> {
 
     const streamProgressFunction = request.streamProgressFunction as api.StreamProgressFunction
     const streamOpenaiProgressFunc: OpenaiChatSSEFunc = (data: OpenaiChatSSE) => {
@@ -280,7 +280,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
   
     // almost final result
     const resultOutputs = responseCollector.getResponseFinalOutputs()
-    const incompleteFinalResponse: IncompleteFinalResponse = {
+    const incompleteResponse: api.ResponseFinal = {
       outputs: resultOutputs,
       usage: {
         service: this.getService(responseCollector.lastObservedEngineId),
@@ -291,7 +291,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
       },
       internResponse: responseCollector.getResponseFinalInternResponse,
     }
-    return incompleteFinalResponse
+    return incompleteResponse
   }
 
 
@@ -412,12 +412,6 @@ function aiReponse2Outputs(data: OpenaiChatResponse): api.Output[] {
     }
 
     return outputs
-}
-
-interface IncompleteFinalResponse {
-  outputs: api.Output[]
-  usage: api.Usage
-  internResponse: any
 }
 
 

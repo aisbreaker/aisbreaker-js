@@ -103,10 +103,10 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
     }
     const abortController = utils.createSecondAbortControllerFromAbortController(request.abortSignal)
 
-    let incompleteResp: IncompleteFinalResponse | api.AIsError | undefined
+    let incompleteResponse: api.ResponseFinal | api.AIsError | undefined
 
     // always no streaming
-    incompleteResp = await this.processNonStreamingRequest(
+    incompleteResponse = await this.processNonStreamingRequest(
       this.url,
       request,
       huggingfaceChatRequest,
@@ -117,24 +117,24 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
     )
 
     if (this.enableDebug) {
-      logger.debug(`incompleteResp=${JSON.stringify(incompleteResp)}`)
+      logger.debug(`incompleteResp=${JSON.stringify(incompleteResponse)}`)
     }
 
     // complete result
-    if (!incompleteResp || incompleteResp instanceof api.AIsError) {
+    if (!incompleteResponse || incompleteResponse instanceof api.AIsError) {
       // some error
-      return incompleteResp
+      return incompleteResponse
     }
 
     // update conversation (after Huggingface API request-response)
-    conversationState.addOutputs(incompleteResp.outputs)
+    conversationState.addOutputs(incompleteResponse.outputs)
 
     // return response
     const responseFinal: api.ResponseFinal = {
-      outputs: incompleteResp.outputs,
+      outputs: incompleteResponse.outputs,
       conversationState: conversationState.toBase64(),
-      usage: incompleteResp.usage,
-      internResponse: incompleteResp.internResponse,
+      usage: incompleteResponse.usage,
+      internResponse: incompleteResponse.internResponse,
     }
     return responseFinal
   }
@@ -148,7 +148,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
     responseCollector: utils.ResponseCollector,
     conversationState: utils.DefaultConversationState,
     context: string
-  ): Promise<IncompleteFinalResponse | api.AIsError> {
+  ): Promise<api.ResponseFinal | api.AIsError> {
     const headers = (this.auth?.secret) ?
       {
         'Content-Type': 'application/json', // optional because set automatically
@@ -184,7 +184,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
     const resultOutputs = aiReponse2Outputs(huggingfaceChatResponse)
 
     // almost final result
-    const incompleteFinalResponse: IncompleteFinalResponse = {
+    const incompleteResponse: api.ResponseFinal = {
       outputs: resultOutputs,
       usage: {
         service: this.getService(),
@@ -192,7 +192,7 @@ export class HuggingfaceCoChatService extends base.BaseAIsService<HuggingfaceCoC
       },
       internResponse: huggingfaceChatResponse,
     }
-    return incompleteFinalResponse
+    return incompleteResponse
   }
 
   /**
@@ -226,12 +226,6 @@ function aiReponse2Outputs(data: HuggingfaceChatResponse): api.Output[] {
     }
 
     return outputs
-}
-
-interface IncompleteFinalResponse {
-  outputs: api.Output[]
-  usage: api.Usage
-  internResponse: any
 }
 
 

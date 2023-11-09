@@ -14,21 +14,24 @@ import { AIsNetworkRequest } from './AIsNetworkRequest.js'
 import { AIsError, isAIsErrorData } from '../../api/AIsError.js'
 import { BaseAIsService } from '../../base/BaseAIsService.js'
 import { logger } from '../../utils/logger.js'
+import { AIsServiceDefaults } from '../../base/AIsServiceDefaults.js'
 
 
 //
 // AIsNetworkClient: Service (client) to access a remote AIsBreaker (proxy) server.
 //
 
-const networkServiceId = 'aisbreaker:network'
+export interface AIsNetworkClientDefaults extends AIsServiceDefaults { }
 
-const DEFAULT_AISSERVER_URL = 'http://localhost:3000' // https://api.demo.aisbreaker.org
-const AISSERVER_API_PATH = '/api/v1/process'
+const defaultServiceId = 'aisbreaker:network'
+const serviceDefaults: AIsNetworkClientDefaults = {
+  url: 'http://localhost:3000/api/v1/process', // https://api.demo.aisbreaker.org/api/v1/process
+}
 
 const DEBUG = true
 
 export interface AIsNetworkClientProps extends AIsServiceProps {
-  /** access this AIs server */
+  /** access this AIsBreaker server */
   url: string
 
   /** the actual service; this filter will forward to this service */
@@ -36,7 +39,11 @@ export interface AIsNetworkClientProps extends AIsServiceProps {
 }
 
 
-export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProps> {
+export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProps, AIsNetworkClientDefaults> {
+  constructor(serviceProps: AIsNetworkClientProps, serviceDefaults: AIsNetworkClientDefaults, auth?: Auth) {
+    super(serviceProps, serviceDefaults, auth)
+  }
+ 
   /**
    * Do the work of process()
    * without the need to care about all error handling.
@@ -48,28 +55,23 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
    *          In the case of an error it returns an AIsError OR throws an AIError or general Error.
    */
   async processUnprotected(request: Request, context: string): Promise<ResponseFinal | AIsError | undefined> {
-    logger.debug(`${context} BEFORE INNER START`)
-    const forward2ServiceProps = this.serviceProps?.forward2ServiceProps
-    const url = `${this.serviceProps.url || DEFAULT_AISSERVER_URL}${AISSERVER_API_PATH}`
-    logger.debug(`${context} INNER START`)
-    
     // prepare remote access
     const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
     if (isStreamingRequested) {
       (request as any).stream = true
     }
     const aisNetworkRequest: AIsNetworkRequest = {
-      service: forward2ServiceProps,
+      service: this.serviceProps?.forward2ServiceProps,
       request,
     }
     const abortController = utils.createSecondAbortControllerFromAbortController(request.abortSignal)
 
     if (!isStreamingRequested) {
       // no streaming (simple)
-      return await this.processNonStreamingRequest(url, request, aisNetworkRequest, abortController, context)
+      return await this.processNonStreamingRequest(this.url, request, aisNetworkRequest, abortController, context)
     } else {
       // streaming (more complex)
-      return await this.processStreamingRequest(url, request, aisNetworkRequest, abortController, context)
+      return await this.processStreamingRequest(this.url, request, aisNetworkRequest, abortController, context)
     }
   }
 
@@ -193,9 +195,10 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
 //
 // factory
 //
-export class AIsNetworkClientFactory implements AIsAPIFactory<AIsNetworkClientProps, AIsNetworkClientService> {
+export class AIsNetworkClientFactory
+ implements AIsAPIFactory<AIsNetworkClientProps, AIsNetworkClientService> {
     createAIsService(props: AIsNetworkClientProps, auth?: Auth): AIsNetworkClientService {
-        return new AIsNetworkClientService(props, auth)
+        return new AIsNetworkClientService(props, serviceDefaults, auth)
     }
 }
 
@@ -203,4 +206,4 @@ export class AIsNetworkClientFactory implements AIsAPIFactory<AIsNetworkClientPr
 //
 // register this service/connector
 //
-AIsBreaker.getInstance().registerFactory({serviceId: networkServiceId, factory: new AIsNetworkClientFactory()})
+AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new AIsNetworkClientFactory()})

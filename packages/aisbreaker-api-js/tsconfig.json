@@ -101,6 +101,9 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "exclude": [
-    "openapi-spec"
+    "build",
+    "jest.config.ts",
+    //"**/__test__/*",
+    "openapi-spec",
   ]
 }

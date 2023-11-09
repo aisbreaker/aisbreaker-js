@@ -9,6 +9,7 @@ import {
     ResponseFinal,
     Usage,
 } from '../../api/index.js'
+import { AIsServiceDefaults } from '../../base/AIsServiceDefaults.js'
 import { BaseAIsService } from '../../base/index.js'
 
 
@@ -16,21 +17,18 @@ import { BaseAIsService } from '../../base/index.js'
 // EchoService service API: echo all (text) inputs, with '[ECHO] ' prefix
 //
 
-const echoServiceId = 'chat:echo'
+const defaultServiceId = 'chat:echo'
+const serviceDefaults: AIsServiceDefaults = { }
 
-export class EchoService extends BaseAIsService<AIsServiceProps> {
 
-    constructor(serviceProps: AIsServiceProps, auth?: Auth) {
-        super(serviceProps, auth)
-    }
-
+export class EchoService extends BaseAIsService<AIsServiceProps, AIsServiceDefaults> {
     /**
      * Do the work of process()
      * without the need to care about all error handling.
      */
     async processUnprotected(request: Request): Promise<ResponseFinal> {
 
-        // update conversation (before trivial request-response) - OPTIONAL because state is not used
+        // update conversation (before trivial request-response) - OPTIONAL because state is not used here
         const conversationState = this.getConversationState(request)
         conversationState.addInputs(request.inputs)
 
@@ -52,19 +50,14 @@ export class EchoService extends BaseAIsService<AIsServiceProps> {
         // update conversation (after echo request-response) - OPTIONAL because state is not used
         conversationState.addOutputs(outputs)
 
-        // calculate usage
-        const usage: Usage = {
-            engine: {
-                serviceId: echoServiceId,
-            },
-            totalMilliseconds: 1,
-        }
-
         // return response
         const response: ResponseFinal = {
             outputs: outputs,
             conversationState: conversationState.toBase64(),
-            usage: usage,
+            usage: {
+                service: this.getService(),
+                totalMilliseconds: 1,
+            }
         }
         return response
     }
@@ -72,7 +65,7 @@ export class EchoService extends BaseAIsService<AIsServiceProps> {
 
 export class EchoFactory implements AIsAPIFactory<AIsServiceProps, EchoService> {
     createAIsService(props: AIsServiceProps, auth?: Auth): EchoService {
-        return new EchoService(props, auth)
+        return new EchoService(props, serviceDefaults, auth)
     }
 }
 
@@ -80,4 +73,4 @@ export class EchoFactory implements AIsAPIFactory<AIsServiceProps, EchoService> 
 //
 // register this service/feature
 //
-AIsBreaker.getInstance().registerFactory({serviceId: echoServiceId, factory: new EchoFactory()})
+AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new EchoFactory()})

@@ -10,44 +10,38 @@ const logger = utils.logger
 // general API implementation for OpenAI Chat completion API
 //
 
-const chatBaseServiceId = 'chat:openai.com'
+export interface OpenaiComChatDefaults extends base.AIsServiceDefaults { }
 
-const DEFAULT_CHATGPT_MODEL = 'gpt-3.5-turbo'
-//const DEFAULT_CHATGPT_MODEL = 'gpt-4'
-const DEFAULT_URL = 'https://api.openai.com/v1/chat/completions'
-const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
-let DEBUG = false
-const TRACE_HTTP = false
-
-export interface OpenaiComChatProps extends api.AIsServiceProps {
-  /** access this OpenAI API server */
-  url?: string
+const defaultServiceId = 'chat:openai.com'
+const serviceDefaults: OpenaiComChatDefaults = {
+  url: 'https://api.openai.com/v1/chat/completions',
+  // OpenAI model/engine lists:
+  // - https://platform.openai.com/docs/models/gpt-3-5
+  // - https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
+  //engine: 'gpt-3.5-turbo', // worked 2023-11-08 and before; Currently points to gpt-3.5-turbo-0613. Will point to gpt-3.5-turbo-1106 starting Dec 11, 2023
+  engine: 'gpt-3.5-turbo-1106', // worked 2023-11-08
+  //engine: 'gpt-4', // worked 2023-11-08
+  //engine: 'gpt-4-1106-preview', // (GPT-4 Turbo) worked 2023-11-08
+  //engine: 'gpt-4-vision-preview', // (GPT-4 Turbo with vision) worked 2023-11-08
 }
 
-export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps> {
-  model: string
-  url: string
 
-  constructor(props: OpenaiComChatProps, auth?: api.Auth) {
-    super(props, auth)
+export interface OpenaiComChatProps extends api.AIsServiceProps { }
+
+export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps, OpenaiComChatDefaults> {
+  // properties to tune this service
+  timeoutMillis = 3 * 60 * 1000 // 3 minutes
+  enableDebug = false
+  enableTraceHttp = false
+  
+  constructor(props: OpenaiComChatProps, serviceDefaults: OpenaiComChatDefaults, auth?: api.Auth) {
+    super(props, serviceDefaults, auth)
 
     // check props
     if (!auth?.secret) {
       throw new api.AIsError(`OpenaiComChatService: missing auth.secret`, extern.ERROR_401_Unauthorized)
     }
-
-    // determine some OpenAI details
-    this.model = this.getModelFromServiceId(props.serviceId) || DEFAULT_CHATGPT_MODEL
-    this.url = this.serviceProps.url || DEFAULT_URL
   }
-
-  getEngine(model: string = DEFAULT_CHATGPT_MODEL): api.Engine {
-      const engine: api.Engine = {
-          serviceId: `${chatBaseServiceId}/${model}`
-      }
-      return engine
-  }
-
 
   /**
    * Do the work of process()
@@ -78,7 +72,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     const specialOpts = {} as any
     const openaiChatRequest: OpenaiChatRequest = {
         messages: allOpenaiChatMessages,
-        model: this.model,
+        model: this.engine,
         stream: isStreamingRequested,
         temperature: typeof specialOpts.temperature === 'undefined' ? 0.8 : specialOpts.temperature,
         top_p: typeof specialOpts.top_p === 'undefined' ? 1 : specialOpts.top_p,
@@ -87,10 +81,10 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     }
     const abortController = utils.createSecondAbortControllerFromAbortController(request.abortSignal)
 
-    let incompleteResp: IncompleteFinalResponse | api.AIsError | undefined
+    let incompleteResponse: api.ResponseFinal | api.AIsError | undefined
     if (!isStreamingRequested) {
       // no streaming (simple)
-      incompleteResp = await this.processNonStreamingRequest(
+      incompleteResponse = await this.processNonStreamingRequest(
         this.url,
         request,
         openaiChatRequest,
@@ -102,7 +96,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
 
     } else {
       // streaming (more complex)
-      incompleteResp = await this.processStreamingRequest(
+      incompleteResponse = await this.processStreamingRequest(
         this.url,
         request,
         openaiChatRequest,
@@ -114,20 +108,20 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     }
 
     // complete result
-    if (!incompleteResp || incompleteResp instanceof api.AIsError) {
+    if (!incompleteResponse || incompleteResponse instanceof api.AIsError) {
       // some error
-      return incompleteResp
+      return incompleteResponse
     }
 
     // update conversation (after OpenAI API request-response)
-    conversationState.addOutputs(incompleteResp.outputs)
+    conversationState.addOutputs(incompleteResponse.outputs)
 
     // return response
     const responseFinal: api.ResponseFinal = {
-      outputs: incompleteResp.outputs,
+      outputs: incompleteResponse.outputs,
       conversationState: conversationState.toBase64(),
-      usage: incompleteResp.usage,
-      internResponse: incompleteResp.internResponse,
+      usage: incompleteResponse.usage,
+      internResponse: incompleteResponse.internResponse,
     }
     return responseFinal
   }
@@ -141,7 +135,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     responseCollector: utils.ResponseCollector,
     conversationState: utils.DefaultConversationState,
     context: string
-  ): Promise<IncompleteFinalResponse | api.AIsError> {
+  ): Promise<api.ResponseFinal | api.AIsError> {
     const responseJsonPromise = ky.post(
       url,
       {
@@ -150,8 +144,8 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
           'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-OpenaiComChatService'}`,
         },
         json: openaiChatRequest,
-        timeout: TIMEOUT_MILLIS,
-        hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
+        timeout: this.timeoutMillis,
+        hooks: utils.kyHooksToReduceLogging(this.enableTraceHttp),
         throwHttpErrors: true,
         signal: abortController.signal,
       }
@@ -159,7 +153,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     const responseJson = await responseJsonPromise
 
     // simple checks of the result
-    if (DEBUG) {
+    if (this.enableDebug) {
       logger.debug(`responseJson: ${JSON.stringify(responseJson)}`)
     }
     if (!responseJson) {
@@ -168,14 +162,9 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
 
     // convert response
     const openaiChatResponse = responseJson as OpenaiChatResponse
-    const resultOutputs = openaiChatReponse2Outputs(openaiChatResponse)
+    const resultOutputs = aiReponse2Outputs(openaiChatResponse)
 
     // summarize the non-streamed result result, incl. usage
-    const resultUsage = {
-        engine: this.getEngine((openaiChatResponse as any)?.model),
-        //totalTokens: r?.usage?.total_tokens,
-        totalMilliseconds: responseCollector.getMillisSinceStart(),
-    }
     /*
     if (shouldGenerateTitle) {
       conversation.title = await this.generateTitle(userMessage, replyMessage);
@@ -184,12 +173,16 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     */
 
     // almost final result
-    const incompleteFinalResponse: IncompleteFinalResponse = {
+    const incompleteResponse: api.ResponseFinal = {
       outputs: resultOutputs,
-      usage: resultUsage,
+      usage: {
+        service: this.getService((openaiChatResponse as any)?.model),
+        //totalTokens: r?.usage?.total_tokens,
+        totalMilliseconds: responseCollector.getMillisSinceStart(),
+      },
       internResponse: openaiChatResponse,
     }
-    return incompleteFinalResponse
+    return incompleteResponse
   }
 
   /** process streaming */
@@ -201,7 +194,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     responseCollector: utils.ResponseCollector,
     conversationState: utils.DefaultConversationState,
     context: string
-  ): Promise<IncompleteFinalResponse | api.AIsError | undefined> {
+  ): Promise<api.ResponseFinal | api.AIsError | undefined> {
 
     const streamProgressFunction = request.streamProgressFunction as api.StreamProgressFunction
     const streamOpenaiProgressFunc: OpenaiChatSSEFunc = (data: OpenaiChatSSE) => {
@@ -221,12 +214,12 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
           'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-OpenaiComChatService'}`,
         },
         json: openaiChatRequest,
-        timeout: TIMEOUT_MILLIS,
-        hooks: utils.kyHooksToReduceLogging(TRACE_HTTP),
+        timeout: this.timeoutMillis,
+        hooks: utils.kyHooksToReduceLogging(this.enableTraceHttp),
         throwHttpErrors: true,
         onDownloadProgress: utils.kyOnDownloadProgress4onMessage((message: any) => {
           try {
-            if (DEBUG) {
+            if (this.enableDebug) {
                 logger.debug('onMessage() called', message)
             }
             if (!message.data || message.event === 'ping') {
@@ -265,7 +258,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
 
     // error response from OpenAI API (not from SSE)?
     let errorStr: string | undefined
-    if (DEBUG) {
+    if (this.enableDebug) {
       logger.debug('final ky reponse (streamed): responseText: ', responseText)
     }
     try {
@@ -284,14 +277,6 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     }
 
     // summarize the streamed result, incl. usage caclulation
-    const resultOutputs = responseCollector.getResponseFinalOutputs()
-    //const inputsTokens = this.countInputsTokens(request.inputs)
-    //const outputsTokens = this.countOutputsTokens(resultOutputs)
-    const resultUsage = {
-        engine: this.getEngine(responseCollector.lastObservedEngineId),
-        //totalTokens: inputsTokens + outputsTokens,
-        totalMilliseconds: responseCollector.getMillisSinceStart(),
-    }
     /*
     if (shouldGenerateTitle) {
       conversation.title = await this.generateTitle(userMessage, replyMessage);
@@ -300,12 +285,19 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
     */
   
     // almost final result
-    const incompleteFinalResponse: IncompleteFinalResponse = {
+    const resultOutputs = responseCollector.getResponseFinalOutputs()
+    const incompleteResponse: api.ResponseFinal = {
       outputs: resultOutputs,
-      usage: resultUsage,
+      usage: {
+        service: this.getService(responseCollector.lastObservedEngineId),
+        //const inputsTokens = this.countInputsTokens(request.inputs)
+        //const outputsTokens = this.countOutputsTokens(resultOutputs)
+        //totalTokens: inputsTokens + outputsTokens,
+        totalMilliseconds: responseCollector.getMillisSinceStart(),
+      },
       internResponse: responseCollector.getResponseFinalInternResponse,
     }
-    return incompleteFinalResponse
+    return incompleteResponse
   }
 
 
@@ -324,7 +316,7 @@ export class OpenaiComChatService extends base.BaseAIsService<OpenaiComChatProps
   // helpers for token counting
   //
 
-  private tiktokenEncoding = tiktoken.encoding_for_model(DEFAULT_CHATGPT_MODEL)
+  private tiktokenEncoding = tiktoken.encoding_for_model('gpt-3.5-turbo')
   private countTextTokens(text: string): number {
       const tokens = this.tiktokenEncoding.encode(text)
       return tokens.length
@@ -404,7 +396,7 @@ function createResponseEventFromOpenaiChatSSEAndCollectIt(
     return responseEvent
 }
 
-function openaiChatReponse2Outputs(data: OpenaiChatResponse): api.Output[] {
+function aiReponse2Outputs(data: OpenaiChatResponse): api.Output[] {
     const d = data as any
     const outputs: api.Output[] = []
 
@@ -426,12 +418,6 @@ function openaiChatReponse2Outputs(data: OpenaiChatResponse): api.Output[] {
     }
 
     return outputs
-}
-
-interface IncompleteFinalResponse {
-  outputs: api.Output[]
-  usage: api.Usage
-  internResponse: any
 }
 
 
@@ -537,9 +523,9 @@ type OpenaiChatResponse = object
 //
 // factory
 //
-export class OpenaiComChatFactory implements api.AIsAPIFactory<api.AIsServiceProps, OpenaiComChatService> {
+export class OpenaiComChatFactory implements api.AIsAPIFactory<OpenaiComChatProps, OpenaiComChatService> {
   createAIsService(props: api.AIsServiceProps, auth?: api.Auth): OpenaiComChatService {
-      return new OpenaiComChatService(props, auth)
+      return new OpenaiComChatService(props, serviceDefaults, auth)
   }
 }
 
@@ -547,5 +533,5 @@ export class OpenaiComChatFactory implements api.AIsAPIFactory<api.AIsServicePro
 //
 // register this service/connector
 //
-api.AIsBreaker.getInstance().registerFactory({serviceId: chatBaseServiceId, factory: new OpenaiComChatFactory()})
-api.AIsBreaker.getInstance().registerFactory({serviceId: chatBaseServiceId+'/gpt-4', factory: new OpenaiComChatFactory()})
+api.AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new OpenaiComChatFactory()})
+api.AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId+'/gpt-4', factory: new OpenaiComChatFactory()})

@@ -48,6 +48,8 @@ describe('Test service chat:openai.com', () => {
       await processLocalService(serviceProps, validOpenaiComAuth, jsPrompt, doStream)
 
     // check result
+    console.log("Test service chat:openai.com: without stream, success - responseFinal: ",
+                JSON.stringify(responseFinal, null, 2))
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
   }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 

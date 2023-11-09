@@ -9,32 +9,27 @@ import ky from 'ky-universal'
 // API url:  https://api.openai.com/v1/images/generations
 //
 
-const textToImageBaseServiceId = 'text-to-image:openai.com'
+export interface OpenaiComImageDefaults extends base.AIsServiceDefaults { }
 
-const DEFAULT_URL = 'https://api.openai.com/v1/images/generations'
+const defaultServiceId = 'text-to-image:openai.com'
+const serviceDefaults: OpenaiComImageDefaults = {
+  url: 'https://api.openai.com/v1/images/generations',
+  //engine: '',
+}
+
 const TIMEOUT_MILLIS = 3 * 60 * 1000 // 3 minutes
 
+export interface OpenaiComImageProps extends api.AIsServiceProps { }
 
-export class OpenaiComImageService extends base.BaseAIsService<api.AIsServiceProps> {
-  url: string
 
-  constructor(props: api.AIsServiceProps, auth?: api.Auth) {
-    super(props, auth)
+export class OpenaiComImageService extends base.BaseAIsService<OpenaiComImageProps, OpenaiComImageDefaults> {
+  constructor(props: OpenaiComImageProps, serviceDefaults: OpenaiComImageDefaults, auth?: api.Auth) {
+    super(props, serviceDefaults, auth)
 
     // check props
     if (!auth?.secret) {
-      throw new api.AIsError(`OpenaiComImageService: missing auth.secret`, extern.ERROR_401_Unauthorized)
+      throw new api.AIsError(`OpenaiComChatService: missing auth.secret`, extern.ERROR_401_Unauthorized)
     }
-
-    // determine some OpenAI details
-    this.url = this.serviceProps.url || DEFAULT_URL
-  }
-
-  getEngine(): api.Engine {
-    const engine: api.Engine = {
-      serviceId: `${textToImageBaseServiceId}`
-    }
-    return engine
   }
 
   /**
@@ -78,7 +73,6 @@ export class OpenaiComImageService extends base.BaseAIsService<api.AIsServicePro
     }
 
     // call OpenAI API and wait for the response
-    const url = this.serviceProps.url || DEFAULT_URL
     const body = {
       prompt: prompt,
       n: request.requested?.samples || 1,
@@ -88,7 +82,7 @@ export class OpenaiComImageService extends base.BaseAIsService<api.AIsServicePro
     }
     console.log("OpenaiImageService.process() body: " + JSON.stringify(body))
     const responseJson = await ky.post(
-      url,
+      this.url,
       {
         headers: {
           'Content-Type': 'application/json', // optional because set automatically
@@ -105,11 +99,7 @@ export class OpenaiComImageService extends base.BaseAIsService<api.AIsServicePro
     */
 
     // convert the result
-    let resultOutputs = openaiImageResponse2Outputs(responseJson as OpenaiImageResponse)
-    let resultUsage: api.Usage = {
-      engine: this.getEngine(),
-      totalMilliseconds: responseCollector.getMillisSinceStart(),
-    }
+    let resultOutputs = aiResponse2Outputs(responseJson as OpenaiImageResponse)
     let resultInternResponse: any = responseJson
 
     // update conversation (after OpenAI API request-response)
@@ -119,14 +109,17 @@ export class OpenaiComImageService extends base.BaseAIsService<api.AIsServicePro
     const responseFinal: api.ResponseFinal = {
       outputs: resultOutputs,
       conversationState: conversationState.toBase64(),
-      usage: resultUsage,
+      usage: {
+        service: this.getService(),
+        totalMilliseconds: responseCollector.getMillisSinceStart(),
+      },
       internResponse: resultInternResponse,
     }
     return responseFinal
   }
 }
 
-function openaiImageResponse2Outputs(res: OpenaiImageResponse): api.Output[] {
+function aiResponse2Outputs(res: OpenaiImageResponse): api.Output[] {
   const outputs: api.Output[] = []
 
   if (res.data) {
@@ -190,9 +183,12 @@ type OpenaiImageResponse = {
 }
 
 
+//
+// factory
+//
 export class OpenaiComImageFactory implements api.AIsAPIFactory<api.AIsServiceProps, OpenaiComImageService> {
   createAIsService(props: api.AIsServiceProps, auth?: api.Auth): OpenaiComImageService {
-    return new OpenaiComImageService(props, auth)
+    return new OpenaiComImageService(props, serviceDefaults, auth)
   }
 }
 
@@ -200,4 +196,4 @@ export class OpenaiComImageFactory implements api.AIsAPIFactory<api.AIsServicePr
 //
 // register this service/connector
 //
-api.AIsBreaker.getInstance().registerFactory({serviceId: textToImageBaseServiceId, factory: new OpenaiComImageFactory()})
+api.AIsBreaker.getInstance().registerFactory({serviceId: defaultServiceId, factory: new OpenaiComImageFactory()})

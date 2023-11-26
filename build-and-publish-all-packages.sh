@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# Build all modules/packages.
+# Build all modules/packages and publish them to npm.
+#
+# This script is usually called in the CI pipeline - USUALLY, YOU DON'T CALL THIS MANUALLY!!!
 #
 # Some limitations of npm workspaces CLI (as of 2023-07-06):
 # - npm --workspaces version doesn't update dependencies

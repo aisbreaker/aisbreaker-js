@@ -1,6 +1,5 @@
 import { RequestAuthAndQuotas, RequestQuotas } from "../models/index.js"
 
-
 let apiRequestQuotasCache: RequestQuotas | undefined
 /**
  * (API overall quotas)
@@ -33,6 +32,12 @@ async function getApiRequestQuotasInitial(): Promise<RequestQuotas> {
   }
 }
 
+/**
+ * Request without auth? Use this default API key/access token.
+ */
+export async function getDefaultAisbreakerApiKey(): Promise<string | undefined> {
+  return process.env.DEFAULT_AISBREAKER_API_KEY
+}
 
 
 let defaultRequestAuthAndQuotasCache: RequestAuthAndQuotas | undefined
@@ -42,7 +47,7 @@ let defaultRequestAuthAndQuotasCache: RequestAuthAndQuotas | undefined
  * @returns default authentication+request quotas (in addition to getApiRequestQuotas()),
  *          used if no (valid) Auth was provided by the client.         
  */
-export async function getDefaultRequestAuthAndQuotas(): Promise<RequestAuthAndQuotas> {
+export async function getDefaultRequestAuthAndQuotas(serverHostname: string): Promise<RequestAuthAndQuotas> {
   // already loaded?
   if (defaultRequestAuthAndQuotasCache) {
     // yes
@@ -50,10 +55,10 @@ export async function getDefaultRequestAuthAndQuotas(): Promise<RequestAuthAndQu
   }
 
   // no, load now
-  defaultRequestAuthAndQuotasCache = await getDefaultRequestAuthAndQuotasInitial()
+  defaultRequestAuthAndQuotasCache = await getDefaultRequestAuthAndQuotasInitial(serverHostname)
   return defaultRequestAuthAndQuotasCache
 }
-async function getDefaultRequestAuthAndQuotasInitial(): Promise<RequestAuthAndQuotas> {
+async function getDefaultRequestAuthAndQuotasInitial(serverHostname: string): Promise<RequestAuthAndQuotas> {
   return {
     requestQuotas: {
       globalRequestLimits: {

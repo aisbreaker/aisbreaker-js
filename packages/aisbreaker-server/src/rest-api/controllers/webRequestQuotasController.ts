@@ -5,11 +5,11 @@ import { RequestQuotasLimiter } from '../../utils/RequestQuotasLimiter.js'
 
 import * as config from './config.js'
 import { api, extern, utils } from 'aisbreaker-api-js'
-import { ACCESS_TOKEN_PREFIX, getObjectCryptoId } from '../../utils/index.js'
+import { API_KEY_PREFIX, getObjectCryptoId } from '../../utils/index.js'
 
 import NodeCache from 'node-cache'
 
-import { decryptAisbreakerAccessToken } from '../../utils/index.js'
+import { decryptAisbreakerApiKey } from '../../utils/index.js'
 
 
 
@@ -21,6 +21,7 @@ export interface CheckRequestQuotasResult {
   // either errorMsg or requestAuthAndQuotas is set
   errorMsg?: string
   requestAuthAndQuotas?: RequestAuthAndQuotas
+  warnings?: string[]
 }
 
 /**
@@ -46,6 +47,14 @@ export async function checkRequest(
       return {errorMsg: denyErrorMsg1}
     }
 
+    // no auth-based request - use defaults?
+    var warnings: string[] = []
+    if (!requestSecret) {
+      // yes, use defaults
+      requestSecret = await config.getDefaultAisbreakerApiKey()
+      warnings.push(`No auth provided - using default AIsBreaker API key/access token`)
+    }
+
     // check auth-based request quotas
     const requestAuthAndQuotas = await extractRequestAuthAndQuotas(serverHostname, requestSecret)
     const denyErrorMsg2 = isRequestDeniedByRequestAuthAndQuotas(requestAuthAndQuotas, clientIp, requestTime)
@@ -54,7 +63,10 @@ export async function checkRequest(
     }
 
     // access allowed
-    return {requestAuthAndQuotas: requestAuthAndQuotas}
+    return {
+      requestAuthAndQuotas: requestAuthAndQuotas,
+      warnings: warnings,
+    }
   } catch (err) {
     logger.warn(`process() - error: ${err}`, err)
     if (err instanceof api.AIsError) {
@@ -82,7 +94,8 @@ export async function isRequestDeniedByApiRequestQuotas(
     const quotasLimiter = await getApiRequestQuotasLimiter()
     
     // check
-    let errorMsg = quotasLimiter.isRequestDenied(clientIp, 1, requestTime)
+    const requestWeight = 1 // TODO: use higher requestWeight for more expensive requests (e.g. with images)
+    let errorMsg = quotasLimiter.isRequestDenied(clientIp, requestWeight, requestTime)
     if (errorMsg) {
        // access denied
       errorMsg = `API request quota exceeded: ${errorMsg}`
@@ -119,22 +132,24 @@ async function extractRequestAuthAndQuotas(
   requestSecret: string | undefined): Promise<RequestAuthAndQuotas> {
   // get valid RequestAuthAndQuotas
   let r: RequestAuthAndQuotas
-  let opt = await tryToExtractRequestAuthAndQuotasFromAccessToken(serverHostname, requestSecret)
+  let opt = await tryToExtractRequestAuthAndQuotasFromApiKey(serverHostname, requestSecret)
   if (opt) {
-    // auth contains RequestAuthAndQuotas
+    // auth contains valid RequestAuthAndQuotas
     r = opt
   } else {
-    // is this an aisbreaker access token?
-    if (requestSecret && requestSecret.startsWith(ACCESS_TOKEN_PREFIX)) {
-      // yes: it's an aisbreaker access token, but invalid
+    // no valid auth;
+    // does it look like an aisbreaker API key/access token, but is invalid?
+    if (requestSecret && requestSecret.startsWith(API_KEY_PREFIX)) {
+      // yes: it looks like an aisbreaker API key/access token, but is invalid
       const msg = `extractRequestAuthAndQuotas(): Invalid aisbreaker access token: '${requestSecret.substring(0, 10)}...' (len=${requestSecret.length})`
       console.log(msg)
       throw new api.AIsError(msg, extern.ERROR_401_Unauthorized)
     }
+    // if does'n look like an aisbreaker API key/access token
   
     // auth does not contain RequestAuthAndQuotas: use defaults
     console.log("extractRequestAuthAndQuotas(): use defaults")
-    r = await config.getDefaultRequestAuthAndQuotas()
+    r = await config.getDefaultRequestAuthAndQuotas(serverHostname)
   }
   return r
 }
@@ -263,7 +278,7 @@ function isRequestSecretFrom3rdParty(requestSecret: string | undefined): boolean
     return false
   }
   // check
-  if (requestSecret.startsWith(ACCESS_TOKEN_PREFIX)) {
+  if (requestSecret.startsWith(API_KEY_PREFIX)) {
     // no 3rd party access token
     return false
   } else {
@@ -277,13 +292,13 @@ function isRequestSecretFrom3rdParty(requestSecret: string | undefined): boolean
 //
 
 /**
- * Extract RequestAuthAndQuotas from access token.
+ * Extract RequestAuthAndQuotas from API key/access token.
  * 
  * @param serverHostname  hostname of the web server
  * @param requestSecret   authentication (bearer header)
  * @returns a valid RequestAuthAndQuotas object, or undefined if it cannot be extracted
  */
-async function tryToExtractRequestAuthAndQuotasFromAccessToken(
+async function tryToExtractRequestAuthAndQuotasFromApiKey(
   serverHostname: string,
   requestSecret: string | undefined
   ): Promise<RequestAuthAndQuotas | undefined> {
@@ -315,10 +330,10 @@ async function tryToExtractRequestAuthAndQuotasFromAccessToken(
   }
   */
 
-  // try to decrypt and parse the secret / aisbreaker access key
+  // try to decrypt and parse the secret / aisbreaker API key / access token
   try {
-    const accessToken = requestSecret
-    const requestAuthAndQuotas = await decryptAisbreakerAccessToken(serverHostname, accessToken)
+    const apiKey = requestSecret
+    const requestAuthAndQuotas = await decryptAisbreakerApiKey(serverHostname, apiKey)
     if (isRequestAuthAndQuotas(requestAuthAndQuotas)) {
       return requestAuthAndQuotas
     }

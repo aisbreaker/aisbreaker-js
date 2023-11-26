@@ -1,6 +1,6 @@
 import { utils } from 'aisbreaker-api-js'
 import { RequestAuthAndQuotas } from '../../rest-api/index.js'
-import { decryptAisbreakerAccessToken, encryptAisbreakerAccessToken } from '../../utils/index.js'
+import { decryptAisbreakerApiKey, encryptAisbreakerAccessToken } from '../../utils/index.js'
 
 
 describe('testing AisbreakerAccessKeyEncryptionUtils', () => {
@@ -39,7 +39,7 @@ describe('testing AisbreakerAccessKeyEncryptionUtils', () => {
     expect(accessToken).toMatch(/^aisbreaker_ey/)
 
     // decrypt
-    const decryptedRequestAuthAndQuotas = await decryptAisbreakerAccessToken(hostname, accessToken)
+    const decryptedRequestAuthAndQuotas = await decryptAisbreakerApiKey(hostname, accessToken)
     console.log("decryptedRequestAuthAndQuotas: ", decryptedRequestAuthAndQuotas)
 
     // check result
@@ -51,14 +51,14 @@ describe('testing AisbreakerAccessKeyEncryptionUtils', () => {
 
     // decrypt invalid token
     const invalidToken = accessToken.replace('ey', 'ex')
-    await expect(decryptAisbreakerAccessToken(hostname, invalidToken))
+    await expect(decryptAisbreakerApiKey(hostname, invalidToken))
       .rejects
       .toThrow()
 
     // decrypt after expiration of the token
     const bufferMillis = 100
     await utils.delay(1*1000+bufferMillis)
-    await expect(decryptAisbreakerAccessToken(hostname, accessToken))
+    await expect(decryptAisbreakerApiKey(hostname, accessToken))
       .rejects
       .toThrow()
   });

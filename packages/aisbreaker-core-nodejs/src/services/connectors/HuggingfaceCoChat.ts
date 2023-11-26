@@ -6,7 +6,7 @@ const logger = utils.logger
 
 
 //
-// general API implementation for Huggingface.co inference API for text generation API,
+// general API implementation for Huggingface.co inference API for `conversational-task` text generation API,
 // docs:
 //   - https://huggingface.co/docs/api-inference/detailed_parameters#conversational-task
 //   - https://huggingface.co/docs/inference-endpoints/supported_tasks#conversational

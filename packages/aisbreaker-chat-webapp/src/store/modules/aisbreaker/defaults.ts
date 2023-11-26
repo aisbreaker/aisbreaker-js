@@ -38,14 +38,45 @@ export function getAIsServicePropsTemplateByName(name: string | undefined): AIsS
 export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
   {
     name: 'Dummy Chat',
-    description: 'Dummy Chat assistant for testing',
+    description: 'Dummy Chat assistant - for testing',
     serviceProps: {
       serviceId: 'chat:dummy',
     }
   },
   {
+    name: 'Echo+Mirror Chat',
+    description: 'Echo and mirror the user input - for testing',
+    serviceProps: {
+      serviceId: 'aisbreaker:mirror',
+      forward2ServiceProps: {
+          serviceId: 'chat:echo',
+      },
+    } as any
+  },
+  {
+    name: 'Huggingface conversational-task: ANY/MODEL',
+    description: 'Huggingface.co inference API for any conversational-task',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/ANY/MODEL',
+    }
+  },
+  {
+    name: 'Huggingface conversational-task: microsoft/DialoGPT-large',
+    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-large',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
+    }
+  },
+  {
+    name: 'Huggingface conversational-task: microsoft/DialoGPT-small',
+    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-small',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
+    }
+  },
+  {
     name: 'OpenAI ChatGPT',
-    description: 'OpenAI ChatGPT connector (default version)',
+    description: 'OpenAI ChatGPT connector (default GPT version)',
     serviceProps: {
       serviceId: 'chat:openai.com',
     }
@@ -58,27 +89,13 @@ export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
     }
   },
   {
-    name: 'OpenAI ChatGPT compatible server',
+    name: 'OpenAI ChatGPT compatible servers (like Azure OpenAI GPT)',
     description: 'OpenAI ChatGPT compatible connector, configure the URL of the alternative API server',
     serviceProps: {
       serviceId: 'chat:openai.com',
       url: 'https://api.openai.compatible.example.com/v1/chat/completions',
     }
   },
-  {
-    name: 'Echo+Mirror Chat',
-    description: 'Echo and mirror the user input - for testing',
-    serviceProps: {
-      serviceId: 'aisbreaker:mirror',
-      /*
-      forward2ServiceProps: {
-          serviceId: 'chat:openai.com',
-      },
-      */
-
-    }
-  },
-
 ]
 
 export const allAIsServicePropsTemplateNameOptions: { label: string; key: string; value: string, tooltip: string }[] = 

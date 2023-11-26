@@ -28,7 +28,8 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
   let aisService: api.AIsService
 
   logger.debug(`apiProcess() - started`)
-  
+  let warnings: string[] = []
+
   // abort handling
   const abortController = new AbortController()
   res.on('close', () => {
@@ -43,6 +44,8 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
       logger.debug(`apiProcess() - requestSecret='${requestSecret}'`)
     }
 
+    var addionalUsageWarnings: string[] = []
+
     // check quotas
     const clientIp = getClientIP(req)
     const quotasResult = await checkRequest(clientIp, req.hostname, requestSecret)
@@ -54,6 +57,9 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
     if (!requestAuthAndQuotas) {
       const e = new api.AIsError(`Server Error (process): invalid CheckRequestQuotasResult`, extern.ERROR_400_Bad_Request)
       return writeJsonResponseAIsErrorAndEnd(res, e)
+    }
+    if (quotasResult.warnings) {
+      addionalUsageWarnings.push(...quotasResult.warnings)
     }
 
     // get aisNetworkRequest
@@ -93,10 +99,10 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
   const isStreamingRequested = (aisRequest as any).stream ? true : false
   if (!isStreamingRequested) {
     // simple/non-streaming request
-    await processNonStreamingRequest(/*req,*/ res, aisService, aisRequest, abortController)
+    await processNonStreamingRequest(/*req,*/ res, aisService, aisRequest, warnings, abortController)
   } else {
     // streaming request with server-side events
-    await processStreamingRequest(/*req,*/ res, aisService, aisRequest, abortController)
+    await processStreamingRequest(/*req,*/ res, aisService, aisRequest, warnings, abortController)
   }
 }
 
@@ -106,12 +112,16 @@ async function processNonStreamingRequest(
   res: express.Response,
   aisService: api.AIsService,
   aisRequest: api.Request,
+  addionalUsageWarnings: string[],
   abortController: AbortController) {
 
   try {
     // call requested service
     aisRequest.abortSignal = abortController.signal
     const response = await aisService.process(aisRequest)
+    if (response.usage.warnings) {
+      response.usage.warnings.push(...addionalUsageWarnings)
+    }
     writeJsonResponse(res, 200, response)
 
   } catch (err: any) {
@@ -133,6 +143,7 @@ async function processStreamingRequest(
   res: express.Response,
   aisService: api.AIsService,
   aisRequest: api.Request,
+  addionalUsageWarnings: string[],
   abortController: AbortController) {
   
   // Attention: header may not be sent twice, otherwise the server can crash
@@ -150,6 +161,9 @@ async function processStreamingRequest(
     const response = await aisService.process(aisRequest)
 
     // send final event
+    if (response.usage.warnings) {
+      response.usage.warnings.push(...addionalUsageWarnings)
+    }
     return writeJsonServerSideEventFinalResponseAndEnd(res, response)
 
   } catch (err: any) {

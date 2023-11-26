@@ -25,7 +25,7 @@ import logger from './logger.js'
 
 
 /** prefix of the bearer token/ before the JWT value */
-export const ACCESS_TOKEN_PREFIX = 'aisbreaker_'
+export const API_KEY_PREFIX = 'aisbreaker_'
 
 /**
  * Main key for encryption+decryption
@@ -109,26 +109,26 @@ export async function encryptAisbreakerAccessToken(
   const payloadObj = requestAuthAndQuotas
   const jwt = await encryptJson(subject, encryptionKey, expirationTimeSpan, payloadObj)
 
-  return ACCESS_TOKEN_PREFIX + jwt
+  return API_KEY_PREFIX + jwt
 }
 
 
-export async function decryptAisbreakerAccessToken(
+export async function decryptAisbreakerApiKey(
   hostname: string,
-  accessToken: string): Promise<RequestAuthAndQuotas> {
+  apiKey: string): Promise<RequestAuthAndQuotas> {
   // trivial check
-  if (!accessToken.startsWith(ACCESS_TOKEN_PREFIX)) {
-    throw new Error(`Invalid access token start: '${accessToken.substring(0, 10)}...' (len=${accessToken.length})`)
+  if (!apiKey.startsWith(API_KEY_PREFIX)) {
+    throw new Error(`Invalid API key/access token start: '${apiKey.substring(0, 10)}...' (len=${apiKey.length})`)
   }
 
   // preparation
-  const jwt = accessToken.substring(ACCESS_TOKEN_PREFIX.length)
+  const jwt = apiKey.substring(API_KEY_PREFIX.length)
   const subject = getJoseSubjectValue(hostname)
 
   // try all decryption keys
   for (const decryptionKey of decryptionKeys) {
     try {
-      const result = await decryptAisbreakerAccessTokenWithSingleDecryptionKey(subject, jwt, decryptionKey)
+      const result = await decryptAisbreakerApiKeyWithSingleDecryptionKey(subject, jwt, decryptionKey)
 
       // no exception = success
       return result
@@ -137,7 +137,7 @@ export async function decryptAisbreakerAccessToken(
       // failed with this key - try next
     }
   }
-  throw new Error(`Could decrypt access token with any available key: '${accessToken.substring(0, 10)}...' (len=${accessToken.length})`)
+  throw new Error(`Could decrypt API key/access token with any available key: '${apiKey.substring(0, 10)}...' (len=${apiKey.length})`)
 }
 
 /**
@@ -146,7 +146,7 @@ export async function decryptAisbreakerAccessToken(
  * @param hostname
  * @param accessToken 
  */
-async function decryptAisbreakerAccessTokenWithSingleDecryptionKey(
+async function decryptAisbreakerApiKeyWithSingleDecryptionKey(
   subject: string,
   jwt: string,
   decryptionKey: Uint8Array): Promise<RequestAuthAndQuotas> {
@@ -159,7 +159,7 @@ async function decryptAisbreakerAccessTokenWithSingleDecryptionKey(
   }
 
   // invalid payload
-  throw new Error(`Invalid (access token) jwt payload type: '${jwt.substring(0, 5)}...' (len=${jwt.length})`)
+  throw new Error(`Invalid (API key/access token) jwt payload type: '${jwt.substring(0, 5)}...' (len=${jwt.length})`)
 }
 
 

@@ -30,6 +30,11 @@ spec:
               secretKeyRef:
                 name: aisbreaker-api-server-secrets
                 key: auth-encryption-keyphrase
+          - name: DEFAULT_AISBREAKER_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: aisbreaker-api-server-secrets
+                key: default-aisbreaker-api-key
 
           # provide environment variable with pod and namespace name using Kubernetes Downward API,
           #   https://github.com/kubernetes/kubernetes/blob/release-1.0/docs/user-guide/downward-api.md

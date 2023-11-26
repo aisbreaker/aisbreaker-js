@@ -14,3 +14,9 @@
     docker run --init -p3000:3000 aisbreaker-proxy-server
     
 Hint: The '--init' is optional. It's to easy stop the container on command line [How to fix Ctrl+C inside a Docker container?](https://www.tutorialspoint.com/how-to-fix-ctrlplusc-inside-a-docker-container)
+
+
+## Configuration
+Optional environment variable(s):
+- DEFAULT_AISBREAKER_API_KEY (used if no API key is provided by client, e.g. for demo server)
+

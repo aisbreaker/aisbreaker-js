@@ -35,6 +35,22 @@ Steps:
 ## Build and Publish all npm Packages with the same Version
 
 Steps:
+    # publish all npms (example with version 0.0.1)
+    ./set-version-in-all-packages-after-build-check.sh 0.0.1
+
+    # git add, commit and push updated package.json files
+    git add -A package*json packages/*/package.json
+    git commit -m "New version '0.0.1' of npm packages to publish"
+    git push
+
+    # if not on central repo: merge to 'https://github.com/aisbreaker/aisbreaker-js'
+
+    # on repo 'https://github.com/aisbreaker/aisbreaker-js' + branch 'main':
+    # CI/CD pipeline will build and publish to npm repo
+
+
+## Build and Publish all npm Packages with the same Version (OLD)
+Steps:
 
     # publish all npms (example with version 0.0.1)
     ./publish-all-packages.sh 0.0.1

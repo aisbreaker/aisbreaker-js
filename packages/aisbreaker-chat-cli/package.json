@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-chat-cli",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Two demo applications to demonstrate the usage of `aisbreaker-api` in a JavaScript NodeJS application",
   "type": "module",
   "main": "chat-cli.js",
@@ -12,7 +12,7 @@
   "author": "aisbreaker",
   "license": "MIT",
   "dependencies": {
-    "aisbreaker-core-nodejs": "^0.1.4",
+    "aisbreaker-core-nodejs": "^0.1.5",
     "boxen": "^7.0.1",
     "clipboardy": "^3.0.0",
     "inquirer": "^9.1.4",

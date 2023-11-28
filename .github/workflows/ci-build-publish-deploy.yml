@@ -287,7 +287,7 @@ jobs:
         run: |
           cd test/
           env | sort
-          ./integration-tests.sh
+          ./server-integration-tests.sh
         env:
           AISBREAKER_SERVER_URL: ${{secrets.AISBREAKER_SERVER_URL}}
           AISBREAKER_API_KEY: ${{secrets.AISBREAKER_API_KEY}}

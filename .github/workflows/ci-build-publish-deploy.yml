@@ -282,6 +282,9 @@ jobs:
           cd test/
           npm install
           ls -l node_modules/
+          # to keep a valid reference '../node_modules/aisbreaker-independent-test-utils/build/FailFastTestEnvironment.js' in jest.config.ts:
+          cd ..
+          ln -s test/node_modules ./
       
       - name: Build and run integration tests
         run: |

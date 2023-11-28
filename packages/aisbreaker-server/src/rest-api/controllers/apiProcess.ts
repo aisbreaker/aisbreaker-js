@@ -58,6 +58,9 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
       const e = new api.AIsError(`Server Error (process): invalid CheckRequestQuotasResult`, extern.ERROR_400_Bad_Request)
       return writeJsonResponseAIsErrorAndEnd(res, e)
     }
+    if (DEBUG) {
+      logger.debug(`apiProcess() - requestAuthAndQuotas=${JSON.stringify(requestAuthAndQuotas)}`)
+    }
     if (quotasResult.warnings) {
       addionalUsageWarnings.push(...quotasResult.warnings)
     }
@@ -72,6 +75,9 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
     // get auth for the requested service
     const serviceId = serviceProps.serviceId
     const auth = getAuthForServiceId(requestAuthAndQuotas, requestSecret, serviceId)
+    if (DEBUG) {
+      logger.debug(`apiProcess() - auth=${JSON.stringify(auth)}`) 
+    }
 
     // get/create requested service
     try {

@@ -238,10 +238,14 @@ export function getAuthForServiceId(
     const serviceSecrets = requestAuthAndQuotas.serviceSecrets
     if (serviceSecrets) {
       for (let serviceSecret of serviceSecrets) {
-        if (serviceSecret.serviceId.startsWith(serviceId)) {
+        if (serviceId.startsWith(serviceSecret.serviceId)) {
           // found a match
+          logger.debug(`getAuthForServiceId() - serviceId='${serviceId}' vs serviceSecret.serviceId='${serviceSecret.serviceId}' - found a match`)
           secret = serviceSecret.authSecret
           break;
+        } else {
+          // no match
+          logger.debug(`getAuthForServiceId() - serviceId='${serviceId}' vs serviceSecret.serviceId='${serviceSecret.serviceId}' - no match`)
         }
       }
     }

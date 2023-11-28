@@ -34,9 +34,15 @@ async function getApiRequestQuotasInitial(): Promise<RequestQuotas> {
 
 /**
  * Request without auth? Use this default API key/access token.
+ *
+ * @returns default API key/access token, or undefined if none is configured.
  */
 export async function getDefaultAisbreakerApiKey(): Promise<string | undefined> {
-  return process.env.DEFAULT_AISBREAKER_API_KEY
+  let result = process.env.DEFAULT_AISBREAKER_API_KEY
+  if (result && result.trim().length === 0) {
+    result = undefined
+  }
+  return result
 }
 
 

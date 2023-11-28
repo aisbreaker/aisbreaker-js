@@ -7,8 +7,9 @@
   "license": "MIT",
   "//workspaces": "!!! All modules/packages be defined in the order from no-inter-dependency to max-inter-dependencies. Therefore, no 'packages/*'",
   "workspaces": [
-    "packages/aisbreaker-test-utils",
+    "packages/aisbreaker-independent-test-utils",
     "packages/aisbreaker-api-js",
+    "packages/aisbreaker-test-utils",
     "packages/aisbreaker-core-nodejs",
     "packages/aisbreaker-chat-cli",
     "packages/aisbreaker-server",

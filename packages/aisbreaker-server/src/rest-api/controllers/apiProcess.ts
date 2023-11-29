@@ -67,7 +67,7 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
 
     // get aisNetworkRequest
     const json = req.body
-    logger.debug(`apiProcess() - json=${JSON.stringify(json)}`)
+    logger.debug(`apiProcess() - request.body(json)=${JSON.stringify(json)}`)
     const aisNetworkRequest: services.AIsNetworkRequest = json
     const serviceProps = aisNetworkRequest.service
     aisRequest = aisNetworkRequest.request

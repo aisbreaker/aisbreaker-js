@@ -134,7 +134,7 @@ jobs:
   # intergration test with Kubernetes Dev namespace
   #
   # Required (environment) variable(s) from CI:
-  # - secrets.AISBREAKER_SERVER_URL
+  # - vars.AISBREAKER_SERVER_URL
   # - secrets.AISBREAKER_API_KEY
   # - secrets.OPENAI_API_KEY
   aisbreaker-integration-test-with-dev:
@@ -209,7 +209,7 @@ jobs:
           ./server-integration-tests.sh
         env:
           AISBREAKER_SERVER_URL: ${{vars.AISBREAKER_SERVER_URL}}
-          AISBREAKER_API_KEY: ${{vars.AISBREAKER_API_KEY}}
+          AISBREAKER_API_KEY: ${{secrets.AISBREAKER_API_KEY}}
           OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
 
       - name: Test Report

@@ -15,11 +15,15 @@ core.init()
 
 export async function apiProcess(req: express.Request, res: express.Response): Promise<void> {
   try {
+    // logging
     if (DEBUG) {
       logger.debug(`apiProcess() req.headers='${JSON.stringify(req.headers)}'`)
       logger.debug(`apiProcess() req.body='${JSON.stringify(req.body)}'`)
     }
+
+    // action
     apiProcessUnprotected(req, res)
+
   } catch (err) {
     logger.warn(`apiProcess extern() - error: ${err}`, err)
     writeJsonResponse(res, 500, {error: {type: 'server_error', message: `Server Error (apiProcess): ${err}`}})
@@ -42,6 +46,14 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
   })
 
   try {
+    // check content-type
+    var contype = req.headers['content-type'];
+    if (!contype || contype.indexOf('application/json') !== 0) {
+      logger.warn(`apiProcess - wrong content-type of request: '${contype}'`)
+      writeJsonResponse(res, 400, {error: {type: 'server_error', message: `Parameter Error (apiProcess): wrong content-type of request: '${contype}'`}})
+      return
+    }
+
     // check and use authentication (bearer header)
     const requestSecret = extractHttpAuthHeaderSecret(req)
     if (DEBUG) {

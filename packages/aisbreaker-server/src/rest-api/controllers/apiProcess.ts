@@ -15,6 +15,10 @@ core.init()
 
 export async function apiProcess(req: express.Request, res: express.Response): Promise<void> {
   try {
+    if (DEBUG) {
+      logger.debug(`apiProcess() req.headers='${JSON.stringify(req.headers)}'`)
+      logger.debug(`apiProcess() req.body='${JSON.stringify(req.body)}'`)
+    }
     apiProcessUnprotected(req, res)
   } catch (err) {
     logger.warn(`apiProcess extern() - error: ${err}`, err)

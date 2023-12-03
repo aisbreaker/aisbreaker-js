@@ -15,6 +15,129 @@ permissions:
 
 jobs:
 
+  #
+  # Build all packages, but do not publish.
+  #
+  # This is intended to run on branches!=main and on repo forks only.
+  #
+  build-npms:
+    runs-on: ubuntu-latest
+    if: github.repository != 'aisbreaker/aisbreaker-js' || github.ref != 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build all packages/modules 
+        run: |
+          echo "./build-all-packages.sh"
+
+
+
+  #
+  # Build and publish all npm packages.
+  #
+  # Intended to run on the main repo + main branch only.
+  #
+  # Required (environment) variable(s) from CI:
+  # - secrets.NPM_AUTH_TOKEN
+  #
+  build-and-publish-npms:
+    runs-on: ubuntu-latest
+    if: github.repository == 'aisbreaker/aisbreaker-js' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup .npmrc file to publish to npm
+      - name: Setup npm authentication
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build and Publish all packages/modules to npm
+        run: |
+          ./build-and-publish-all-packages.sh
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+
+
+
+  #
+  # build and publish Docker images
+  #
+  # Required (environment) variable(s) from CI:
+  # - secrets.DOCKER_USERNAME
+  # - secrets.DOCKER_PASSWORD
+  #
+  aisbreaker-server-docker-image-build-and-publish:
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-image-build-and-publish
+    runs-on: ubuntu-latest
+    needs: build-and-publish-npms
+    env:
+      PACKAGE_DIR: packages/aisbreaker-server
+      IMAGE_NAME: aisbreaker/aisbreaker-server
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: |
+          cd "${PACKAGE_DIR}/"
+
+          export VERSION=`cat VERSION`
+          if [[ -z "$VERSION" ]] ; then
+            echo "Couldn't find valid VERSION file"
+            exit 1
+          fi
+
+          cp ../../package-lock.json ./
+          docker build -t "${IMAGE_NAME}:${VERSION}" -t "${IMAGE_NAME}:latest" .
+
+      - name: Publish Docker image 
+        run: |
+          cd "${PACKAGE_DIR}/"
+
+          docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+          docker push --all-tags "${IMAGE_NAME}"
+
+  aisbreaker-chat-webapp-docker-image-build-and-publish:
+    # almost duplicated code (except env values) in jobs: aisbreaker-*-image-build-and-publish
+    runs-on: ubuntu-latest
+    needs: build-and-publish-npms
+    env:
+      PACKAGE_DIR: packages/aisbreaker-chat-webapp
+      IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: |
+          cd "${PACKAGE_DIR}/"
+
+          export VERSION=`cat VERSION`
+          if [[ -z "$VERSION" ]] ; then
+            echo "Couldn't find valid VERSION file"
+            exit 1
+          fi
+
+          cp ../../package-lock.json ./
+          docker build -t "${IMAGE_NAME}:${VERSION}" -t "${IMAGE_NAME}:latest" .
+
+      - name: Publish Docker image 
+        run: |
+          cd "${PACKAGE_DIR}/"
+
+          docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}}
+          docker push --all-tags "${IMAGE_NAME}"
+
 
 
   #
@@ -30,9 +153,9 @@ jobs:
   #
   aisbreaker-server-k8s-dev-deploy:
     runs-on: ubuntu-latest
-    #needs:
-    #  - aisbreaker-server-docker-image-build-and-publish
-    #  - aisbreaker-chat-webapp-docker-image-build-and-publish
+    needs:
+      - aisbreaker-server-docker-image-build-and-publish
+      - aisbreaker-chat-webapp-docker-image-build-and-publish
     env:
       PACKAGE_DIR: packages/aisbreaker-server
       IMAGE_NAME: aisbreaker/aisbreaker-server
@@ -80,9 +203,9 @@ jobs:
 
   aisbreaker-chat-webapp-k8s-dev-deploy:
     runs-on: ubuntu-latest
-    #needs:
-    #  - aisbreaker-server-docker-image-build-and-publish
-    #  - aisbreaker-chat-webapp-docker-image-build-and-publish
+    needs:
+      - aisbreaker-server-docker-image-build-and-publish
+      - aisbreaker-chat-webapp-docker-image-build-and-publish
     env:
       PACKAGE_DIR: packages/aisbreaker-chat-webapp
       IMAGE_NAME: aisbreaker/aisbreaker-chat-webapp
@@ -129,6 +252,7 @@ jobs:
           args: get pods --namespace ${{env.KUBE_NAMESPACE}}
 
 
+
   #
   # intergration test with Kubernetes Dev namespace
   #
@@ -148,45 +272,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
   
-      - name: simple pre-checks with curl
-        run: |
-            export HOSTPORT="https://api.demo.app-dev.cloud.service01.net"
-            echo "XXXXX curl chat:dummy XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            curl "${HOSTPORT}/api/v1/process" \
-                    -X POST \
-                    -d '{
-              "service": {
-                "serviceId": "chat:dummy"
-              },
-              "request": {
-                    "inputs": [ {
-                        "text": {
-                            "role": "user",
-                            "content": "What is Java?"
-                        }
-                    } ]
-                }
-              }' \
-                    -H "Content-Type: application/json"
-
-            echo "XXXXX curl chat:openai.com XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            curl "${HOSTPORT}/api/v1/process" \
-                    -X POST \
-                    -d '{
-              "service": {
-                "serviceId": "chat:openai.com"
-              },
-              "request": {
-                    "inputs": [ {
-                        "text": {
-                            "role": "user",
-                            "content": "What is Java?"
-                        }
-                    } ]
-                }
-              }' \
-                    -H "Content-Type: application/json"
-
       - name: Install dependencies
         run: |
           export VERSION=`cat packages/aisbreaker-server/VERSION`
@@ -221,7 +306,6 @@ jobs:
           reporter: jest-junit        # Format of test results
 
 
-
   #
   # intergration test with Kubernetes Dev namespace
   #
@@ -241,45 +325,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
   
-      - name: simple pre-checks with curl
-        run: |
-            export HOSTPORT="https://api.demo.app-dev.cloud.service01.net"
-            echo "XXXXX curl chat:dummy XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            curl "${HOSTPORT}/api/v1/process" \
-                    -X POST \
-                    -d '{
-              "service": {
-                "serviceId": "chat:dummy"
-              },
-              "request": {
-                    "inputs": [ {
-                        "text": {
-                            "role": "user",
-                            "content": "What is Java?"
-                        }
-                    } ]
-                }
-              }' \
-                    -H "Content-Type: application/json"
-
-            echo "XXXXX curl chat:openai.com XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            curl "${HOSTPORT}/api/v1/process" \
-                    -X POST \
-                    -d '{
-              "service": {
-                "serviceId": "chat:openai.com"
-              },
-              "request": {
-                    "inputs": [ {
-                        "text": {
-                            "role": "user",
-                            "content": "What is Java?"
-                        }
-                    } ]
-                }
-              }' \
-                    -H "Content-Type: application/json"
-
       - name: Install dependencies
         run: |
           export VERSION=`cat packages/aisbreaker-server/VERSION`

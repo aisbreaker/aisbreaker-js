@@ -89,12 +89,19 @@ async function startServer() {
       app.get(apiBasePath + '/version', cors(), (req, res) => {
           apiVersion(req, res, version)
       })
+
       app.post(apiBasePath + '/oauth/token', cors(), (req, res) => {
         oauthToken(req, res)
       })
+
       app.post(apiBasePath + '/process', cors(), (req, res) => {
         apiProcess(req, res)
       })
+      app.head(apiBasePath + '/process', cors(), (req, res) => {
+        console.info('HEAD /process')
+        res.sendStatus(204)
+      })
+      app.options(apiBasePath + '/process', cors())
     }
   
     // TODO: Add alternative APIs 

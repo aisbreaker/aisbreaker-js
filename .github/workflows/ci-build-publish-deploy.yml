@@ -129,6 +129,98 @@ jobs:
           args: get pods --namespace ${{env.KUBE_NAMESPACE}}
 
 
+  #
+  # intergration test with Kubernetes Dev namespace
+  #
+  # Required (environment) variable(s) from CI:
+  # - vars.AISBREAKER_SERVER_URL
+  # - secrets.AISBREAKER_API_KEY
+  # - secrets.OPENAI_API_KEY
+  aisbreaker-integration-test-with-dev-single:
+    runs-on: ubuntu-latest
+    needs: 
+      - aisbreaker-server-k8s-dev-deploy
+      - aisbreaker-chat-webapp-k8s-dev-deploy
+    env:
+      PACKAGE_DIR: packages/aisbreaker-server
+      IMAGE_NAME: aisbreaker/aisbreaker-server
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+  
+      - name: simple pre-checks with curl
+        run: |
+            export HOSTPORT="https://api.demo.app-dev.cloud.service01.net"
+            echo "XXXXX curl chat:dummy XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+            curl "${HOSTPORT}/api/v1/process" \
+                    -X POST \
+                    -d '{
+              "service": {
+                "serviceId": "chat:dummy"
+              },
+              "request": {
+                    "inputs": [ {
+                        "text": {
+                            "role": "user",
+                            "content": "What is Java?"
+                        }
+                    } ]
+                }
+              }' \
+                    -H "Content-Type: application/json"
+
+            echo "XXXXX curl chat:openai.com XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+            curl "${HOSTPORT}/api/v1/process" \
+                    -X POST \
+                    -d '{
+              "service": {
+                "serviceId": "chat:openai.com"
+              },
+              "request": {
+                    "inputs": [ {
+                        "text": {
+                            "role": "user",
+                            "content": "What is Java?"
+                        }
+                    } ]
+                }
+              }' \
+                    -H "Content-Type: application/json"
+
+      - name: Install dependencies
+        run: |
+          export VERSION=`cat packages/aisbreaker-server/VERSION`
+          echo "V=${VERSION}"
+          set -x
+          # avaoid symlinks from aisbreaker-* packages
+          rm -rf package.json
+          cd test/
+          npm install
+          ls -l node_modules/
+          # to keep a valid reference '../node_modules/aisbreaker-independent-test-utils/build/FailFastTestEnvironment.js' in jest.config.ts:
+          cd ..
+          ln -s test/node_modules ./
+      
+      - name: Build and run integration tests
+        run: |
+          cd test/
+          env | sort
+          ./server-integration-single-test.sh
+        env:
+          AISBREAKER_SERVER_URL: ${{vars.AISBREAKER_SERVER_URL}}
+          AISBREAKER_API_KEY: ${{secrets.AISBREAKER_API_KEY}}
+          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: JEST Tests            # Name of the check run which will be created
+          #path: reports/jest-*.xml    # Path to test results
+          path: test/junit.xml        # Path to test results
+          reporter: jest-junit        # Format of test results
+
+
 
   #
   # intergration test with Kubernetes Dev namespace

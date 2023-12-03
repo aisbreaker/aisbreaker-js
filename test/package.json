@@ -13,7 +13,7 @@
     "server-integration-tests-without-build:single01": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server integration/RemoteRemoteDummyChat.test.js",
     "server-integration-tests-without-build:single02": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server integration/RemoteErrorPropagation.test.js",
     "server-integration-tests-without-build:single03": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server integration/RemoteOpenaiComChat.test.js",
-    "server-integration-tests:single": "npm run build && npm run server-integration-tests-without-build:single"
+    "server-integration-tests:single": "npm run build && npm run server-integration-tests-without-build:single01"
   },
   "keywords": [],
   "author": "aisbreaker",

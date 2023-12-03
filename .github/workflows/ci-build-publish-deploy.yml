@@ -152,12 +152,12 @@ jobs:
       - name: simple pre-checks with curl
         run: |
             export HOSTPORT="https://api.demo.app-dev.cloud.service01.net"
-            echo "XXXXX curl chat:dummy"
+            echo "XXXXX curl chat:dummy XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
             curl "${HOSTPORT}/api/v1/process" \
                     -X POST \
                     -d '{
               "service": {
-                "serviceId": "chat:dummy XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                "serviceId": "chat:dummy"
               },
               "request": {
                     "inputs": [ {
@@ -208,8 +208,8 @@ jobs:
           env | sort
           ./server-integration-tests.sh
         env:
-          AISBREAKER_SERVER_URL: ${{secrets.AISBREAKER_SERVER_URL}}
-          AISBREAKER_API_KEY: ${{secrets.AISBREAKER_API_KEY}}
+          AISBREAKER_SERVER_URL: ${{vars.AISBREAKER_SERVER_URL}}
+          AISBREAKER_API_KEY: ${{vars.AISBREAKER_API_KEY}}
           OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
 
       - name: Test Report

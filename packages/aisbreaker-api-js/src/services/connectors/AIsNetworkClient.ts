@@ -86,10 +86,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     const responseJsonPromise =  ky.post(
       url,
       {
-        headers: {
-            'Content-Type': 'application/json', // optional because set automatically
-            'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
-        },
+        headers: this.getHttpRequestHeaders(this.auth?.secret),
         json: aisNetworkRequest,
         hooks: utils.kyHooksToReduceLogging(),
         throwHttpErrors: true,
@@ -119,10 +116,7 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     const responseTextIgnored = await ky.post(
       url,
       {
-        headers: {
-            'Content-Type': 'application/json', // optional because set automatically
-            'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
-        },
+        headers: this.getHttpRequestHeaders(this.auth?.secret),
         json: aisNetworkRequest,
         hooks: utils.kyHooksToReduceLogging(),
         throwHttpErrors: true, // works also with false (probably)
@@ -188,6 +182,20 @@ export class AIsNetworkClientService extends BaseAIsService<AIsNetworkClientProp
     let contextService = super.getContextService() || 'AIsNetworkClient'
     contextService += `->${this.serviceProps?.url}->${this.serviceProps?.forward2ServiceProps?.serviceId}`
     return contextService
+  }
+
+  getHttpRequestHeaders(secret: string | undefined): any {
+    if (secret) {
+      return {
+        'Content-Type': 'application/json', // optional because set automatically
+        'Authorization': `Bearer ${secret}`,
+      }
+    } else {
+      return {
+        'Content-Type': 'application/json', // optional because set automatically
+        // 'Authorization': `Bearer ${this.auth?.secret || 'NoAuthProvided-in-AIsNetworkClientService'}`,
+      }
+    }
   }
 }
 

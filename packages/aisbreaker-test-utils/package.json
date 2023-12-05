@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-test-utils",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Utils for unit and integration testing with jest for (other) AisBreaker packages.",
   "type": "module",
   "main": "build/index.js",
@@ -16,7 +16,7 @@
   "dependencies": {
     "@types/jest": "^29.5.3",
     "@types/node": "^18.14.11",
-    "aisbreaker-api-js": "^0.1.10",
+    "aisbreaker-api-js": "^0.1.11",
     "jest": "^29.6.2",
     "jest-junit": "^16.0.0",
     "jest-runner-groups": "^2.2.0",

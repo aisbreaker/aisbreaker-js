@@ -44,6 +44,21 @@ export const router = createRouter({
   scrollBehavior: () => ({ left: 0, top: 0 }),
 })
 
+// update page title for better usage statistics
+router.beforeEach((to, from, next) => {
+  const title = 'AIsBreaker Web Chat'
+  const host = window.location.host
+
+  // update the title
+  if (host) {
+    document.title = `${title} - ${host}`
+  } else {
+    document.title = title
+  }
+
+  // continue resolving the route
+  next()
+})
 setupPageGuard(router)
 
 export async function setupRouter(app: App) {

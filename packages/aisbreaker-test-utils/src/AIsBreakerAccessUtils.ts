@@ -4,9 +4,9 @@ import { api } from 'aisbreaker-api-js'
 // helper functions for tests
 //
 
-export function testPingRemoteAisbreakerServer(aisbreakerServerURL: string) {
+export function testPingAIsbreakerServer(aisbreakerServerURL: string) {
     test(`Ping remote AIsBreaker server '${aisbreakerServerURL}'`, async () => {
-      const success = await api.AIsBreaker.pingRemoteAIsService(aisbreakerServerURL)
+      const success = await api.AIsBreaker.pingAIsService(aisbreakerServerURL)
   
       // check result
       expect(success).toBe(true)
@@ -14,8 +14,8 @@ export function testPingRemoteAisbreakerServer(aisbreakerServerURL: string) {
   }
   
   
-export async function processClientService(
-  apiServerUrl: string,
+export async function processService(
+  aisbreakerServerUrl: string,
   serviceProps: api.AIsServiceProps,
   auth: api.Auth,
   prompt: string,
@@ -27,7 +27,7 @@ export async function processClientService(
   ]> {
 
   // service initialization
-  const aisService = api.AIsBreaker.getRemoteAIsService(apiServerUrl, serviceProps, auth)
+  const aisService = api.AIsBreaker.getAIsService(aisbreakerServerUrl, serviceProps, auth)
 
   // process with stream
   let streamedProgressText: string | undefined
@@ -70,7 +70,7 @@ export async function processLocalService(
   ]> {
 
   // service initialization
-  const aisService = api.AIsBreaker.getAIsService(serviceProps, auth)
+  const aisService = api.AIsBreaker.getLocalAIsService(serviceProps, auth)
 
   // process with stream
   let streamedProgressText: string | undefined

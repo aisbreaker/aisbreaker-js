@@ -105,7 +105,7 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
 
     // get/create requested service
     try {
-      aisService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+      aisService = api.AIsBreaker.getInstance().getLocalAIsService(serviceProps, auth)
     } catch (err) {
       logger.warn(`apiProcess() - error: ${err}`, err)
       if (err instanceof api.AIsError) {

@@ -1,6 +1,6 @@
 import { api } from 'aisbreaker-api-js'
 import * as core from 'aisbreaker-core-nodejs'
-import { processClientService, testPingRemoteAisbreakerServer } from 'aisbreaker-test-utils'
+import { processService, testPingAIsbreakerServer } from 'aisbreaker-test-utils'
 import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY, OPENAI_API_KEY } from './test-config.js'
 
 
@@ -17,7 +17,7 @@ const OPENAI_LONG_ANSWER_TIMEOUT_MILLIS = 10000
 describe('Test preconditions', () => {
   core.init()
 
-  testPingRemoteAisbreakerServer(URL)
+  testPingAIsbreakerServer(URL)
 
   test('Check for OPENAI_API_KEY', () => {
     expect(OPENAI_API_KEY).toBeDefined()
@@ -55,7 +55,7 @@ describe('Test remote service chat:openai.com', () => {
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processClientService(URL, serviceProps, validOpenaiComAuth, jsPrompt, doStream)
+      await processService(URL, serviceProps, validOpenaiComAuth, jsPrompt, doStream)
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -68,7 +68,7 @@ describe('Test remote service chat:openai.com', () => {
 
     // process with stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processClientService(URL, serviceProps, validOpenaiComAuth, jsPrompt, doStream)
+      await processService(URL, serviceProps, validOpenaiComAuth, jsPrompt, doStream)
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -82,7 +82,7 @@ describe('Test remote service chat:openai.com', () => {
 
     // process without stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-    await processClientService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
+    await processService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -95,7 +95,7 @@ describe('Test remote service chat:openai.com', () => {
 
     // process with stream
     const [responseFinal, responseFinalText, streamedProgressText] =
-      await processClientService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
+      await processService(URL, serviceProps, validAisbreakerAuth, jsPrompt, doStream)
 
     // check result
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
@@ -110,7 +110,7 @@ describe('Test remote service chat:openai.com', () => {
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processClientService(URL, serviceProps, invalidOpenaiComAuth, jsPrompt, doStream)
+        await processService(URL, serviceProps, invalidOpenaiComAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError
@@ -135,7 +135,7 @@ describe('Test remote service chat:openai.com', () => {
     let error: api.AIsError | undefined
     try {
       const [responseFinal, responseFinalText, streamedProgressText] =
-        await processClientService(URL, serviceProps, invalidOpenaiComAuth, jsPrompt, doStream)
+        await processService(URL, serviceProps, invalidOpenaiComAuth, jsPrompt, doStream)
     } catch (e) {
       console.log("ErrorInTest: ", e, (e as api.AIsError).getObject?.())
       error = e as api.AIsError

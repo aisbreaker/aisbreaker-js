@@ -67,7 +67,7 @@ export function getAIsService(): api.AIsService {
 	console.log("getAIsService() - auth: ", authSecretToLog)
 
 	// get AIsService
-	const aisService: api.AIsService = api.AIsBreaker.getRemoteAIsService(url, serviceProps, auth)
+	const aisService: api.AIsService = api.AIsBreaker.getAIsService(url, serviceProps, auth)
 
   return aisService
 }

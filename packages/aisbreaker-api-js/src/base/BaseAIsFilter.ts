@@ -39,7 +39,7 @@ export abstract class BaseAIsFilter<PROPS_T extends FilterProps> implements AIsS
                 throw new Error(`either forward2ServiceProps or forward2Service must be set`)
             }
             service =
-                AIsBreaker.getInstance().getAIsService(this.serviceProps.forward2ServiceProps, this.auth)
+                AIsBreaker.getInstance().getLocalAIsService(this.serviceProps.forward2ServiceProps, this.auth)
         }
         return service
     }

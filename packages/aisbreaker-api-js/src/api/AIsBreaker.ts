@@ -75,7 +75,7 @@ export class AIsBreaker {
      * @param auth     optional auth object
      * @returns
      */
-    getAIsService(props: AIsServiceProps, auth?: Auth): AIsService {
+    getLocalAIsService(props: AIsServiceProps, auth?: Auth): AIsService {
         // get API
         const factory = this.getFactory(props)
         const plainAIsAPI = factory.createAIsService(props, auth)
@@ -86,8 +86,8 @@ export class AIsBreaker {
         return aisAPIWithFilters
     }
 
-    static getAIsService(props: AIsServiceProps, auth?: Auth): AIsService {
-        return AIsBreaker.getInstance().getAIsService(props, auth)
+    static getLocalAIsService(props: AIsServiceProps, auth?: Auth): AIsService {
+        return AIsBreaker.getInstance().getLocalAIsService(props, auth)
     }
 
 
@@ -97,12 +97,12 @@ export class AIsBreaker {
      *
      * Inclusive all default filters. They will be added here during creation.
      *
-     * @param apiSaisbreakerServerURL   URL of the remote AIsBreaker server
+     * @param aisbreakerServerURL       URL of the remote AIsBreaker server
      * @param props                     of the requested service (incl. propos.serviceId)
      * @param auth                      optional auth object
      * @returns
      */
-    getRemoteAIsService(aisbreakerServerURL: string, props: AIsServiceProps, auth?: Auth): AIsService {
+    getAIsService(aisbreakerServerURL: string, props: AIsServiceProps, auth?: Auth): AIsService {
         // create props for remote access
         const remoteProps = {
             "serviceId": "aisbreaker:network",
@@ -110,15 +110,15 @@ export class AIsBreaker {
             "forward2ServiceProps": props
         }            
 
-        return this.getAIsService(remoteProps, auth)
+        return this.getLocalAIsService(remoteProps, auth)
     }
 
-    static getRemoteAIsService(aisbreakerServerURL: string, props: AIsServiceProps, auth?: Auth): AIsService {
-        return AIsBreaker.getInstance().getRemoteAIsService(aisbreakerServerURL, props, auth)
+    static getAIsService(aisbreakerServerURL: string, props: AIsServiceProps, auth?: Auth): AIsService {
+        return AIsBreaker.getInstance().getAIsService(aisbreakerServerURL, props, auth)
     }
 
 
-    async pingRemoteAIsService(aisbreakerServerURL: string): Promise<boolean> {
+    async pingAIsService(aisbreakerServerURL: string): Promise<boolean> {
         try {
             const url = `${aisbreakerServerURL}/api/v1/ping`
             const resp = await ky.get(url).json()
@@ -140,8 +140,8 @@ export class AIsBreaker {
         return false
     }
 
-    static async pingRemoteAIsService(aisbreakerServerURL: string): Promise<boolean> {
-        return await AIsBreaker.getInstance().pingRemoteAIsService(aisbreakerServerURL)
+    static async pingAIsService(aisbreakerServerURL: string): Promise<boolean> {
+        return await AIsBreaker.getInstance().pingAIsService(aisbreakerServerURL)
     }
 
 

@@ -59,7 +59,7 @@ switch (serviceId) {
     default:
         throw new Error(`${tool}: Unknown serviceId: ${serviceId}`)
 }
-const aisService: api.AIsService = api.AIsBreaker.getInstance().getAIsService(serviceProps, auth)
+const aisService: api.AIsService = api.AIsBreaker.getInstance().getLocalAIsService(serviceProps, auth)
 
 
 // use the function with "async/await"

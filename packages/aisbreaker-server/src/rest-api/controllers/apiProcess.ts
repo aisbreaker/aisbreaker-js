@@ -50,13 +50,22 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
     /* allow content-type!='application/json'
        because in some environments this HTTP header cannot set properly
        ( https://stackoverflow.com/questions/38156239/how-to-set-the-content-type-of-request-header-when-using-fetch-api )
-    var contype = req.headers['content-type'];
-    if (!contype || contype.indexOf('application/json') !== 0) {
-      logger.warn(`apiProcess - wrong content-type of request: '${contype}'`)
-      writeJsonResponse(res, 400, {error: {type: 'server_error', message: `Parameter Error (apiProcess): wrong content-type of request: '${contype}'`}})
-      return
-    }
     */
+    var contype = req.headers['content-type']
+    let isContentTypeJson = false
+    if (contype) {
+      contype = contype.toLowerCase()
+      if (contype.indexOf('application/json') === 0) {
+        isContentTypeJson = true
+      } else if (contype.indexOf('text/plain') === 0) {
+        isContentTypeJson = false
+      } else {
+        // error
+        logger.warn(`apiProcess - wrong content-type of request: '${contype}'`)
+        writeJsonResponse(res, 400, {error: {type: 'server_error', message: `Parameter Error (apiProcess): wrong content-type of request: '${contype}'`}})
+        return
+      }
+    }
 
     // check and use authentication (bearer header)
     const requestSecret = extractHttpAuthHeaderSecret(req)
@@ -86,11 +95,21 @@ async function apiProcessUnprotected(req: express.Request, res: express.Response
     }
 
     // get aisNetworkRequest
-    var json = req.body
-    logger.debug(`apiProcess() - request.body(json)=${JSON.stringify(json)}`)
-    if (typeof json === 'string' || json instanceof String) {
-      logger.debug(`apiProcess() - try to parse request.body as JSON`)
-      json = JSON.parse(""+json)
+    var json: any = {}
+    if (isContentTypeJson) {
+      json = req.body
+      logger.debug(`apiProcess() - request.body().json()=${JSON.stringify(json)}`)
+    } else {
+      const bodyStr = req.body
+      logger.debug(`apiProcess() - request.body='${bodyStr}'`)
+      try {
+        json = JSON.parse(""+bodyStr)
+        logger.debug(`apiProcess() - request.body parsed as JSON=${JSON.stringify(json)}`)
+      } catch (err) {
+        logger.warn(`apiProcess() - error: ${err}`, err)
+        const e = new api.AIsError(`Server Error (apiProcess): Could't parse body string='${bodyStr}' as JSON: ${err}`, extern.ERROR_400_Bad_Request)
+        return writeJsonResponseAIsErrorAndEnd(res, e)
+      }
     }
     const aisNetworkRequest: services.AIsNetworkRequest = json
     const serviceProps = aisNetworkRequest.service

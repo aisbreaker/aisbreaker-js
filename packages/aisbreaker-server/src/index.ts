@@ -28,7 +28,8 @@ async function startServer() {
     // init expressjs
     //
     app.use(bodyParser.json())
-    app.use(bodyParser.urlencoded({ extended: false }));
+    app.use(bodyParser.urlencoded({ extended: false }))
+    app.use(bodyParser.text({type: 'text/plain'}))
     app.use(cors())
   
     // enable logging (https://github.com/expressjs/morgan)

@@ -7,6 +7,7 @@ import { DEBUG, AISBREAKER_SERVER_URL as URL, AISBREAKER_API_KEY } from './test-
 // helper functions for tests
 //
 
+const OPENAI_LONG_ANSWER_TIMEOUT_MILLIS = 10000
 
 
 /**
@@ -110,7 +111,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // check result: succcess (access token not needed)
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
   test('Test remote error propagation: with stream, invalid access token, but not needed (success expected)', async () => {
     // service initialization
     const doStream = true
@@ -121,7 +122,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // check result: succcess (access token not needed)
     expect(responseFinalText?.toLowerCase()).toContain(jsContainedAnswer.toLowerCase())
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
   /*
@@ -174,7 +175,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error).toBeDefined()
     expect(error?.statusCode).toBe(expectedStatusCode)
     expect(error?.message).toContain(expectedRootCauseMessage)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
   test('Test longer complex invalid remote service chain: without stream (error expected)', async () => {
     // service initialization
     const doStream = false
@@ -195,7 +196,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error).toBeDefined()
     expect(error?.statusCode).toBe(expectedStatusCode)
     expect(error?.message).toContain(expectedRootCauseMessage)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
   /*
@@ -248,7 +249,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error).toBeDefined()
     expect(error?.statusCode).toBe(expectedStatusCode)
     expect(error?.message).toContain(expectedRootCauseMessage)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
   test('Test longer complex invalid remote service chain: with stream (error expected)', async () => {
     // service initialization
     const doStream = true
@@ -269,7 +270,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
     expect(error).toBeDefined()
     expect(error?.statusCode).toBe(expectedStatusCode)
     expect(error?.message).toContain(expectedRootCauseMessage)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
   // helper function
   function expectInvalidHostError(error: api.AIsError | undefined) {
@@ -301,7 +302,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // check result
     expectInvalidHostError(error)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
   test('Test remote service chain with invalid URL/invalid hostname (simple): with stream (error expected)', async () => {
     // service initialization
     const doStream = true
@@ -318,7 +319,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // check result
     expectInvalidHostError(error)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 
 
   test('Test remote service chain with invalid URL/invalid hostname (chain): without stream (error expected)', async () => {
@@ -337,7 +338,7 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // check result
     expectInvalidHostError(error)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
   test('Test remote service chain with invalid URL/invalid hostname (chain): with stream (error expected)', async () => {
     // service initialization
     const doStream = true
@@ -354,5 +355,5 @@ describe('Test remote error propagation (with complex remote service chain)', ()
 
     // check result
     expectInvalidHostError(error)
-  })
+  }, OPENAI_LONG_ANSWER_TIMEOUT_MILLIS)
 })

@@ -54,13 +54,6 @@ export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
     } as any
   },
   {
-    name: 'Huggingface conversational-task: ANY/MODEL',
-    description: 'Huggingface.co inference API for any conversational-task',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/ANY/MODEL',
-    }
-  },
-  {
     name: 'Huggingface conversational-task: microsoft/DialoGPT-large',
     description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-large',
     serviceProps: {
@@ -72,6 +65,13 @@ export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
     description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-small',
     serviceProps: {
       serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
+    }
+  },
+  {
+    name: 'Huggingface conversational-task: <HF-ACCOUNT>/<HF-MODEL>',
+    description: 'Huggingface.co inference API for every conversational-task, just replace the placeholders',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/<HF-ACCOUNT>/<HF-MODEL>',
     }
   },
   {

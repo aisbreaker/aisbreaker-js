@@ -98,7 +98,7 @@ export abstract class BaseAIsService<PROPS_T extends AIsServiceProps,
       // error handling
       const originalMessage = ""+error
 
-      // Is this an error thrwon by ky HTTP client?
+      // Is this an error thrown by ky HTTP client?
       // Then error.response could contain a message string or a JSON-encoded AIsError
       if ((error as any).response) {
         const aisError = undefined as any //await tryToCreateAIsErrorFromKyResponse((error as any).response)

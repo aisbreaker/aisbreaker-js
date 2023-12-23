@@ -88,26 +88,20 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
 
     // TODO: catch GoogleAuthError!!!
 
-
-    /*
-    // get all messages so far - this is the conversation context
+ 
+    // update conversation (before AI API request-response)
     const conversationState = utils.DefaultConversationState.fromBase64(request.conversationState)
-    const allMessages = conversationState.getMessages()
-    const pastUserInputs = messages2GoogleVertexAiGeminiInputs(allMessages)
-    const generatedResponses = messages2GoogleVertexAiGeminiOutputs(allMessages)
-
-    // update conversation (after creating allMessages)
     conversationState.addInputs(request.inputs)
-    */
 
+    // get all messages so far - this is the conversation context
+    const allMessages = conversationState.getMessages()
+    const allVertextaiContents = messages2VertextaiContents(allMessages)
+    
     // prepare AI API request
-    const specialOpts = {} as any
-
     const vertexaiRequest = {
-      contents: inputs2VertextaiContents(request.inputs)
+      contents: allVertextaiContents
       //contents:   {role: 'user', parts: [{text: 'What is JavaScript?'}]}],
-    };
-
+    }
 
 
     //
@@ -116,8 +110,14 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
 
     const project = serviceDefaults.project
     const location = serviceDefaults.location
-  
-    const validAuth = this.auth || { secret: process.env.GOOGLE_CLOUD_API_KEY }
+
+    const fallbackAuth = {
+      secret:
+       process.env.GOOGLE_CLOUD_API_KEY ||
+       process.env.GOOGLE_CLOUD_API_KEY_service_account ||
+       process.env.GOOGLE_CLOUD_API_KEY_authorized_user,
+    }
+    const validAuth = this.auth || fallbackAuth
     const vertex_ai = new VertexAI_for_AIsBreaker(validAuth, {project: project, location: location});
   
     // Instantiate models
@@ -149,86 +149,37 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
     console.log('aggregated response: ', JSON.stringify(response1));
     */
 
-    // no streaming
+    //
+    // generate (no stream)
+    //
+
     const normalResp = await generativeModel.generateContent(vertexaiRequest);
     const contentResponse = await normalResp.response
     console.log('aggregated response: ', JSON.stringify(contentResponse));
-  
+ 
+    
 
+    // convert response
+    const resultOutputs = vertexaiGenerateContentResponse2Outputs(contentResponse)
 
-    // update conversation (after GoogleVertexAiGemini API request-response)
-    //TODO: conversationState.addOutputs(incompleteResponse.outputs)
+    // update conversation (after AI API request-response)
+    conversationState.addOutputs(resultOutputs)
 
     // return response
-    const usage = {
-      service: this.getService(),
-      totalMilliseconds: responseCollector.getMillisSinceStart(),
-    }
-    const responseFinal: api.ResponseFinal = 
-      vertexaiGenerateContentResponse2ResponseFinal(contentResponse, usage)
-    
+    const responseFinal: api.ResponseFinal = {
+      outputs: resultOutputs,
+      conversationState: conversationState.toBase64(),
+      usage: {
+        service: this.getService(),
+        //totalTokens: r?.usage?.total_tokens,
+        totalMilliseconds: responseCollector.getMillisSinceStart(),
+      },
+      internResponse: contentResponse,
+    } 
     
     return responseFinal
   }
 
-
-
-  /** process non-streaming *
-  async processNonStreamingRequest(
-    url: string,
-    request: api.Request,
-    googleVertexAiGeminiChatRequest: GoogleVertexAiGeminiChatRequest,
-    abortController: AbortController,
-    responseCollector: utils.ResponseCollector,
-    conversationState: utils.DefaultConversationState,
-    context: string
-  ): Promise<api.ResponseFinal | api.AIsError> {
-    const headers = (this.auth?.secret) ?
-      {
-        'Content-Type': 'application/json', // optional because set automatically
-        'Authorization': `Bearer ${this.auth?.secret}`,
-      }
-      :
-      {
-        'Content-Type': 'application/json', // optional because set automatically
-      }
-    const responseJsonPromise = ky.post(
-      url,
-      {
-        headers: headers,
-        json: googleVertexAiGeminiChatRequest,
-        timeout: this.timeoutMillis,
-        hooks: utils.kyHooksToReduceLogging(this.enableTraceHttp),
-        throwHttpErrors: true,
-        signal: abortController.signal,
-      }
-    ).json()
-    const responseJson = await responseJsonPromise
-
-    // simple checks of the result
-    if (this.enableDebug) {
-      logger.debug(`responseJson: ${JSON.stringify(responseJson)}`)
-    }
-    if (!responseJson) {
-      return new api.AIsError('No result from GoogleVertexAiGemini API (non-stream)', extern.ERROR_444_No_Response)
-    }
-
-    // convert response
-    const googleVertexAiGeminiChatResponse = responseJson as GoogleVertexAiGeminiChatResponse
-    const resultOutputs = aiReponse2Outputs(googleVertexAiGeminiChatResponse)
-
-    // almost final result
-    const incompleteResponse: api.ResponseFinal = {
-      outputs: resultOutputs,
-      usage: {
-        service: this.getService(),
-        totalMilliseconds: responseCollector.getMillisSinceStart(),
-      },
-      internResponse: googleVertexAiGeminiChatResponse,
-    }
-    return incompleteResponse
-  }
-*/
   /**
    * Optionally, provide additional context information/description
    * for logging and error messages.
@@ -245,26 +196,14 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
 // data converters Google Cloud VertexAI Gemini API <-> AIsBreaker API
 //
 
-function vertexaiGenerateContentResponse2ResponseFinal(
-  contentResponse: GenerateContentResponse,
-  usage: api.Usage
-): api.ResponseFinal {
+function vertexaiGenerateContentResponse2Outputs(contentResponse: GenerateContentResponse): api.Output[] {
   // put all outputs of all candidates into one array
   const outputs = contentResponse.candidates.flatMap((contentCandidate) => {
     const singleOutputs = vertexaiGenerateContentCandidate2Outputs(contentCandidate, /*isDelta:*/ false)
     return singleOutputs
   })
-
-  // put everything together
-  const responseFinal: api.ResponseFinal = {
-    outputs: outputs,
-    // TODO: conversationState?: string;
-    usage: usage,
-    internResponse: contentResponse,
-  }
-  return responseFinal
+  return outputs
 }
-//function aiReponse2Outputs(data: GoogleVertexAiGeminiChatResponse): api.Output[] {
 function vertexaiGenerateContentCandidate2Outputs(contentCandidate: GenerateContentCandidate, isDelta: boolean): api.Output[] {
   const outputs = vertexaiContent2Outputs(
     contentCandidate.content,
@@ -336,6 +275,56 @@ function input2VertextaiContent(input: api.Input): Content | undefined {
   }
 
   return undefined
+}
+function output2VertextaiContent(output: api.Output): Content | undefined {
+  if (output.text) {
+    return {
+      role: role2VertexaiRole(output.text.role),
+      parts: [
+        {
+          text: output.text.content,
+        },
+      ],
+    }
+  }
+
+  return undefined
+}
+
+function messages2VertextaiContents(messages: api.Message[]): Content[] {
+  const result: Content[] = []
+
+  // combine successive messages with the same role
+  let lastRole: api.InputTextRoleType | api.OutputTextRoleType | undefined = undefined
+  let lastVertextaiContent: Content | undefined = undefined
+  for (const message of messages) {
+    if (message.input && message.input.text) {
+      if (lastRole === message.input.text.role) {
+        lastVertextaiContent?.parts.push({text: message.input.text.content})
+      } else {
+        lastVertextaiContent = input2VertextaiContent(message.input)
+        if (lastVertextaiContent) {
+          result.push(lastVertextaiContent)
+          lastRole = message.input.text.role
+        } else {
+          lastRole = undefined
+        }
+      }
+    } else if (message.output && message.output.text) {
+      if (lastRole === message.output.text.role) {
+        lastVertextaiContent?.parts.push({text: message.output.text.content})
+      } else {
+        lastVertextaiContent = output2VertextaiContent(message.output)
+        if (lastVertextaiContent) {
+          result.push(lastVertextaiContent)
+          lastRole = message.output.text.role
+        } else {
+          lastRole = undefined
+        }
+      }
+    }
+  }
+  return result
 }
 
 //

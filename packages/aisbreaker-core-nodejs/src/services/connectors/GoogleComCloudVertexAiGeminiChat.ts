@@ -100,8 +100,8 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
     // prepare AI API request
     const vertexaiRequest = {
       contents: allVertextaiContents
-      //contents:   {role: 'user', parts: [{text: 'What is JavaScript?'}]}],
     }
+    const isStreamingRequested = (request.streamProgressFunction !== undefined) ? true : false
 
 
     //
@@ -122,45 +122,48 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
   
     // Instantiate models
     const generativeModel = vertex_ai.preview.getGenerativeModel({
-        model: serviceDefaults.engine,
-        // The following parameters are optional
-        // They can also be passed to individual content generation requests
-        safety_settings: [{category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE}],
-        generation_config: {max_output_tokens: 4*256},
-      });
-  
-    const generativeVisionModel = vertex_ai.preview.getGenerativeModel({
-        model: serviceDefaults.engine,
+      model: serviceDefaults.engine,
+      // The following parameters are optional
+      // They can also be passed to individual content generation requests
+      safety_settings: [{category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE}],
+      generation_config: {max_output_tokens: 4*256},
     });
   
   
     //
     // generate (stream)
     //
-  
-    // streaming
-    /*
-    const streamingResp = await generativeModel.generateContentStream(request);
-    for await (const item of streamingResp.stream) {
-      const i: GenerateContentResponse = item
-      console.log('stream chunk: ', JSON.stringify(item));
+    let contentResponse: GenerateContentResponse
+    if (!isStreamingRequested) {
+      // no streaming (simple)
+      const normalResp = await generativeModel.generateContent(vertexaiRequest)
+      contentResponse = await normalResp.response
+
+    } else {
+      // streaming (more complex)
+      const streamProgressFunction = request.streamProgressFunction as api.StreamProgressFunction
+      const streamingResp = await generativeModel.generateContentStream(vertexaiRequest)
+      for await (const responseEventItem of streamingResp.stream) {
+        // stream chunk
+        console.log('stream chunk: ', JSON.stringify(responseEventItem))
+        const responseEventOutputs = vertexaiGenerateContentResponse2Outputs(responseEventItem, /*isDelta:*/ true)
+        const responseEvent: api.ResponseEvent = {
+          outputs: responseEventOutputs,
+          internResponse: responseEventItem,
+        }
+        streamProgressFunction(responseEvent)
+      }
+      // aggregated final response
+      contentResponse = await streamingResp.response
     }
-    const response1 = await streamingResp.response
-    console.log('aggregated response: ', JSON.stringify(response1));
-    */
-
-    //
-    // generate (no stream)
-    //
-
-    const normalResp = await generativeModel.generateContent(vertexaiRequest);
-    const contentResponse = await normalResp.response
     console.log('aggregated response: ', JSON.stringify(contentResponse));
- 
-    
+
+    //
+    // final result
+    //
 
     // convert response
-    const resultOutputs = vertexaiGenerateContentResponse2Outputs(contentResponse)
+    const resultOutputs = vertexaiGenerateContentResponse2Outputs(contentResponse, /*isDelta:*/ false)
 
     // update conversation (after AI API request-response)
     conversationState.addOutputs(resultOutputs)
@@ -196,10 +199,10 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
 // data converters Google Cloud VertexAI Gemini API <-> AIsBreaker API
 //
 
-function vertexaiGenerateContentResponse2Outputs(contentResponse: GenerateContentResponse): api.Output[] {
+function vertexaiGenerateContentResponse2Outputs(contentResponse: GenerateContentResponse, isDelta: boolean): api.Output[] {
   // put all outputs of all candidates into one array
   const outputs = contentResponse.candidates.flatMap((contentCandidate) => {
-    const singleOutputs = vertexaiGenerateContentCandidate2Outputs(contentCandidate, /*isDelta:*/ false)
+    const singleOutputs = vertexaiGenerateContentCandidate2Outputs(contentCandidate, isDelta)
     return singleOutputs
   })
   return outputs
@@ -250,7 +253,6 @@ function role2VertexaiRole(role: api.InputTextRoleType | api.OutputTextRoleType 
     default: return 'assistant'
   }
 }
-
 
 function inputs2VertextaiContents(inputs: api.Input[]): Content[] {
   const result: Content[] = []

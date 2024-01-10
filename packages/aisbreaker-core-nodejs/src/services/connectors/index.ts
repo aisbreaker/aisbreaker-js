@@ -2,6 +2,8 @@
 // re-export all relevant classes/interfaces
 //
 
+export * from './GoogleComCloudVertexAiGeminiChat.js'
+
 export * from './HuggingfaceCoChat.js'
 
 export * from './OpenaiComChat.js'

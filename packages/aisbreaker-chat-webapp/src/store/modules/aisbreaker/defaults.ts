@@ -96,6 +96,15 @@ export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
       url: 'https://api.openai.compatible.example.com/v1/chat/completions',
     }
   },
+  {
+    name: 'Google VertexAI Gemini',
+    description: 'Google VertexAI Gemini connector (model \'gemini-pro\')',
+    serviceProps: {
+      serviceId: 'chat:gemini.vertexai.google.com',
+      location: "us-central1",
+      project: "united-storm-408415",
+    }
+  },
 ]
 
 export const allAIsServicePropsTemplateNameOptions: { label: string; key: string; value: string, tooltip: string }[] = 

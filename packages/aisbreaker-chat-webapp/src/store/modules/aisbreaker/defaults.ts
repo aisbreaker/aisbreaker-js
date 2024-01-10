@@ -44,37 +44,6 @@ export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
     }
   },
   {
-    name: 'Echo+Mirror Chat',
-    description: 'Echo and mirror the user input - for testing',
-    serviceProps: {
-      serviceId: 'aisbreaker:mirror',
-      forward2ServiceProps: {
-          serviceId: 'chat:echo',
-      },
-    } as any
-  },
-  {
-    name: 'Huggingface conversational-task: microsoft/DialoGPT-large',
-    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-large',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
-    }
-  },
-  {
-    name: 'Huggingface conversational-task: microsoft/DialoGPT-small',
-    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-small',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
-    }
-  },
-  {
-    name: 'Huggingface conversational-task: <HF-ACCOUNT>/<HF-MODEL>',
-    description: 'Huggingface.co inference API for every conversational-task, just replace the placeholders',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/<HF-ACCOUNT>/<HF-MODEL>',
-    }
-  },
-  {
     name: 'OpenAI ChatGPT',
     description: 'OpenAI ChatGPT connector (default GPT version)',
     serviceProps: {
@@ -100,10 +69,48 @@ export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
     name: 'Google VertexAI Gemini',
     description: 'Google VertexAI Gemini connector (model \'gemini-pro\')',
     serviceProps: {
-      serviceId: 'chat:gemini.vertexai.google.com',
-      location: "us-central1",
-      project: "united-storm-408415",
+      serviceId: 'chat:gemini.vertexai.google.com'
     }
+  },
+  {
+    name: 'Google VertexAI Gemini (your instance @Google Cloud)',
+    description: 'Google VertexAI Gemini connector (model \'gemini-pro\') on your Google Cloud account with your credentials',
+    serviceProps: {
+      serviceId: 'chat:gemini.vertexai.google.com',
+      project: "<YOUR-GOOGLE-CLOUD-PROJECT>",
+      location: "<YOUR-GOOGLE-CLOUD-LOCATION, e.g. 'us-central1'>",
+    }
+  },
+  {
+    name: 'Huggingface conversational-task: microsoft/DialoGPT-large',
+    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-large',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
+    }
+  },
+  {
+    name: 'Huggingface conversational-task: microsoft/DialoGPT-small',
+    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-small',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
+    }
+  },
+  {
+    name: 'Huggingface conversational-task: <HF-ACCOUNT>/<HF-MODEL>',
+    description: 'Huggingface.co inference API for every conversational-task, just replace the placeholders',
+    serviceProps: {
+      serviceId: 'chat:huggingface.co/<HF-ACCOUNT>/<HF-MODEL>',
+    }
+  },
+  {
+    name: 'Echo+Mirror Chat',
+    description: 'Echo and mirror the user input - for testing',
+    serviceProps: {
+      serviceId: 'aisbreaker:mirror',
+      forward2ServiceProps: {
+          serviceId: 'chat:echo',
+      },
+    } as any
   },
 ]
 

@@ -1,6 +1,6 @@
 {
   "name": "aisbreaker-independent-test-utils",
-  "version": "0.1.15",
+  "version": "0.1.16",
   "description": "Utils for unit and integration testing with jest - without any dependency to AIsBreaker",
   "type": "module",
   "main": "build/index.js",

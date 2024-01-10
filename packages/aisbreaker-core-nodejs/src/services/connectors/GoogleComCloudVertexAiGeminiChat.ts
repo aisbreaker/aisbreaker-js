@@ -13,6 +13,15 @@ const logger = utils.logger
 
 
 //
+// Se use the Google Cloud Vertex AI JavaScript/SDK client library:
+//    - https://github.com/googleapis/nodejs-vertexai/
+//    - https://www.npmjs.com/package/@google-cloud/vertexai
+// Hint: the error "401 Unauthorized" for an invalid access token when using the Google SDK
+//       is currently not handled correctly by the SDK: It does not throw an error
+//       but only logs the error to console and then hangs until the timeout occurs.
+
+//
+// Pure REST API - currently not used:
 // API implementation for Google Cloud Vertex AI Gemini API,
 // docs:
 //   - https://cloud.google.com/vertex-ai/docs/generative-ai/multimodal/overview
@@ -30,19 +39,26 @@ const logger = utils.logger
 //
 
 export interface GoogleComCloudVertexAiGeminiChatDefaults extends base.AIsServiceDefaults {
-  url: string
+  /** default Google Cloud project ID */
   project: string
+  /** default Google Cloud location ID */
   location: string
+  /** default model/engine */
   engine: string
+  /** default maximum output tokens */
+  maxOutputTokens: number,
 }
 
 const defaultServiceId = 'chat:gemini.vertexai.google.com'
 const serviceDefaults: GoogleComCloudVertexAiGeminiChatDefaults = {
-  url: "https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/{engine}:streamGenerateContent",
+  // url not needed when using the Google Cloud SDK
+  //url: "https://${location}-aiplatform.googleapis.com/v1/projects/${project}/locations/${location}/publishers/google/models/{engine}:streamGenerateContent",
+
   project: "united-storm-408415",
   location: "us-central1",
-  // recommended default model/engine: TODO
-  engine: "gemini-pro", // "gemini-pro-vision" not fully supported by this class yet
+  // model/engine "gemini-pro-vision" not fully supported by this class yet
+  engine: "gemini-pro",
+  maxOutputTokens: 4*256,
 }
 
 
@@ -50,7 +66,14 @@ const serviceDefaults: GoogleComCloudVertexAiGeminiChatDefaults = {
 // AIsBreaker connector implementation using TypeScritp package '@google-cloud/vertexai'
 //
 
-export interface GoogleComCloudVertexAiGeminiChatProps extends api.AIsServiceProps { }
+export interface GoogleComCloudVertexAiGeminiChatProps extends api.AIsServiceProps {
+  /** Google Cloud project ID (where the model is deployed, the user/token has access) */
+  project?: string
+  /** Google Cloud location ID(where the model is deployed, the user/token has access) */
+  location?: string
+  /** maximum output tokens */
+  maxOutputTokens?: number
+}
 
 export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService<GoogleComCloudVertexAiGeminiChatProps, GoogleComCloudVertexAiGeminiChatDefaults> {
   // properties to tune this service
@@ -85,10 +108,6 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
     // prepare collection/aggregation of statistics
     const responseCollector = new utils.ResponseCollector(request)
 
-
-    // TODO: catch GoogleAuthError!!!
-
- 
     // update conversation (before AI API request-response)
     const conversationState = utils.DefaultConversationState.fromBase64(request.conversationState)
     conversationState.addInputs(request.inputs)
@@ -107,9 +126,8 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
     //
     // setup API/SDK
     //
-
-    const project = serviceDefaults.project
-    const location = serviceDefaults.location
+    const project = this.serviceProps.project || serviceDefaults.project
+    const location = this.serviceProps.location || serviceDefaults.location
 
     const fallbackAuth = {
       secret:
@@ -121,17 +139,18 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
     const vertex_ai = new VertexAI_for_AIsBreaker(validAuth, {project: project, location: location});
   
     // Instantiate models
+    const maxOutputTokens = this.serviceProps.maxOutputTokens || serviceDefaults.maxOutputTokens
     const generativeModel = vertex_ai.preview.getGenerativeModel({
       model: serviceDefaults.engine,
       // The following parameters are optional
       // They can also be passed to individual content generation requests
       safety_settings: [{category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE}],
-      generation_config: {max_output_tokens: 4*256},
+      generation_config: {max_output_tokens: maxOutputTokens},
     });
   
   
     //
-    // generate (stream)
+    // generate
     //
     let contentResponse: GenerateContentResponse
     if (!isStreamingRequested) {
@@ -189,7 +208,8 @@ export class GoogleComCloudVertexAiGeminiChatService extends base.BaseAIsService
    */
   getContextService(request?: api.Request): string | undefined {
     let contextService = super.getContextService() || 'GoogleComCloudVertexAiGeminiChatService'
-    contextService += `->${this.url}`
+    //contextService += `->${this.url}`
+    contextService += `->GoogleCloud(project=${this.serviceProps.project},location=${this.serviceProps})`
     return contextService
   }
 }

@@ -13,7 +13,7 @@ const logger = utils.logger
 
 
 //
-// Se use the Google Cloud Vertex AI JavaScript/SDK client library:
+// We use the Google Cloud Vertex AI JavaScript/SDK client library:
 //    - https://github.com/googleapis/nodejs-vertexai/
 //    - https://www.npmjs.com/package/@google-cloud/vertexai
 // Hint: the error "401 Unauthorized" for an invalid access token when using the Google SDK

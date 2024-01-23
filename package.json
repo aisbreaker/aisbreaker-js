@@ -18,6 +18,7 @@
     "test"
   ],
   "//ignoredWorkspaces": [],
-  "devDependencies": {},
-  "dependencies": {}
+  "dependencies": {
+    "replicate": "^0.25.2"
+  }
 }

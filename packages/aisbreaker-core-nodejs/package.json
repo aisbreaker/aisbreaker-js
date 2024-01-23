@@ -18,10 +18,11 @@
     "unit-tests": "npm run build && npm run unit-tests-without-build",
     "connector-integration-tests-without-build": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector",
     "connector-integration-tests": "npm run build && npm run connector-integration-tests-without-build",
-    "connector-integration-tests-without-build:single": "npm run connector-integration-tests-without-build:single03",
+    "connector-integration-tests-without-build:single": "npm run connector-integration-tests-without-build:single04",
     "connector-integration-tests-without-build:single01": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector services/connectors/OpenaiComChat.test.js",
     "connector-integration-tests-without-build:single02": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector services/connectors/HuggingfaceCoChat.test.js",
     "connector-integration-tests-without-build:single03": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector services/connectors/GoogleComCloud.test.js",
+    "connector-integration-tests-without-build:single04": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/connector services/connectors/ReplicateComChat.test.js",
     "connector-integration-tests:single": "npm run build && npm run connector-integration-tests-without-build:single"
   },
   "author": "aisbreaker",

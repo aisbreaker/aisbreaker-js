@@ -89,7 +89,7 @@ const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
 }`,
   },
   {
-    name: 'Huggingface conversational-task (e.g. "microsoft/DialoGPT-large")',
+    name: 'Huggingface.co conversational-task (e.g. "microsoft/DialoGPT-large")',
     description: 'Huggingface.co inference API for every conversational-task, e.g. for model "microsoft/DialoGPT-large"',
     servicePropsStr:
 `{
@@ -100,6 +100,25 @@ const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
   #serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
   #serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
   #serviceId: 'chat:huggingface.co/YOU/YourModel',
+  #...
+}`,
+  },
+  {
+    name: 'Replicate.com Generate Text (e.g. "meta/llama-2-70b-chat")',
+    description: 'Replicate.com API for every available generate-text model, e.g. for model "meta/llama-2-70b-chat"',
+    servicePropsStr:
+`{
+  # default model:
+  serviceId: 'chat:replicate.com',
+
+  # Other examples with
+  # serviceId: 'chat:replicate.com/<ACCOUNT>/<MODEL>'
+  # or with
+  # serviceId: 'chat:replicate.com/<ACCOUNT>/<MODEL>:<HASH>':
+  #
+  #serviceId: 'chat:replicate.com/meta/llama-2-70b-chat',
+  #serviceId: 'chat:replicate.com/mistralai/mistral-7b-instruct-v0.1:83b6a56e7c828e667f21fd596c338fd4f0039b46bcfa18d973e8e70e455fda70',
+  #serviceId: 'chat:replicate.com/YOU/YourModel',
   #...
 }`,
   },

@@ -12,6 +12,8 @@ More:
 * added support for [replicate.com]( API: serviceId="chat:replicate.com"
 * allow comments in "Service Properties" in Service settings dialog of aisbreaker-chat-webapp
   * and more flexible and better understandable default values for "Service Properties"
+* added 'Accept' headers to all requests to the AIsBreaker server
+
 
 ## 0.1.16 (2024-01-11)
 

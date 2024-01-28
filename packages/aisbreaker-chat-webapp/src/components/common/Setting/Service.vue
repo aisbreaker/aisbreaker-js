@@ -23,8 +23,13 @@ const aisServicePropsTemplateName = computed<string>({
     return aisbreakerStore.aisServicePropsTemplateName || '< Custom >'
   },
   set(value: string) {
-    const updated = aisbreakerStore.setAIsServicePropsTemplateName(value)
-    if (updated) {
+    const {changed, errorMsg} = aisbreakerStore.setAIsServicePropsTemplateName(value)
+    if (errorMsg) {
+      console.log("Validation Error from template: ", errorMsg)
+      aisServicePropsStrValidationStatus.value = 'error'
+      aisServicePropsStrValidationErrorMsg.value = errorMsg //.replace('\n', ' ')
+    }
+    if (changed) {
       revalidateFields()
     }
   },

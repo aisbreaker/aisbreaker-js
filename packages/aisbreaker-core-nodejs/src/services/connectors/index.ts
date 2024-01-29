@@ -9,4 +9,6 @@ export * from './HuggingfaceCoChat.js'
 export * from './OpenaiComChat.js'
 export * from './OpenaiComImage.js'
 
+export * from './ReplicateComChat.js'
+
 export * from './StabilityAiImage.js'

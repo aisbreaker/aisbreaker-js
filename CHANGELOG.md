@@ -6,7 +6,17 @@ More:
 * main npm package: [aisbreaker-api-js](https://www.npmjs.com/package/aisbreaker-api-js)
 
 
-## 0.1.16+ (2024-01-xx)
+## 0.1.17 (2024-01-29)
+
+### Features
+* added support for [replicate.com](https://replicate.com/) API: serviceId="chat:replicate.com"
+  * to support running large open source AI models
+* allow comments in "Service Properties" in Service settings dialog of aisbreaker-chat-webapp
+  * and more flexible and better understandable default values for "Service Properties"
+* added 'Accept' headers to all requests to the AIsBreaker server
+
+
+## 0.1.16 (2024-01-11)
 
 ### Features
 * added support for new Google Gemini AI model: serviceId="chat:gemini.vertexai.google.com"

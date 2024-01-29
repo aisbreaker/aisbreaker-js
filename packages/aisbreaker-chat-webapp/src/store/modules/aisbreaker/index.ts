@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia'
 import type { AisbreakerState } from './helper.js'
-import { getLocalSetting, setLocalSetting } from './helper.js'
+import { getLocalSetting, parseAisServicePropsStr, setLocalSetting } from './helper.js'
 import { getAIsServicePropsTemplateByName } from './defaults.js'
 import { store } from '@/store/index.js'
 import { api } from 'aisbreaker-api-js'
-import YAML from 'yaml'
 
 
 export const useAisbreakerStore = defineStore('aisbreaker-store', {
@@ -17,39 +16,42 @@ export const useAisbreakerStore = defineStore('aisbreaker-store', {
       }
     },
 
-    /** @return true is changes; false if unchanged */
-    setAIsServicePropsTemplateName(name: string | undefined): boolean {
+    /** @return true/false if changed/unchanged, potential parese error message when parsing default aisServiceProps */
+    setAIsServicePropsTemplateName(name: string | undefined): {changed: boolean, errorMsg: string|undefined} {
       if (this.aisServicePropsTemplateName !== name) {
+        this.aisServicePropsStr = getAIsServicePropsTemplateByName(name)?.servicePropsStr //JSON.stringify(this.aisServiceProps, null, 2)
+        const {aisServiceProps, parseError} = parseAisServicePropsStr(this.aisServicePropsStr)
+        this.aisServiceProps = aisServiceProps
         this.aisServicePropsTemplateName = name
-        this.aisServiceProps = getAIsServicePropsTemplateByName(name)?.serviceProps
-        this.aisServicePropsStr = JSON.stringify(this.aisServiceProps, null, 2)
         this.recordState()
-        return true
+        return {
+          changed: true,
+          errorMsg: parseError,
+        }
       }
-      return false
+      return {
+        changed: false,
+        errorMsg: undefined,
+      }
     },
 
     /** @return parse error message in case of an error; undefined if valid */
     setAIsServicePropsStr(propsStr: string | undefined): string | undefined {
       // check and parse
       if (this.aisServicePropsStr !== propsStr) {
-        try {
-          this.aisServicePropsTemplateName = undefined
-          this.aisServicePropsStr = propsStr
-          this.recordState()
+        const {aisServiceProps, parseError} = parseAisServicePropsStr(propsStr)
 
-          const props = YAML.parse(propsStr || '')
-          if (api.isAIsServiceProps(props)) {
-            // is a valid object
-            return undefined
-          } else {
-            // is an INVALID object
-            return 'Invalid AIsServiceProps object (valid JSON/YAML, but properties are missing)'
-          }
-        } catch (e: any) {
-          // string could't be parsed
-          //console.log(e)
-          return 'Invalid JSON/YAML: ' + (e?.message || '')
+        this.aisServicePropsTemplateName = undefined
+        this.aisServicePropsStr = propsStr
+        this.aisServiceProps = aisServiceProps
+        this.recordState()
+
+        if (aisServiceProps) {
+          // is a valid object
+          return undefined
+        } else {
+          // is an INVALID object
+          return parseError
         }
       }
       // nothing changed
@@ -84,8 +86,6 @@ export const useAisbreakerStore = defineStore('aisbreaker-store', {
     },
   },
 })
-
-
 
 export function useAisbreakerStoreWithOut() {
   return useAisbreakerStore(store)

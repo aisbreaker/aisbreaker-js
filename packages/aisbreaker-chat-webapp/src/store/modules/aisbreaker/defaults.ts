@@ -1,4 +1,3 @@
-//import { api } from 'aisbreaker-core-browserjs'
 import { api } from 'aisbreaker-api-js'
 
 
@@ -23,7 +22,9 @@ console.log(`defaultApiURL': '${defaultApiURL}'`)
 export interface AIsServicePropsTemplate {
   name: string
   description: string
-  serviceProps: api.AIsServiceProps
+  servicePropsStr: string
+  //Deprecated because it doesn't allow comments:
+  //serviceProps: api.AIsServiceProps
 }
 
 export const defaultAIsServicePropsTemplateName: string = 'Dummy Chat'
@@ -35,82 +36,104 @@ export function getAIsServicePropsTemplateByName(name: string | undefined): AIsS
   return allAIsServicePropsTemplate.find((template) => template.name === name)
 }
 
-export const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
+const allAIsServicePropsTemplate: AIsServicePropsTemplate[] = [
   {
     name: 'Dummy Chat',
     description: 'Dummy Chat assistant - for testing',
-    serviceProps: {
-      serviceId: 'chat:dummy',
-    }
+    servicePropsStr:
+`{
+  serviceId: 'chat:dummy',
+}`,
   },
   {
     name: 'OpenAI ChatGPT',
     description: 'OpenAI ChatGPT connector (default GPT version)',
-    serviceProps: {
-      serviceId: 'chat:openai.com',
-    }
+    servicePropsStr:
+`{
+  serviceId: 'chat:openai.com',
+
+  # If you use an OpenAI compatible server
+  # (like Azure OpenAI GPT)
+  # then set server URL here:
+  #
+  #url: 'https://<OPENAI-COMPATIBLE-SERVER-HOST>/v1/chat/completions',
+}`,
   },
   {
     name: 'OpenAI ChatGPT-4',
     description: 'OpenAI ChatGPT connector (version GPT-4)',
-    serviceProps: {
-      serviceId: 'chat:openai.com/gpt-4',
-    }
-  },
-  {
-    name: 'OpenAI ChatGPT compatible servers (like Azure OpenAI GPT)',
-    description: 'OpenAI ChatGPT compatible connector, configure the URL of the alternative API server',
-    serviceProps: {
-      serviceId: 'chat:openai.com',
-      url: 'https://api.openai.compatible.example.com/v1/chat/completions',
-    }
+    servicePropsStr:
+`{
+  serviceId: 'chat:openai.com/gpt-4',
+
+  # If you use an OpenAI compatible server
+  # (like Azure OpenAI GPT)
+  # then set server URL here:
+  #
+  #url: 'https://<OPENAI-COMPATIBLE-SERVER-HOST>/v1/chat/completions',
+}`,
   },
   {
     name: 'Google VertexAI Gemini',
     description: 'Google VertexAI Gemini connector (model \'gemini-pro\')',
-    serviceProps: {
-      serviceId: 'chat:gemini.vertexai.google.com'
-    }
+    servicePropsStr:
+`{
+  serviceId: 'chat:gemini.vertexai.google.com',
+
+  # If you use your own Google Cloud project/own API key
+  # (https://aisbreaker.org/docs/ai-service-details/google-cloud-api-keys)
+  # then set project+location here:
+  #
+  #project: "<YOUR-GOOGLE-CLOUD-PROJECT>",
+  #location: "<YOUR-GOOGLE-CLOUD-LOCATION, e.g. 'us-central1'>",
+}`,
   },
   {
-    name: 'Google VertexAI Gemini (your instance @Google Cloud)',
-    description: 'Google VertexAI Gemini connector (model \'gemini-pro\') on your Google Cloud account with your credentials',
-    serviceProps: {
-      serviceId: 'chat:gemini.vertexai.google.com',
-      project: "<YOUR-GOOGLE-CLOUD-PROJECT>",
-      location: "<YOUR-GOOGLE-CLOUD-LOCATION, e.g. 'us-central1'>",
-    }
+    name: 'Huggingface.co conversational-task (e.g. "microsoft/DialoGPT-large")',
+    description: 'Huggingface.co inference API for every conversational-task, e.g. for model "microsoft/DialoGPT-large"',
+    servicePropsStr:
+`{
+  # serviceId: 'chat:huggingface.co/<HF-ACCOUNT>/<HF-MODEL>',
+  serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
+
+  # Other examples:
+  #serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
+  #serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
+  #serviceId: 'chat:huggingface.co/YOU/YourModel',
+  #...
+}`,
   },
   {
-    name: 'Huggingface conversational-task: microsoft/DialoGPT-large',
-    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-large',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-large',
-    }
-  },
-  {
-    name: 'Huggingface conversational-task: microsoft/DialoGPT-small',
-    description: 'Huggingface.co inference API for any conversational-task: model microsoft/DialoGPT-small',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/microsoft/DialoGPT-small',
-    }
-  },
-  {
-    name: 'Huggingface conversational-task: <HF-ACCOUNT>/<HF-MODEL>',
-    description: 'Huggingface.co inference API for every conversational-task, just replace the placeholders',
-    serviceProps: {
-      serviceId: 'chat:huggingface.co/<HF-ACCOUNT>/<HF-MODEL>',
-    }
+    name: 'Replicate.com Generate Text (e.g. "meta/llama-2-70b-chat")',
+    description: 'Replicate.com API for every available generate-text model, e.g. for model "meta/llama-2-70b-chat"',
+    servicePropsStr:
+`{
+  # default model:
+  serviceId: 'chat:replicate.com',
+
+  # Other examples with
+  # serviceId: 'chat:replicate.com/<ACCOUNT>/<MODEL>'
+  # or with
+  # serviceId: 'chat:replicate.com/<ACCOUNT>/<MODEL>:<HASH>':
+  #
+  #serviceId: 'chat:replicate.com/meta/llama-2-70b-chat',
+  #serviceId: 'chat:replicate.com/mistralai/mistral-7b-instruct-v0.1:83b6a56e7c828e667f21fd596c338fd4f0039b46bcfa18d973e8e70e455fda70',
+  #serviceId: 'chat:replicate.com/YOU/YourModel',
+  #...
+}`,
   },
   {
     name: 'Echo+Mirror Chat',
     description: 'Echo and mirror the user input - for testing',
-    serviceProps: {
-      serviceId: 'aisbreaker:mirror',
-      forward2ServiceProps: {
-          serviceId: 'chat:echo',
-      },
-    } as any
+    servicePropsStr:
+`{
+  serviceId: 'aisbreaker:mirror',
+  forward2ServiceProps: {
+    # this service should be mirrored
+    # (every valid serviceId is possible here):
+    serviceId: 'chat:echo',
+  },
+}`,
   },
 ]
 

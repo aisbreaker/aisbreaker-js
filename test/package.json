@@ -10,10 +10,11 @@
     "// test info-2": "https://kulshekhar.github.io/ts-jest/docs/guides/esm-support/",
     "server-integration-tests-without-build": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server",
     "server-integration-tests": "npm run build && npm run server-integration-tests-without-build",
+    "server-integration-tests-without-build:single00": "echo 'server-integration-single-test: NOP'",
     "server-integration-tests-without-build:single01": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server integration/RemoteRemoteDummyChat.test.js",
     "server-integration-tests-without-build:single02": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server integration/RemoteErrorPropagation.test.js",
     "server-integration-tests-without-build:single03": "NODE_OPTIONS=--experimental-vm-modules jest --group=integration/server integration/RemoteOpenaiComChat.test.js",
-    "server-integration-tests:single": "npm run build && npm run server-integration-tests-without-build:single01"
+    "server-integration-tests:single": "npm run build && npm run server-integration-tests-without-build:single00"
   },
   "keywords": [],
   "author": "aisbreaker",

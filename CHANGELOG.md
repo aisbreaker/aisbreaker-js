@@ -6,6 +6,12 @@ More:
 * main npm package: [aisbreaker-api-js](https://www.npmjs.com/package/aisbreaker-api-js)
 
 
+## 0.1.18 (2024-01-29)
+
+### Fixes
+* fixed and upgraded npm package dependecies
+
+
 ## 0.1.17 (2024-01-29)
 
 ### Features

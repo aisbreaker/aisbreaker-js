@@ -13,10 +13,18 @@ e.g. with
 or with
 ```bash
 . ./setenv-for-dev-server-integration-tests.sh
-# make sure the verserver runs on https://api.demo.app-dev.cloud.service01.net
+# make sure the server runs on https://api.demo.app-dev.cloud.service01.net
 ```
 
 Run all tests:
 ```bash
 ./server-integration-tests.sh
 ```
+
+**Attention for Testing with loclhost server:** Don't forget to set env variable `AUTH_ENCRYPTION_KEYPHRASE` **before starting the server**, e.g. with
+```bash
+cd packages/aisbreaker-server/
+. ../../../setenv.sh
+./startDev.sh
+```
+

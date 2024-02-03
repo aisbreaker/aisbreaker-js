@@ -6,6 +6,12 @@ More:
 * main npm package: [aisbreaker-api-js](https://www.npmjs.com/package/aisbreaker-api-js)
 
 
+## 0.1.19 (2024-02-03)
+
+### Fixes
+* fixed problem of (sometimes) missing output text fragmens for OpenaiComChat and others during streaming with Server Site Events (SSE)
+
+
 ## 0.1.18 (2024-01-29)
 
 ### Fixes

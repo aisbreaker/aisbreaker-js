@@ -61,11 +61,26 @@ export function kyOnDownloadProgress4onMessage(
   onMessage: (message: EventSourceMessage) => void
 ): (progress: DownloadProgress, chunk: Uint8Array) => void {
 
+  // preparation,
+  // important: a single the onChunk() function instance must be used for all calls of a response
+  let onChunk = onChunk4onMessage(onMessageDebug(onMessage))
+
+  // build result function
   let onDownloadProgress = function (progress: DownloadProgress, chunk: Uint8Array): void {
     try {
-      logger.silly("kyOnDownloadProgress4onMessage", progress)
-      let onChunk = onChunk4onMessage(onMessageDebug(onMessage))
+      // logging
+      if (TRACE) {
+        // Convert Uint8Array to string
+        const decoder = new TextDecoder();
+        const chunkString = decoder.decode(chunk);
+        logger.silly("kyOnDownloadProgress4onMessage", progress, chunkString)
+      }
+
+      // action
       onChunk(chunk)
+      if (TRACE) {
+        logger.silly("kyOnDownloadProgress4onMessage - onChunk done")
+      }
     } catch (err) {
       logger.warn("kyOnDownloadProgress4onMessage", err)
     }

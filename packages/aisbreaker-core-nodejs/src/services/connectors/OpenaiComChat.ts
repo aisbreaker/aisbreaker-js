@@ -384,7 +384,7 @@ function createResponseEventFromOpenaiChatSSEAndCollectIt(
         responseCollector.lastObservedEngineId = `${openaiModel}`
     }
 
-    // call upstream progress function
+    // consolidate data of this event
     const responseEvent: api.ResponseEvent = {
         outputs: outputs,
         internResponse: data
